@@ -422,6 +422,7 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
                         n_final_iters = 3) {
   
+  # flag cells with no counts in the available genes, and remove from consideration
   
   # define random starts:
   randstarts = vector("list", n_starts)
@@ -440,9 +441,16 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     message(paste0("random start ", i))
     use = randstarts[[i]]
     
+    if (is.null(init_clust)) {
+      randinit <- NULL
+    }
+    else {
+      randinit <- init_clust[use]
+    }
+    
     # run clustering:
     tempclust <- nbclust(counts = counts[use, ], s = s[use], bg = bg[use], 
-                         init_clust = NULL, n_clusts = n_clusts,
+                         init_clust = randinit, n_clusts = n_clusts,
                          fixed_profiles = fixed_profiles, 
                          nb_size = nb_size, n_iters = n_iters, 
                          method = method, shrinkage = shrinkage)
@@ -462,12 +470,17 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     }
   } # now on to the final clustering
   
-  # for the final clustering, get initial cell type assignments using the best subset clustering result:
-  logliks_under_init_clust <- apply(tempclust$profiles, 2, function(ref) {
-    lldist(x = ref, mat = counts, bg = bg, size = nb_size)
-  })
-  final_clust_init <- colnames(logliks_under_init_clust)[
-    apply(logliks_under_init_clust, 1, which.max)]
+  if (is.null(init_clust)) {
+    # for the final clustering, get initial cell type assignments using the best subset clustering result:
+    logliks_under_init_clust <- apply(tempclust$profiles, 2, function(ref) {
+      lldist(x = ref, mat = counts, bg = bg, size = nb_size)
+    })
+    final_clust_init <- colnames(logliks_under_init_clust)[
+      apply(logliks_under_init_clust, 1, which.max)]
+  }
+  else {
+    final_clust_init <- init_clust
+  }
   
   # now run the final clustering:
   message("clustering all cells")
