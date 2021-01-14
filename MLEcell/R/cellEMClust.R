@@ -1,5 +1,4 @@
 
-
 # function for calculating loglikelihood distance between cell profiles (mat) 
 # and a reference matrix (x).
 # (duplicate with the same function found in findCellTypes, so commenting out here)
@@ -153,7 +152,7 @@ Estep_size <- function(counts, clust, s, bg) {
   # define the matrix of expected counts (mu in the NB model):
   if (is.vector(clust)) {
     expected = NOTIMPLEMENTEDYET
-      
+    
   }
   if (is.matrix(clust)) {
     expected = clust %*% means + bg  
@@ -240,8 +239,8 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   # if an initial clustering is available, use it to estimate initial profiles:
   if (!is.null(init_clust)) {
     new_profiles <- Estep(counts = counts[tempuse, ], 
-                      clust = init_clust[tempuse], 
-                      s = s[tempuse], bg = bgtemp) 
+                          clust = init_clust[tempuse], 
+                          s = s[tempuse], bg = bgtemp) 
     profiles <- cbind(fixed_profiles, new_profiles)
   }
   
@@ -272,7 +271,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         bg = bg,
                         fixed_profiles = fixed_profiles,
                         shrinkage = shrinkage)
-       #nb_size <- Estep_size(counts = counts, )
+      #nb_size <- Estep_size(counts = counts, )
       
     }
     if (method == "EM") {
@@ -389,10 +388,7 @@ ismax <- function(x) {
 #'                      n_benchmark_cells = 500,
 #'                      n_final_iters = 5)   # this is not enough 
 #' # plot clusters:
-#' scols = c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69',
-#' '#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8',
-#' '#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')[
-#' 1:length(unique(unsup$clust))]
+#' scols = c(cellcols, brewer.pal(12, "Set3")[-2], brewer.pal(8, "Set2"))[1:length(unique(unsup$clust))]
 #' names(scols) = unique(unsup$clust)
 #' plot(cellannot$x, cellannot$y, pch = 16, col = scols[unsup$clust])
 #' 
@@ -413,10 +409,7 @@ ismax <- function(x) {
 #'                     n_benchmark_cells = 500,
 #'                     n_final_iters = 5)  # this is not enough  
 #' # plot clusters:
-#' scols = c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69',
-#' '#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8',
-#' '#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')[
-#' 1:length(unique(semi$clust))]
+#' scols = c(cellcols, brewer.pal(12, "Set3")[-2], brewer.pal(8, "Set2"))[1:length(unique(semi$clust))]
 #' names(scols) = unique(semi$clust)
 #' plot(cellannot$x, cellannot$y, pch = 16, col = scols[semi$clust])
 #' # draw flightpath plot for summarizing cell typing results:
@@ -429,7 +422,6 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
                         n_final_iters = 3) {
   
-  # flag cells with no counts in the available genes, and remove from consideration
   
   # define random starts:
   randstarts = vector("list", n_starts)
@@ -448,16 +440,9 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     message(paste0("random start ", i))
     use = randstarts[[i]]
     
-    if (is.null(init_clust)) {
-      randinit <- NULL
-    }
-    else {
-      randinit <- init_clust[use]
-    }
-    
     # run clustering:
     tempclust <- nbclust(counts = counts[use, ], s = s[use], bg = bg[use], 
-                         init_clust = randinit, n_clusts = n_clusts,
+                         init_clust = NULL, n_clusts = n_clusts,
                          fixed_profiles = fixed_profiles, 
                          nb_size = nb_size, n_iters = n_iters, 
                          method = method, shrinkage = shrinkage)
@@ -477,17 +462,12 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     }
   } # now on to the final clustering
   
-  if (is.null(init_clust)) {
-    # for the final clustering, get initial cell type assignments using the best subset clustering result:
-    logliks_under_init_clust <- apply(tempclust$profiles, 2, function(ref) {
-      lldist(x = ref, mat = counts, bg = bg, size = nb_size)
-    })
-    final_clust_init <- colnames(logliks_under_init_clust)[
-      apply(logliks_under_init_clust, 1, which.max)]
-  }
-  else {
-    final_clust_init <- init_clust
-  }
+  # for the final clustering, get initial cell type assignments using the best subset clustering result:
+  logliks_under_init_clust <- apply(tempclust$profiles, 2, function(ref) {
+    lldist(x = ref, mat = counts, bg = bg, size = nb_size)
+  })
+  final_clust_init <- colnames(logliks_under_init_clust)[
+    apply(logliks_under_init_clust, 1, which.max)]
   
   # now run the final clustering:
   message("clustering all cells")
@@ -499,4 +479,3 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   
   return(finalclust)
 }
-
