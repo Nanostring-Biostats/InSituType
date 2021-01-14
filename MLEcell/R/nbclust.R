@@ -1,63 +1,28 @@
-# other clustering functions needed:
-# quickly choose init cluster assignments
-# to cluster huge datasets, cluster on a random subset, then classify the rest vs the resulting profiles
-# to help find tiny clusters, a function to look for poorly-fit cells and see if any of them can be lumped into cluster
 
-# other to-dos:
-# x- enable CEM vs. EM
-# x- strange misbehavior when s == 0 -> leads to NAs and odd clustering results.
-# *- the "shrinkage" argument is implemented in a pretty slapdash manner in the Mstep function. It's worth being more thoughtful about it.
-# x- fast iters by only operating on 2k subsets of the data
-# x-bug: why does changing "shrinkage" not change 4058 results?
-# - semi-sup: learn profiles of missing genes?
-# x- return vector of cell logliks
-# - add a step for estimating theta?
-# x- add a wrapper function that:
-# x  1. manages multiple initial conditions, and 
-# x  2. manages subsampling
-# *- add stopping criteria to nbclust: either no cells change, or hit max_iters (currently just have max iters.)
-# - need a fn to get logliks of cells vs celltypes, outputting a matrix
-# *- should probably use cell type frequency in the cell type probability calculation
-# - finish Estep_size
-# - handling of "bg" argument is awkward. Maybe force it into a vector up-front if only a scalar was implemented? Or just use in matrix format throughout?
-# x- init_clust setting should include fixed profiles
-# **- function to quickly select K: cluster with a range of Ks from 1000 cells, track loglik ~ K, and use Tibshirani's "gap statistic"?
-# *- flag cells with no counts in the available genes, and remove from consideration (careful how this is handled - don't break things downstream)
-# *- need to implement "init_clust" in cellEMclust - and make sure the subsets also use the init_clust values. (and disable the multiple random starts feature)
-# 
 
 # function for calculating loglikelihood distance between cell profiles (mat) 
 # and a reference matrix (x).
 # (duplicate with the same function found in findCellTypes, so commenting out here)
-if (FALSE) {
-  lldist <- function(x, mat, bg = 0.01, size = 10) {
-    
-    # convert to matrix form if only a vector was input:
-    if (is.vector(mat)) {
-      mat = matrix(mat, nrow = 1)
-    }
-    
-    # calc scaling factor to put y on the scale of x:
-    bgsub = pmax(sweep(mat, 1, bg, "-"), 0)
-    s = Matrix::rowSums(bgsub) / sum(x) 
-    # override it if s is negative:
-    s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
-    
-    # expected counts:
-    yhat = sweep(s %*% t(x), 1, bg, "+")
-    
-    # loglik:
-    lls = dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = T)
-    
-    return(rowSums(lls))
+lldist <- function(x, mat, bg = 0.01, size = 10) {
+  
+  # convert to matrix form if only a vector was input:
+  if (is.vector(mat)) {
+    mat = matrix(mat, nrow = 1)
   }
-}
-
-#' get lldist between a count matrix and a cell profile matrix
-lldist_matrix_vs_matrix <- function(counts, mat, bg, size) {
   
+  # calc scaling factor to put y on the scale of x:
+  bgsub = pmax(sweep(mat, 1, bg, "-"), 0)
+  s = Matrix::rowSums(bgsub) / sum(x) 
+  # override it if s is negative:
+  s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
   
+  # expected counts:
+  yhat = sweep(s %*% t(x), 1, bg, "+")
   
+  # loglik:
+  lls = dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = T)
+  
+  return(rowSums(lls))
 }
 
 
@@ -535,49 +500,3 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   return(finalclust)
 }
 
-
-#' "Flightpath" (umap-like) plot of clustering results
-#' 
-#' Arrays cells in 2d space based on their probability of belonging to a given cluster. 
-#' @param probs Matrix of cells' probabilities of belonging to each cluster.
-#' @param profiles Matrix of mean cluster profiles, used in umap layout. 
-#'   If not provided, then the probs matrix is passed to umap.
-#' @param cluster_xpos Vector of cluster centroids' x position (i.e. where you want each cell type to appear in the plot)
-#' @param cluster_ypos Vector of cluster centroids' y position
-#' @return A list with two elements:
-#' \enumerate{
-#' \item clustpos: a matrix of cluster centroids * x,y positions in the flightpath plot
-#' \item cellpos: A matrix of cells * x,y positions in the flightpath plot
-#' }
-#' @importFrom umap umap
-#' @export
-flightpath_layout <- function(probs, profiles = NULL, cluster_xpos = NULL, cluster_ypos = NULL) {
-  
-  
-  # get cluster centroid positions if not pre-specified:
-  if (is.null(cluster_xpos) | is.null(cluster_ypos)) {
-    # matrix for umap layout:
-    mat = probs
-    if (!is.null(profiles)) {
-      mat = profiles
-    }
-    # controls for a umap-based layout:
-    conf = umap::umap.defaults
-    conf$min_dist = 3
-    conf$spread = conf$min_dist * 1.1
-    conf$n_neighbors = ncol(mat)
-    clustum = umap(t(sqrt(mat)), config = conf)$layout
-    cluster_xpos = clustum[, 1]
-    cluster_ypos = clustum[, 2]
-  }
-  
-  # get cell xy positions as a weighted average of the umap positions
-  ux = probs %*% clustum[, 1]
-  uy = probs %*% clustum[, 2]
-  
-  out = list(clustpos = cbind(cluster_xpos, cluster_ypos),
-             cellpos = cbind(ux, uy))
-  colnames(out$clustpos) = c("x", "y")
-  colnames(out$cellpos) = c("x", "y")
-  return(out)
-}
