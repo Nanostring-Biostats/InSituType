@@ -188,6 +188,8 @@ Estep_size <- function(counts, clust, s, bg) {
 #' @param subset_size To speed computations, each iteration will use a subset of only this many cells.
 #'  (The final iteration runs on all cells.) Set to NULL to use all cells in every iter. 
 #'  (This option has not yet been enabled.)
+#' @param ref_scaling_factors Vector of per-gene scaling factors to apply to the fixed_profiles. 
+#'  This argument is intended to be used by cellEMclust, not by the user. 
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
@@ -195,7 +197,8 @@ Estep_size <- function(counts, clust, s, bg) {
 #' }
 nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
-                    method = "CEM", shrinkage = 0.8, subset_size = 1000) {
+                    method = "CEM", shrinkage = 0.8, subset_size = 1000,
+                    ref_scaling_factors = NULL) {
   
   # checks:
   if (min(s) <= 0) {
@@ -240,15 +243,23 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   
   # if an initial clustering is available, use it to estimate initial profiles:
   #if (!is.null(init_clust)) {   #<----- this logical is never FALSE now, I think
-    new_profiles <- Estep(counts = counts[tempuse, ], 
-                          clust = init_clust[tempuse], 
-                          s = s[tempuse], bg = bgtemp) 
-    profiles <- cbind(fixed_profiles, new_profiles)
+  new_profiles <- Estep(counts = counts[tempuse, ], 
+                        clust = init_clust[tempuse], 
+                        s = s[tempuse], bg = bgtemp) 
+  profiles <- cbind(fixed_profiles, new_profiles)
   #}
+    
+  # if ref_scaling_factors are available, rescale the fixed profiles accordingly:
+  if (!is.null(ref_scaling_factors)) {
+    profiles[, colnames(fixed_profiles)] <- 
+      sweep(profiles[, colnames(fixed_profiles)], 1, ref_scaling_factors, "*")
+  }
   
+  # initialize iterations:
   clust_old = init_clust
   n_changed = c()
   
+  # run EM algorithm iterations:
   for (iter in seq_len(n_iters)) {
     message(paste0("iter ", iter))
     # M-step: get cell * cluster probs:
@@ -539,7 +550,8 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         init_clust = final_clust_init, n_clusts = NULL,
                         fixed_profiles = fixed_profiles, nb_size = nb_size, 
                         n_iters = n_final_iters, 
-                        method = method, shrinkage = shrinkage)
+                        method = method, shrinkage = shrinkage,
+                        ref_scaling_factors = best_clust$ref_scaling_factors)
   
   return(finalclust)
 }
