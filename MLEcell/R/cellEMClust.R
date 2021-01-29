@@ -204,8 +204,10 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   
   # specify which profiles to leave fixed:
   keep_profiles = NULL
+  reference_calibration <- NULL
   if (!is.null(fixed_profiles)) {
     keep_profiles = colnames(fixed_profiles)
+    reference_calibration <- rep(1, nrow(fixed_profiles))
   }
   
   ### get initial profiles:
@@ -237,12 +239,12 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   }
   
   # if an initial clustering is available, use it to estimate initial profiles:
-  if (!is.null(init_clust)) {
+  #if (!is.null(init_clust)) {   #<----- this logical is never FALSE now, I think
     new_profiles <- Estep(counts = counts[tempuse, ], 
                           clust = init_clust[tempuse], 
                           s = s[tempuse], bg = bgtemp) 
     profiles <- cbind(fixed_profiles, new_profiles)
-  }
+  #}
   
   clust_old = init_clust
   n_changed = c()
@@ -255,6 +257,20 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                    bg = bg, 
                    size = nb_size) 
     
+    # E-step: update calibration factors:
+    if (!is.null(fixed_profiles)) {
+      
+      # for each cell type, identify all cells
+      
+      # for all genes * cell types, get fold-change from reference to normalized data
+      
+      # for each gene, take a weighted average of log fold-changes, 
+      # weighting by expression level and number of cells.
+      
+      
+      # QUESTION: then, where do we apply the calib factors?
+    }
+    
     # E-step: update profiles:
     if (method == "CEM") {
       tempprobs = probs[, setdiff(colnames(probs), keep_profiles)]
@@ -263,7 +279,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                             clust = tempprobs,
                             s = s, 
                             bg = bg)
-      # update the reference profiles / "fixed_profiles" \
+      # update the reference profiles / "fixed_profiles" 
       updated_reference <- 
         Estep_reference(counts = counts, 
                         clust = probs[, colnames(fixed_profiles)],
@@ -271,8 +287,6 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         bg = bg,
                         fixed_profiles = fixed_profiles,
                         shrinkage = shrinkage)
-      #nb_size <- Estep_size(counts = counts, )
-      
     }
     if (method == "EM") {
       tempprobs = 1 * t(apply(probs[, setdiff(colnames(probs), keep_profiles)], 1, ismax))
