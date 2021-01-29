@@ -204,10 +204,10 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   
   # specify which profiles to leave fixed:
   keep_profiles = NULL
-  reference_calibration <- NULL
+  ref_scaling_factors <- NULL
   if (!is.null(fixed_profiles)) {
     keep_profiles = colnames(fixed_profiles)
-    reference_calibration <- rep(1, nrow(fixed_profiles))
+    ref_scaling_factors <- rep(1, nrow(fixed_profiles))
   }
   
   ### get initial profiles:
@@ -259,15 +259,12 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     
     # E-step: update calibration factors:
     if (!is.null(fixed_profiles)) {
-      
-      # for each cell type, identify all cells
-      
-      # for all genes * cell types, get fold-change from reference to normalized data
-      
-      # for each gene, take a weighted average of log fold-changes, 
-      # weighting by expression level and number of cells.
-      
-      
+     
+      ref_scaling_factors <- estimatRefScalingFactors(counts = counts,
+                                                      bg = bg,
+                                                      s = s,
+                                                      celltype = colnames(probs)[apply(probs, 1, ismax)],
+                                                      fixed_profiles = fixed_profiles)
       # QUESTION: then, where do we apply the calib factors?
     }
     
@@ -285,7 +282,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         clust = probs[, colnames(fixed_profiles)],
                         s = s, 
                         bg = bg,
-                        fixed_profiles = fixed_profiles,
+                        fixed_profiles = sweep(fixed_profiles, 1, ref_scaling_factors, "*"),
                         shrinkage = shrinkage)
     }
     if (method == "EM") {
@@ -301,7 +298,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         clust = probs[, colnames(fixed_profiles)],
                         s = s, 
                         bg = bg,
-                        fixed_profiles = fixed_profiles,
+                        fixed_profiles = sweep(fixed_profiles, 1, ref_scaling_factors, "*"),
                         shrinkage = shrinkage)
       
       # for any profiles that have been lost, replace them with their previous version:
@@ -342,7 +339,8 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
              probs = probs, 
              profiles = sweep(profiles, 2, colSums(profiles), "/") * 1000,
              n_changed = n_changed,
-             logliks = logliks)
+             logliks = logliks,
+             ref_scaling_factors = ref_scaling_factors)
   return(out)
 }
 
@@ -351,8 +349,47 @@ ismax <- function(x) {
   return(x == max(x, na.rm = T))
 }
 
+#' Estimate scaling factors between data and pre-specified reference profiles
+#' 
+#' a
+#' @param counts Counts matrix, cells * genes.
+#' @param s Vector of scaling factors for each cell, e.g. as defined by cell area. 
+#' @param bg Expected background
+#' @param celltype Vector of cell type assignments
+#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
+#' @return A vector of each gene's calibration factor, the estimated ratio of efficiency in the data / efficiency in the fixed profile. 
+estimatRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
 
+  # init matrix of log fold-changes for each gene * cell type:
+  meanfc <- matrix(NA, ncol(counts), ncol(fixed_profiles),
+                  dimnames = list(colnames(counts), colnames(fixed_profiles)))
+  
+  # for all genes * cell types, get fold-change from reference to normalized data
+  for (cell in colnames(meanlogfc)) {
+    use = which(celltype == cell)
+    if (length(use) > 0) {
+      if (is.matrix(bg)) {
+        meanexpr <- mean(sweep(pmax(counts - bg, 0), 1, s, "/"))
+      }
+      if (length(bg) == ncol(counts)) {
+        meanexpr <- mean(sweep(pmax(sweep(counts, 2, bg, "-"), 0), 1, s, "/"))
+      }
+      meanfc[, cell] <- meanexpr / fixed_profiles[, cell]
+    }
+  }
+  
+  # get the weight for each cell type in each gene's average:
+  # (note: the below calcultion is pretty arbitrary. It was chosen to advantage cell types with higher counts and with more cells)
+  ncells <- table(celltype)[colnames(fixed_profiles)]
+  wts <- sweep(sqrt(fixed_profiles), 2, sqrt(ncells), "*")
+  wts[rowSums(wts) == 0, ] <- NA
+  wts <- sweep(wts, 1, rowSums(wts), "/")
 
+  # for each gene, take a weighted average of log fold-changes, 
+  ref_scaling_factors <- exp(rowSums(log(meanfc) - log(fixed_profiles)))
+  return(ref_scaling_factors)
+}
+  
 #' Clustering wrapper function
 #' 
 #' A wrapper for nbclust, to manage subsampling and multiple random starts
