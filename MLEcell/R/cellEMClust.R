@@ -534,7 +534,7 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   
   if (is.null(init_clust)) {
     # for the final clustering, get initial cell type assignments using the best subset clustering result:
-    logliks_under_init_clust <- apply(tempclust$profiles, 2, function(ref) {
+    logliks_under_init_clust <- apply(best_clust$profiles, 2, function(ref) {
       lldist(x = ref, mat = counts, bg = bg, size = nb_size)
     })
     final_clust_init <- colnames(logliks_under_init_clust)[
