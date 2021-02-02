@@ -185,9 +185,6 @@ Estep_size <- function(counts, clust, s, bg) {
 #'   assigned to one cluster). 
 #' @param shrinkage Fraction by which to shrink the average profiles towards
 #'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
-#' @param subset_size To speed computations, each iteration will use a subset of only this many cells.
-#'  (The final iteration runs on all cells.) Set to NULL to use all cells in every iter. 
-#'  (This option has not yet been enabled.)
 #' @param ref_scaling_factors Vector of per-gene scaling factors to apply to the fixed_profiles. 
 #'  This argument is intended to be used by cellEMclust, not by the user. 
 #' @return A list, with the following elements:
@@ -197,7 +194,7 @@ Estep_size <- function(counts, clust, s, bg) {
 #' }
 nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
-                    method = "CEM", shrinkage = 0.8, subset_size = 1000,
+                    method = "CEM", shrinkage = 0.8, 
                     ref_scaling_factors = NULL) {
   
   # checks:
@@ -274,7 +271,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
       ref_scaling_factors <- estimatRefScalingFactors(counts = counts,
                                                       bg = bg,
                                                       s = s,
-                                                      celltype = colnames(probs)[apply(probs, 1, ismax)],
+                                                      celltype = colnames(probs)[unlist(apply(probs, 1, whichismax))],
                                                       fixed_profiles = fixed_profiles)
       # QUESTION: then, where do we apply the calib factors?
     }
@@ -359,6 +356,9 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
 ismax <- function(x) {
   return(x == max(x, na.rm = T))
 }
+whichismax <- function(x) {
+  return(which(ismax(x))[1])
+}
 
 #' Estimate scaling factors between data and pre-specified reference profiles
 #' 
@@ -376,29 +376,36 @@ estimatRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
                   dimnames = list(colnames(counts), colnames(fixed_profiles)))
   
   # for all genes * cell types, get fold-change from reference to normalized data
-  for (cell in colnames(meanlogfc)) {
+  for (cell in colnames(meanfc)) {
     use = which(celltype == cell)
     if (length(use) > 0) {
       if (is.matrix(bg)) {
-        meanexpr <- mean(sweep(pmax(counts - bg, 0), 1, s, "/"))
+        meanexpr <- mean(sweep(pmax(counts[use, ] - bg[use, ], 0), 1, s[use], "/"))
       }
-      if (length(bg) == ncol(counts)) {
-        meanexpr <- mean(sweep(pmax(sweep(counts, 2, bg, "-"), 0), 1, s, "/"))
+      if (length(bg) == nrow(counts)) {
+        meanexpr <- colMeans(sweep(pmax(sweep(counts[use, ], 1, bg[use], "-"), 0), 1, s[use], "/"))
       }
       meanfc[, cell] <- meanexpr / fixed_profiles[, cell]
     }
   }
+  # rescale all of meanfc to avoid errors in small decimals:
+  meanfc = meanfc / median(meanfc, na.rm = T)
   
   # get the weight for each cell type in each gene's average:
   # (note: the below calcultion is pretty arbitrary. It was chosen to advantage cell types with higher counts and with more cells)
   ncells <- table(celltype)[colnames(fixed_profiles)]
   wts <- sweep(sqrt(fixed_profiles), 2, sqrt(ncells), "*")
   wts[rowSums(wts) == 0, ] <- NA
+  wts[meanfc == 0] <- 0
   wts <- sweep(wts, 1, rowSums(wts), "/")
 
   # for each gene, take a weighted average of log fold-changes, 
-  ref_scaling_factors <- exp(rowSums(log(meanfc) - log(fixed_profiles)))
+  ref_scaling_factors <- exp(rowSums(wts * (log(meanfc) - log(fixed_profiles)), na.rm = TRUE))
   return(ref_scaling_factors)
+  
+  # note 1: we get lots of meanFCs = 0, with log of -Inf. This will ruin calculations. 
+  # x note 2: meanfc might hit scaling challenges - recenter everything to a reasonable place?
+  # note 3: huge range of ref_scaling_factors. very long right tail. very implausible. either there's an error, or we need something more controlled like ebayes.
 }
   
 #' Clustering wrapper function
