@@ -70,16 +70,24 @@ Estep <- function(counts, clust, s, bg) {
   # scale counts:
   counts = sweep(pmax(counts - bg, 0), 1, s, "/")
   
+  # weight cells by their total counts:
+  ngenes = dim(counts)[2]
+  totcounts = rowSums(counts)
+  cellweights = sqrt(pmin(totcounts, ngenes))
+  
   # get cluster means:
   if (is.vector(clust)) {
     means = sapply(unique(clust), function(cl) {
-      colMeans(counts[clust == cl, , drop = FALSE])
+      tempweights = cellweights[clust == cl] / sum(cellweights[clust == cl])
+      colSums(sweep(counts[clust == cl, , drop = FALSE], 1, tempweights, "*"))
     })
   }
   if (is.matrix(clust)) {
     means = apply(clust, 2, function(x) {
-      wts = x / mean(x)
-      colMeans(sweep(counts, 1, wts, "*"))
+      probwts = x / sum(x)
+      useweights = probwts * cellweights
+      useweights = useweights / sum(useweights)
+      colSums(sweep(counts, 1, useweights, "*"))
     })
   }
   
