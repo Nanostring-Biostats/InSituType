@@ -361,6 +361,7 @@ whichismax <- function(x) {
   return(which(ismax(x))[1])
 }
 
+
 #' Estimate scaling factors between data and pre-specified reference profiles
 #' 
 #' a
@@ -371,6 +372,33 @@ whichismax <- function(x) {
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #' @return A vector of each gene's calibration factor, the estimated ratio of efficiency in the data / efficiency in the fixed profile. 
 estimateRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
+  
+  # For all genes, use the negbinom mle to get an optimal scaling factor.
+  # the model: counts ~ NB(mean = r * s * x + b, theta = theta),
+  #  where r = the gene's scaling factor, s = the vector of cells' scaling factors, x = the ref profile for the gene and b = background
+  
+  # problem: using this approach, we depend on having the cell profiles all on the right scale
+  
+  
+  
+  
+  
+  
+  return(ref_scaling_factors)
+}
+
+
+
+#' Estimate scaling factors between data and pre-specified reference profiles
+#' 
+#' a
+#' @param counts Counts matrix, cells * genes.
+#' @param s Vector of scaling factors for each cell, e.g. as defined by cell area. 
+#' @param bg Expected background
+#' @param celltype Vector of cell type assignments
+#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
+#' @return A vector of each gene's calibration factor, the estimated ratio of efficiency in the data / efficiency in the fixed profile. 
+estimateRefScalingFactors_meanratio <- function(counts, s, bg, celltype, fixed_profiles) {
 
   # remove zeroes from fixed profiles:
   fixed_profiles = replace(fixed_profiles, fixed_profiles == 0, min(fixed_profiles[fixed_profiles > 0]))
@@ -416,6 +444,8 @@ estimateRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
   # -> there should be some shrinkage applied. Perhaps this is a place to be bayesian.
   # -> Specify a prior based on CPA efficiencies, then update prior 
 }
+
+
   
 #' Clustering wrapper function
 #' 
