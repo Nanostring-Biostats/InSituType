@@ -195,7 +195,7 @@ Estep_size <- function(counts, clust, s, bg) {
 nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
                     method = "CEM", shrinkage = 0.8, 
-                    ref_scaling_factors = NULL) {
+                    ref_scaling_factors = NULL, rescale_fixed_profiles = FALSE) {
   
   # checks:
   if (min(s) <= 0) {
@@ -267,13 +267,14 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     
     # E-step: update calibration factors:
     if (!is.null(fixed_profiles)) {
-     
-      ref_scaling_factors <- estimatRefScalingFactors(counts = counts,
-                                                      bg = bg,
-                                                      s = s,
-                                                      celltype = colnames(probs)[unlist(apply(probs, 1, whichismax))],
-                                                      fixed_profiles = fixed_profiles)
-      # QUESTION: then, where do we apply the calib factors?
+      ref_scaling_factors <- rep(1, nrow(fixed_profiles))
+      if (rescale_fixed_profiles) {
+        ref_scaling_factors <- estimateRefScalingFactors(counts = counts,
+                                                         bg = bg,
+                                                         s = s,
+                                                         celltype = colnames(probs)[unlist(apply(probs, 1, whichismax))],
+                                                         fixed_profiles = fixed_profiles)
+      }
     }
     
     # E-step: update profiles:
@@ -369,8 +370,11 @@ whichismax <- function(x) {
 #' @param celltype Vector of cell type assignments
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #' @return A vector of each gene's calibration factor, the estimated ratio of efficiency in the data / efficiency in the fixed profile. 
-estimatRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
+estimateRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
 
+  # remove zeroes from fixed profiles:
+  fixed_profiles = replace(fixed_profiles, fixed_profiles == 0, min(fixed_profiles[fixed_profiles > 0]))
+  
   # init matrix of log fold-changes for each gene * cell type:
   meanfc <- matrix(NA, ncol(counts), ncol(fixed_profiles),
                   dimnames = list(colnames(counts), colnames(fixed_profiles)))
@@ -378,7 +382,7 @@ estimatRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
   # for all genes * cell types, get fold-change from reference to normalized data
   for (cell in colnames(meanfc)) {
     use = which(celltype == cell)
-    if (length(use) > 0) {
+    if (length(use) > 50) {
       if (is.matrix(bg)) {
         meanexpr <- mean(sweep(pmax(counts[use, ] - bg[use, ], 0), 1, s[use], "/"))
       }
@@ -387,9 +391,11 @@ estimatRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
       }
       meanfc[, cell] <- meanexpr / fixed_profiles[, cell]
     }
+    # should we scale the columns of meanfc to be on the same scale? 
+    # -> this seems risky. Hard to prevent case where one column gets massively rescaled and skews the overall result. 
   }
   # rescale all of meanfc to avoid errors in small decimals:
-  meanfc = meanfc / median(meanfc, na.rm = T)
+  #meanfc = meanfc / quantile(meanfc, 0.9, na.rm = T)
   
   # get the weight for each cell type in each gene's average:
   # (note: the below calcultion is pretty arbitrary. It was chosen to advantage cell types with higher counts and with more cells)
@@ -406,6 +412,9 @@ estimatRefScalingFactors <- function(counts, s, bg, celltype, fixed_profiles) {
   # note 1: we get lots of meanFCs = 0, with log of -Inf. This will ruin calculations. 
   # x note 2: meanfc might hit scaling challenges - recenter everything to a reasonable place?
   # note 3: huge range of ref_scaling_factors. very long right tail. very implausible. either there's an error, or we need something more controlled like ebayes.
+  # note 2/2: the huge range is probably driven in part by the ratios of very low-expressing genes. 
+  # -> there should be some shrinkage applied. Perhaps this is a place to be bayesian.
+  # -> Specify a prior based on CPA efficiencies, then update prior 
 }
   
 #' Clustering wrapper function
