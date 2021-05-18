@@ -10,7 +10,9 @@
 #' @return A vector of each gene's calibration factor, the estimated ratio of efficiency in the data / efficiency in the fixed profile. 
 estimateRefScalingFactors_stub <- function(counts, s, bg, celltype, fixed_profiles) {
   
-  # Step 1: get data needed for model:
+  # get mean profiles of normalized cells:
+  
+  # NOTE: NEED TO ALSO GET A MEAN BACKGROUND MATRIX, THEN SUBTRACT FROM MEANPROFILES
   meanprofileslist <- by(sweep(counts, 1, s, "/"), celltype, colMeans)
   meanprofiles <- (matrix(unlist(meanprofileslist), ncol = length(meanprofileslist)))
   colnames(meanprofiles) <- names(meanprofileslist)
@@ -29,6 +31,11 @@ estimateRefScalingFactors_stub <- function(counts, s, bg, celltype, fixed_profil
     celltype <- rep(colnames(meanprofiles), each = nrow(meanprofiles)),
   )
   df$n <- table(celltype)[df$celltype]
+  
+  # calculate weights based on n and on counts (assuming poisson error with var = mean):
+  df$wt <- sqrt(min(n, 1000) / (obs))
+  
+  
   
   
   
