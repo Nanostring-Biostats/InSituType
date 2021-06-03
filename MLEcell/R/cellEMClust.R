@@ -121,10 +121,10 @@ Estep_reference <- function(counts, clust, s, neg, fixed_profiles, shrinkage = 0
   for (name in colnames(means)) {
     scaled_fixed_profiles[, name] = 
       fixed_profiles[, name] * mean(means[, name]) / mean(fixed_profiles[, name])
-    
-    # shrink means towards the fixed profiles:
-    updated_profiles <- means * (1 - shrinkage) + scaled_fixed_profiles * shrinkage
   }
+  
+  # shrink means towards the fixed profiles:
+  updated_profiles <- means * (1 - shrinkage) + scaled_fixed_profiles * shrinkage
   
   return(updated_profiles)
 }
