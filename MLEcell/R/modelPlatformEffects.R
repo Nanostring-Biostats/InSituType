@@ -6,6 +6,35 @@ if (FALSE) {
 }
 
 
+#' Estimate platform effects / gene scaling factors
+#' 
+#' Estimates a scaling factor for each gene to bring the fixed_profiles onto the scale of the data.
+#'  Models the log ratio between platforms as a function of gene, cell line, and
+#'  reference expression.
+#' @param mean_profiles Matrix of mean background-subtracted expression of genes * clusters.
+#' @param fixed_profiles Matrix of pre-specified reference profiles. 
+#' @return A vector of scaling factors used to multiply the rows of fixed_profiles
+estimate_platform_effects <- function(mean_profiles, fixed_profiles) {
+  # make data frame for model:
+  df <- data.frame(obs = as.vector(mean_profiles),
+                  ref = as.vector(fixed_profiles),
+                  gene = rep(rownames(mean_profiles), ncol(mean_profiles)),
+                  cell = rep(colnames(mean_profiles), each = nrow(mean_profiles)))
+  df$logratio <- log(df$obs / df$ref)
+  
+  # remove rows where either obs or ref == 0:
+  df <- df[(df$obs > 0) & (df$ref > 0), ]
+  
+  # fit the model:
+  mod <- lm(logratio ~ gene + cell + log(ref), data = df, weights = ref)
+  coefs <- mod$coefficients[grepl("gene", names(mod$coefficients))]
+  names(coefs) <- gsub("gene", "", names(coefs))
+  return(exp(coefs))
+}
+
+
+
+
 #' Mean background-subtracted expression per cluster
 #' 
 #' Estimates mean background-subtracted expression per cluster

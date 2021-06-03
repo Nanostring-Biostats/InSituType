@@ -121,15 +121,16 @@ Estep_reference <- function(counts, clust, s, bg, fixed_profiles, shrinkage = 0.
     })
   }
   
-  # scale the fixed_profiles to be on the same scale as the means:
-  scaled_fixed_profiles <- means * NA
-  for (name in colnames(means)) {
-    scaled_fixed_profiles[, name] = 
-      fixed_profiles[, name] * mean(means[, name]) / mean(fixed_profiles[, name])
-  }
+  # estimate gene scaling effects
+  gene_scaling_factors <- estimate_platform_effects(
+    mean_profiles = means,
+    fixed_profiles = fixed_profiles
+  )
   
-  # shrink means towards the fixed profiles:
-  updated_profiles <- means * (1 - shrinkage) + scaled_fixed_profiles * shrinkage
+  # rescale fixed profiles by platform effects:
+  updated_profiles <- sweep(fixed_profiles, 1, gene_scaling_factors, "*")
+  
+  # shrink means towards the fixed profiles:  (possibly, pending Zhi's JS estimator investigations)
   
   return(updated_profiles)
 }
@@ -265,18 +266,6 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                    bg = bg, 
                    size = nb_size) 
     
-    # E-step: update calibration factors:
-    if (!is.null(fixed_profiles)) {
-      ref_scaling_factors <- rep(1, nrow(fixed_profiles))
-      if (rescale_fixed_profiles) {
-        ref_scaling_factors <- estimateRefScalingFactors(counts = counts,
-                                                         bg = bg,
-                                                         s = s,
-                                                         celltype = colnames(probs)[unlist(apply(probs, 1, whichismax))],
-                                                         fixed_profiles = fixed_profiles)
-      }
-    }
-    
     # E-step: update profiles:
     if (method == "CEM") {
       tempprobs = probs[, setdiff(colnames(probs), keep_profiles)]
@@ -291,7 +280,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         clust = probs[, colnames(fixed_profiles)],
                         s = s, 
                         bg = bg,
-                        fixed_profiles = sweep(fixed_profiles, 1, ref_scaling_factors, "*"),
+                        fixed_profiles = fixed_profiles,
                         shrinkage = shrinkage)
     }
     if (method == "EM") {
@@ -307,7 +296,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         clust = probs[, colnames(fixed_profiles)],
                         s = s, 
                         bg = bg,
-                        fixed_profiles = sweep(fixed_profiles, 1, ref_scaling_factors, "*"),
+                        fixed_profiles = fixed_profiles,
                         shrinkage = shrinkage)
       
       # for any profiles that have been lost, replace them with their previous version:
@@ -317,8 +306,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     
     
     profiles <- cbind(updated_reference, new_profiles)
-    #profiles <- cbind(fixed_profiles, new_profiles)
-    
+
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, function(x) {
       order(x, decreasing = TRUE)[1]
