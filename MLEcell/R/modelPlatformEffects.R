@@ -1,3 +1,31 @@
+if (FALSE) {
+  counts = t(as.matrix(mini_tma@expression$rna$raw))
+  s = Matrix::colSums(mini_tma@expression$rna$raw)
+  bg = rep(0.1, length(s))
+  celltype = mini_tma@cell_metadata$rna$slide
+}
+
+
+#' Mean background-subtracted expression per cluster
+#' 
+#' Estimates mean background-subtracted expression per cluster
+#' @param counts Counts matrix, cells * genes.
+#' @param s Vector of scaling factors for each cell, e.g. as defined by cell area. 
+#' @param bg Expected background
+#' @param celltype Vector of cell type assignments
+#' @return A matrix of mean expression profiles
+estimateCellTypeProfiles <- function(counts, s, bg, celltype) {
+  
+  # subtract background:
+  scaledandsubtractedcounts <- sweep(sweep(counts, 1, bg, "-"), 1, s, "/")
+  meanprofileslist <- by(scaledandsubtractedcounts, celltype, colMeans)
+  mean_profiles <- pmax((matrix(unlist(meanprofileslist), ncol = length(meanprofileslist))), 0)
+  colnames(mean_profiles) <- names(meanprofileslist)
+  rownames(mean_profiles) <- colnames(scaledandsubtractedcounts)  
+  return(mean_profiles)
+}
+
+
 #' Model platform effects between reference profiles and the current data
 #' 
 #' Estimates a scaling factor for each gene between the reference profiles and 
@@ -8,36 +36,27 @@
 #' @param celltype Vector of cell type assignments
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #' @return A vector of each gene's calibration factor, the estimated ratio of efficiency in the data / efficiency in the fixed profile. 
-estimateRefScalingFactors_stub <- function(counts, s, bg, celltype, fixed_profiles) {
+estimateRefScalingFactors <- function(mean_profiles, fixed_profiles) {
   
-  # get mean profiles of normalized cells:
-  
-  # NOTE: NEED TO ALSO GET A MEAN BACKGROUND MATRIX, THEN SUBTRACT FROM MEANPROFILES
-  meanprofileslist <- by(sweep(counts, 1, s, "/"), celltype, colMeans)
-  meanprofiles <- (matrix(unlist(meanprofileslist), ncol = length(meanprofileslist)))
-  colnames(meanprofiles) <- names(meanprofileslist)
-  rownames(meanprofiles) <- rownames(counts)
-  # align to fixed_profiles:
-  meanprofiles <- meanprofiles[rownames(fixed_profiles), colnames(fixed_profiles)]
-  
-  #n <- as.vector(table(celltype)[colnames(meanprofiles)])
-  #names(n) <- colnames(meanprofiles)
   
   # Step 2: assemble the data frame for modeling:
   df <- data.frame(
-    obs <- as.vector(meanprofiles),
-    ref <- as.vector(fixed_profiles),
-    gene <- rep(rownames(meanprofiles), ncol(meanprofiles)),
-    celltype <- rep(colnames(meanprofiles), each = nrow(meanprofiles)),
+    obs = as.vector(mean_profiles),
+    ref = as.vector(fixed_profiles),
+    gene = rep(rownames(mean_profiles), ncol(mean_profiles)),
+    celltype = rep(colnames(mean_profiles), each = nrow(mean_profiles))
   )
   df$n <- table(celltype)[df$celltype]
   
   # calculate weights based on n and on counts (assuming poisson error with var = mean):
-  df$wt <- sqrt(min(n, 1000) / (obs))
+  df$wt <- sqrt(min(df$n, 1000) / pmax(df$obs, 1e-3))
   
-  
-  
-  
+  # run model:
+  mod = lm(obs ~ ref*gene - 1, data = df, weights = df$wt) # this is not ideal 
+  # better: run a separate model for each gene?
+  # needed:
+  # - adjust for cell type scaling (e.g. total RNA content)
+  # - constrain so non-negative "ref" term
   
 }
 
