@@ -63,23 +63,21 @@ Mstep <- function(counts, means, bg = 0.01, size = 10) {
 #'   of cells (rows) belonging to clusters (columns).
 #' @param s Vector of scaling factors for each cell, 
 #'   e.g. as defined by cell area. 
-#' @param bg Expected background
+#' @param neg Vector of mean background counts
 #' @return A matrix of cluster profiles, genes * clusters
-Estep <- function(counts, clust, s, bg) {
+Estep <- function(counts, clust, s, neg) {
   
-  # scale counts:
-  counts = sweep(pmax(counts - bg, 0), 1, s, "/")
-  
+
   # get cluster means:
   if (is.vector(clust)) {
     means = sapply(unique(clust), function(cl) {
-      colMeans(counts[clust == cl, , drop = FALSE])
+      pmax(colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
     })
   }
   if (is.matrix(clust)) {
-    means = apply(clust, 2, function(x) {
-      wts = x / mean(x)
-      colMeans(sweep(counts, 1, wts, "*"))
+    means <- apply(clust, 2, function(x) {
+      wts <- x / sum(x)
+      pmax(colSums(sweep(counts, 1, wts, "*")) - sum(neg * wts), 0)
     })
   }
   
@@ -96,31 +94,28 @@ Estep <- function(counts, clust, s, bg) {
 #'   of cells (rows) belonging to clusters (columns).
 #' @param s Vector of scaling factors for each cell, 
 #'   e.g. as defined by cell area. 
-#' @param bg Expected background
+#' @param neg Vector of mean background counts
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
 #' @param shrinkage Fraction by which to shrink the average profiles towards
 #'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
 #' @return A matrix of cluster profiles, genes * clusters
-Estep_reference <- function(counts, clust, s, bg, fixed_profiles, shrinkage = 0.5) {
+Estep_reference <- function(counts, clust, s, neg, fixed_profiles, shrinkage = 0.5) {
   
-  # scale counts:
-  counts = sweep(pmax(counts - bg, 0), 1, s, "/")
-  
+
   # get cluster means:
   if (is.vector(clust)) {
     means = sapply(unique(clust), function(cl) {
-      colMeans(counts[clust == cl, ])
+      pmax(colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
     })
   }
   if (is.matrix(clust)) {
-    means = apply(clust, 2, function(x) {
-      wts = x / mean(x)
-      colMeans(sweep(counts, 1, wts, "*"))
+    means <- apply(clust, 2, function(x) {
+      wts <- x / sum(x)
+      pmax(colSums(sweep(counts, 1, wts, "*")) - sum(neg * wts), 0)
     })
   }
-  
   # scale the fixed_profiles to be on the same scale as the means:
   scaled_fixed_profiles <- means * NA
   for (name in colnames(means)) {
@@ -171,6 +166,7 @@ Estep_size <- function(counts, clust, s, bg) {
 #' @param counts Counts matrix, cells * genes.
 #' @param s Vector of scaling factors for each cell, 
 #'   e.g. as defined by cell area. 
+#' @param neg Vector of mean negprobe counts per cell   
 #' @param bg Expected background
 #' @param init_clust Vector of initial cluster assignments. 
 #' If NULL, initial assignments will be automatically inferred.
@@ -192,7 +188,7 @@ Estep_size <- function(counts, clust, s, bg) {
 #' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
-nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
+nbclust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
                     method = "CEM", shrinkage = 0.8, 
                     ref_scaling_factors = NULL, rescale_fixed_profiles = FALSE) {
@@ -200,6 +196,12 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   # checks:
   if (min(s) <= 0) {
     stop("scaling factors must be positive numbers.")
+  }
+  
+  # infer bg if not provided: assume background is proportional to the scaling factor s
+  if (is.null(bg)) {
+    bgmod <- lm(neg ~ s - 1)
+    bg <- bgmod$fitted
   }
   
   # specify which profiles to leave fixed:
@@ -239,12 +241,11 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   }
   
   # if an initial clustering is available, use it to estimate initial profiles:
-  #if (!is.null(init_clust)) {   #<----- this logical is never FALSE now, I think
-  new_profiles <- Estep(counts = counts[tempuse, ], 
-                        clust = init_clust[tempuse], 
-                        s = s[tempuse], bg = bgtemp) 
-  profiles <- cbind(fixed_profiles, new_profiles)
-  #}
+  if (!is.null(init_clust)) {
+    new_profiles <- Estep(counts = counts[tempuse, ], 
+                          clust = init_clust[tempuse], 
+                          s = s[tempuse], neg = neg[tempuse]) 
+    profiles <- cbind(fixed_profiles, new_profiles)
     
   # if ref_scaling_factors are available, rescale the fixed profiles accordingly:
   if (!is.null(ref_scaling_factors)) {
@@ -284,14 +285,14 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
       new_profiles <- Estep(counts = counts, 
                             clust = tempprobs,
                             s = s, 
-                            bg = bg)
+                            neg = neg)
       # update the reference profiles / "fixed_profiles" 
       updated_reference <- 
         Estep_reference(counts = counts, 
                         clust = probs[, colnames(fixed_profiles)],
                         s = s, 
-                        bg = bg,
-                        fixed_profiles = sweep(fixed_profiles, 1, ref_scaling_factors, "*"),
+                        neg = neg,
+                        fixed_profiles = fixed_profiles,
                         shrinkage = shrinkage)
     }
     if (method == "EM") {
@@ -300,14 +301,14 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
       new_profiles <- Estep(counts = counts, 
                             clust = tempprobs,
                             s = s, 
-                            bg = bg)
+                            neg = neg)
       # update the reference profiles / "fixed_profiles" 
       updated_reference <- 
         Estep_reference(counts = counts, 
                         clust = probs[, colnames(fixed_profiles)],
                         s = s, 
-                        bg = bg,
-                        fixed_profiles = sweep(fixed_profiles, 1, ref_scaling_factors, "*"),
+                        neg = neg,
+                        fixed_profiles = fixed_profiles,
                         shrinkage = shrinkage)
       
       # for any profiles that have been lost, replace them with their previous version:
@@ -317,8 +318,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     
     
     profiles <- cbind(updated_reference, new_profiles)
-    #profiles <- cbind(fixed_profiles, new_profiles)
-    
+
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, function(x) {
       order(x, decreasing = TRUE)[1]
@@ -372,6 +372,7 @@ whichismax <- function(x) {
 #' @param counts Counts matrix, cells * genes.
 #' @param s Vector of scaling factors for each cell, 
 #'   e.g. as defined by cell area. 
+#' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param init_clust Vector of initial cluster assignments. 
 #' If NULL, initial assignments will be automatically inferred.
@@ -443,13 +444,20 @@ whichismax <- function(x) {
 #' fp = flightpath_layout(probs = semi$probs, cluster_xpos = NULL, cluster_ypos = NULL)
 #' plot(fp$cellpos, pch = 16, col = alpha(scols[semi$clust], 0.5))
 #' text(fp$clustpos[, 1], fp$clustpos[, 2], rownames(fp$clustpos), cex = 1.5)
-cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
+cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                         fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
                         method = "CEM", shrinkage = 0.8, 
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
                         n_final_iters = 3) {
   
   # flag cells with no counts in the available genes, and remove from consideration
+
+  
+  # infer bg if not provided: assume background is proportional to the scaling factor s
+  if (is.null(bg)) {
+    bgmod <- lm(neg ~ s - 1)
+    bg <- bgmod$fitted
+  }
   
   # define random starts:
   randstarts = vector("list", n_starts)
@@ -470,13 +478,13 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     
     if (is.null(init_clust)) {
       randinit <- NULL
-    }
-    else {
+    } else {
       randinit <- init_clust[use]
     }
     
     # run clustering:
-    tempclust <- nbclust(counts = counts[use, ], s = s[use], bg = bg[use], 
+    tempclust <- nbclust(counts = counts[use, ], s = s[use], 
+                         neg = neg[use], bg = bg[use], 
                          init_clust = randinit, n_clusts = n_clusts,
                          fixed_profiles = fixed_profiles, 
                          nb_size = nb_size, n_iters = n_iters, 
@@ -511,7 +519,7 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   
   # now run the final clustering:
   message("clustering all cells")
-  finalclust <- nbclust(counts = counts, s = s, bg = bg, 
+  finalclust <- nbclust(counts = counts, s = s, neg = neg, bg = bg, 
                         init_clust = final_clust_init, n_clusts = NULL,
                         fixed_profiles = fixed_profiles, nb_size = nb_size, 
                         n_iters = n_final_iters, 
