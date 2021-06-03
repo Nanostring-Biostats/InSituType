@@ -425,6 +425,13 @@ cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts =
                         n_final_iters = 3) {
   
   # flag cells with no counts in the available genes, and remove from consideration
+
+  
+  # infer bg if not provided: assume background is proportional to the scaling factor s
+  if (is.null(bg)) {
+    bgmod <- lm(neg ~ s - 1)
+    bg <- bgmod$fitted
+  }
   
   # define random starts:
   randstarts = vector("list", n_starts)
@@ -445,8 +452,7 @@ cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts =
     
     if (is.null(init_clust)) {
       randinit <- NULL
-    }
-    else {
+    } else {
       randinit <- init_clust[use]
     }
     
