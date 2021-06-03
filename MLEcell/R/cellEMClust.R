@@ -186,7 +186,7 @@ Estep_size <- function(counts, clust, s, bg) {
 #'   assigned to one cluster). 
 #' @param shrinkage Fraction by which to shrink the average profiles towards
 #'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
-#' @param ref_scaling_factors Vector of per-gene scaling factors to apply to the fixed_profiles. 
+#' @param updated_reference Rescaled, possibly shrunken version of fixed_profiles. 
 #'  This argument is intended to be used by cellEMclust, not by the user. 
 #' @return A list, with the following elements:
 #' \enumerate{
@@ -196,7 +196,7 @@ Estep_size <- function(counts, clust, s, bg) {
 nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
                     method = "CEM", shrinkage = 0.8, 
-                    ref_scaling_factors = NULL, rescale_fixed_profiles = FALSE) {
+                    updated_reference = NULL) {
   
   # checks:
   if (min(s) <= 0) {
@@ -204,12 +204,16 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   }
   
   # specify which profiles to leave fixed:
-  keep_profiles = NULL
-  ref_scaling_factors <- NULL
+  keep_profiles <- NULL
   if (!is.null(fixed_profiles)) {
     keep_profiles = colnames(fixed_profiles)
-    ref_scaling_factors <- rep(1, nrow(fixed_profiles))
   }
+  
+  # start with updated_reference = fixed_profiles if not already specified
+  if (is.null(updated_reference)) {
+    updated_reference <- fixed_profiles
+  }
+  
   
   ### get initial profiles:
   
@@ -218,16 +222,16 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
     if (is.null(n_clusts)) {
       stop("Must specify either init_clust or n_clusts.")
     }
-    n_fixed_profiles = 0
+    n_fixed_profiles <- 0
     if (!is.null(fixed_profiles)) {
       n_fixed_profiles = ncol(fixed_profiles)
     }
-    clustnames = c(colnames(fixed_profiles), letters, paste0(rep(letters, each = 26), letters))[
+    clustnames <- c(colnames(fixed_profiles), 
+                   paste0("cluster_", c(letters, paste0(rep(letters, each = 26), letters))))[
       seq_len(n_clusts + n_fixed_profiles)]
     # arbitrary but non-random initialization:
     init_clust = rep(clustnames, ceiling(nrow(counts) / length(clustnames)))[seq_len(nrow(counts))]
   }
-  
   
   # for deriving initial profiles, subset on only the cells that aren't part of a pre-specified cluster:
   tempuse = !is.element(init_clust, keep_profiles)
@@ -244,14 +248,9 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
   new_profiles <- Estep(counts = counts[tempuse, ], 
                         clust = init_clust[tempuse], 
                         s = s[tempuse], bg = bgtemp) 
-  profiles <- cbind(fixed_profiles, new_profiles)
+  profiles <- cbind(updated_reference, new_profiles)
   #}
     
-  # if ref_scaling_factors are available, rescale the fixed profiles accordingly:
-  if (!is.null(ref_scaling_factors)) {
-    profiles[, colnames(fixed_profiles)] <- 
-      sweep(profiles[, colnames(fixed_profiles)], 1, ref_scaling_factors, "*")
-  }
   
   # initialize iterations:
   clust_old = init_clust
@@ -337,7 +336,7 @@ nbclust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
              profiles = sweep(profiles, 2, colSums(profiles), "/") * 1000,
              n_changed = n_changed,
              logliks = logliks,
-             ref_scaling_factors = ref_scaling_factors)
+             updated_reference = updated_reference)
   return(out)
 }
 
@@ -504,7 +503,7 @@ cellEMClust <- function(counts, s, bg, init_clust = NULL, n_clusts = NULL,
                         fixed_profiles = fixed_profiles, nb_size = nb_size, 
                         n_iters = n_final_iters, 
                         method = method, shrinkage = shrinkage,
-                        ref_scaling_factors = best_clust$ref_scaling_factors)
+                        updated_reference = best_clust$updated_reference)
   
   return(finalclust)
 }
