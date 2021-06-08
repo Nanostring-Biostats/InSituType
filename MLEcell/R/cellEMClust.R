@@ -354,6 +354,7 @@ ismax <- function(x) {
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
+#' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution. 
 #' @param n_iters Numer of iterations
 #' @param method Whether to run a SEM algorithm (points given a probability 
@@ -419,13 +420,33 @@ ismax <- function(x) {
 #' plot(fp$cellpos, pch = 16, col = alpha(scols[semi$clust], 0.5))
 #' text(fp$clustpos[, 1], fp$clustpos[, 2], rownames(fp$clustpos), cex = 1.5)
 cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
-                        fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
+                        fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, n_iters = 20, 
                         method = "CEM", shrinkage = 0.8, 
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
                         n_final_iters = 3) {
   
-  # flag cells with no counts in the available genes, and remove from consideration
-
+  # align genes in counts and fixed_profiles
+  if (align_genes & !is.null(fixed_profiles)) {
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    
+    # subset:
+    counts <- counts[, sharedgenes]
+    fixed_profiles <- fixed_profiles[sharedgenes, ]
+    if (is.matrix(bg)) {
+      bg <- bg[, sharedgenes]
+    }
+    
+    # warn about genes being lost:
+    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted: ",
+                     paste0(lostgenes, collapse = ",")))
+    }
+    if (length(lostgenes) > 50) {
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted"))
+    }
+    
+  }
   
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
