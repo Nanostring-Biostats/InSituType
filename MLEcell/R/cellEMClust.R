@@ -105,11 +105,13 @@ Estep_reference <- function(counts, clust, s, neg, fixed_profiles, shrinkage = 0
   
 
   # get cluster means:
+  # if clust has been passed as a vector of cluster names:
   if (is.vector(clust)) {
     means = sapply(unique(clust), function(cl) {
       pmax(colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
     })
   }
+  # if clust has been passed as a matrix of cluster probabilities:
   if (is.matrix(clust)) {
     means <- apply(clust, 2, function(x) {
       wts <- x / sum(x)
@@ -238,19 +240,19 @@ nbclust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NUL
   
   # for deriving initial profiles, subset on only the cells that aren't part of a pre-specified cluster:
   tempuse = !is.element(init_clust, keep_profiles)
-  bgtemp = bg
-  if (length(bg) == nrow(counts)) {
-    bgtemp = bg[tempuse]
-  }
-  if (is.matrix(bg)) {
-    bgtemp = bg[tempuse, ]
-  }
+  #bgtemp = bg
+  #if (length(bg) == nrow(counts)) {
+  #  bgtemp = bg[tempuse]
+  #}
+  #if (is.matrix(bg)) {
+  #  bgtemp = bg[tempuse, ]
+  #}
   
   # if an initial clustering is available, use it to estimate initial profiles:
   #if (!is.null(init_clust)) {   #<----- this logical is never FALSE now, I think
   new_profiles <- Estep(counts = counts[tempuse, ], 
                         clust = init_clust[tempuse], 
-                        s = s[tempuse], bg = bgtemp) 
+                        s = s[tempuse], neg = neg[tempuse]) 
   profiles <- cbind(updated_reference, new_profiles)
   #}
 
@@ -478,7 +480,8 @@ cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts =
                          init_clust = randinit, n_clusts = n_clusts,
                          fixed_profiles = fixed_profiles, 
                          nb_size = nb_size, n_iters = n_iters, 
-                         method = method, shrinkage = shrinkage)
+                         method = method, shrinkage = shrinkage,
+                         updated_reference = NULL)
     
     # now get the loglik of the benchmarking cells under this clustering scheme:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {

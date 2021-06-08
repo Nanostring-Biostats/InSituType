@@ -20,15 +20,31 @@ estimate_platform_effects <- function(mean_profiles, fixed_profiles) {
                   ref = as.vector(fixed_profiles),
                   gene = rep(rownames(mean_profiles), ncol(mean_profiles)),
                   cell = rep(colnames(mean_profiles), each = nrow(mean_profiles)))
-  df$logratio <- log(df$obs / df$ref)
   
   # remove rows where either obs or ref == 0:
-  df <- df[(df$obs > 0) & (df$ref > 0), ]
+  #df <- df[(df$obs > 0) & (df$ref > 0), ]
+  df <- df[df$ref > 0, ]
+
+  # lower-threshold the observed means so 0 values don't go to -Inf:
+  df$obs <- pmax(df$obs, quantile(df$obs[df$obs>0], 0.01))
+  
+  # calc logratio
+  df$logratio <- log(df$obs / df$ref)
   
   # fit the model:
   mod <- lm(logratio ~ gene + cell + log(ref), data = df, weights = ref)
   coefs <- mod$coefficients[grepl("gene", names(mod$coefficients))]
+  
+  # shrink coefs?
+  #ses <- summary(mod)$coef[names(coefs), "Std. Error"]
+  #shrinkage <- 1 - (length(coefs) - 2) * var(coefs) / sum(coefs^2)
+  #coefs <- coefs * shrinkage
+  
+  # add coefs for genes that got dropped due to all 0s in df:
   names(coefs) <- gsub("gene", "", names(coefs))
+  lostgenes <- setdiff(rownames(mean_profiles), names(coefs))
+  coefs[lostgenes] <- mean(coefs)
+  coefs <- coefs[rownames(mean_profiles)]
   return(exp(coefs))
 }
 
