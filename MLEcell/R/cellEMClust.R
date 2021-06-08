@@ -448,10 +448,6 @@ cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts =
     
   }
   
-  # flag cells with no counts in the available genes, and remove from consideration
-  nonzero <- rowSums(counts)
-
-  
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
     bgmod <- lm(neg ~ s - 1)
