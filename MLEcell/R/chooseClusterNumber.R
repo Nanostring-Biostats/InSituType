@@ -12,10 +12,18 @@
 #' @param n_iters Number of iterations in each clustering attempt. Recommended to choose 
 #'  a smaller number for a quicker, approximate clustering. 
 #' @param subset_size Number of cells to include in clustering. 
-#' @param align_genes Logical, for whether to align the genes in fixed_profiles with the colnames in counts
+#' @param align_genes Logical, for whether to align the genes in fixed_profiles with the colnames in count
+#' @param plotresults Logical, for whether to plot the results.
 #' @param ... Arguments passed to nbclust.
+#' @export
+#' @importFrom graphics plot
+#' @importFrom graphics lines
+#' @return A list, with the following elements:
+#' \itemize{
+#'  \item 
+#' }
 chooseClusterNumber <- function(counts, s, neg, bg = NULL, fixed_profiles = NULL, n_clusts = 6:20, 
-                                n_iters = 10, subset_size = 1000, align_genes = TRUE, ...) {
+                                n_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, ...) {
   
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
@@ -67,10 +75,20 @@ chooseClusterNumber <- function(counts, s, neg, bg = NULL, fixed_profiles = NULL
   
   # report goodness-of-fit
   n_parameters <- n_clusts * ncol(counts)
-  aic <- n_parameters * 2 - 2 * totallogliks 
+  aic <- n_parameters * 2 - 2 * totallogliks
   bic <- n_parameters * log(nrow(counts)) - 2 * totallogliks 
   
   best_clust_number <- n_clusts[order(aic)[1]]
+  
+  if (plotresults) {
+    original_par <- par()$mfrow
+    par(mfrow = c(2,1))
+    graphics::plot(n_clusts, totallogliks, xlab = "Number of clusters", ylab = "Log-likelihood")
+    graphics::lines(n_clusts, totallogliks)
+    graphics::plot(n_clusts, aic, xlab = "Number of clusters", ylab = "AIC")
+    graphics::lines(n_clusts, aic)
+    par(mfrow = original_par)
+  }
   
   out <- list(best_clust_number = best_clust_number,
               n_clusts = n_clusts,
