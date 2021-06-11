@@ -186,7 +186,7 @@ Estep_size <- function(counts, clust, s, bg) {
 #'  (This option has not yet been enabled.)
 #' @return A list, with the following elements:
 #' \enumerate{
-#' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
+#' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
 nbclust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
