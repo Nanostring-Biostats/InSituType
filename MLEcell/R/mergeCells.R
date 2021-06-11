@@ -28,16 +28,17 @@ mergeCells <- function(merges, logliks) {
   #  its best loglik under the "old" celltype. 
   newlogliks <- matrix(NA, nrow(logliks), length(unique(merges)),
                        dimnames = list(rownames(logliks), unique(merges)))
-  sapply(unique(merges), function(newname) {
+  newlogliks <- sapply(unique(merges), function(newname) {
     oldnames <- names(merges)[merges == newname]
     newlogliks[, newname] = apply(logliks[, oldnames, drop = FALSE], 1, max)
   })
+  newlogliks <- cbind(newlogliks, logliks[, setdiff(colnames(logliks), names(merges)), drop = FALSE])
   
   ## convert to probs:
   # first rescale (ie recenter on log scale) to avoid rounding errors:
-  logliks <- sweep(logliks, 1, apply(logliks, 1, max), "-")
+  newlogliks <- sweep(newlogliks, 1, apply(newlogliks, 1, max), "-")
   # get on likelihood scale:
-  liks <- exp(logliks)
+  liks <- exp(newlogliks)
   # convert to probs
   probs <- sweep(liks, 1, rowSums(liks), "/")
   clust <- colnames(probs)[apply(probs, 1, which.max)]
