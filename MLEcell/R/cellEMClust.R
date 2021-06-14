@@ -2,7 +2,7 @@
 # function for calculating loglikelihood distance between cell profiles (mat) 
 # and a reference matrix (x).
 # (duplicate with the same function found in findCellTypes, so commenting out here)
-lldist <- function(x, mat, bg = 0.01, size = 10) {
+lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
@@ -21,7 +21,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10) {
   # loglik:
   lls = dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = T)
   
-  return(rowSums(lls))
+  return(round(rowSums(lls), digits))
 }
 
 
@@ -35,8 +35,9 @@ lldist <- function(x, mat, bg = 0.01, size = 10) {
 #'   e.g. as defined by cell area. 
 #' @param bg Expected background
 #' @param size NB size parameter
+#' @param digits Round the output to this many digits (saves memory)
 #' @return Matrix of probabilities of each cell belonging to each cluster
-Mstep <- function(counts, means, bg = 0.01, size = 10) {
+Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
   
   # get logliks of cells * clusters 
   logliks <- apply(means, 2, function(x) {
@@ -50,7 +51,7 @@ Mstep <- function(counts, means, bg = 0.01, size = 10) {
   # convert to probs
   probs = sweep(liks, 1, rowSums(liks), "/")
   
-  return(probs)
+  return(round(probs, digits))
 }
 
 
@@ -301,9 +302,7 @@ nbclust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NUL
     profiles <- cbind(updated_reference, new_profiles)
 
     # get cluster assignment
-    clust = colnames(probs)[apply(probs, 1, function(x) {
-      order(x, decreasing = TRUE)[1]
-    })]
+    clust = colnames(probs)[apply(probs, 1, which.max)]
     
     # record number of switches
     n_changed = c(n_changed, sum(clust != clust_old))
