@@ -31,8 +31,6 @@ lldist <- function(x, mat, bg = 0.01, size = 10) {
 #' @param counts Counts matrix, cells * genes.
 #' @param means Matrix of mean cluster profiles,
 #'  with genes in rown and clusters in columns.
-#' @param s Vector of scaling factors for each cell, 
-#'   e.g. as defined by cell area. 
 #' @param bg Expected background
 #' @param size NB size parameter
 #' @return Matrix of probabilities of each cell belonging to each cluster
