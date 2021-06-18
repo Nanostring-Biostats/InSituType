@@ -183,11 +183,6 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
                     method = "CEM", shrinkage = 0.8, subset_size = 1000) {
   
-  # checks:
-  if (min(s) <= 0) {
-    stop("scaling factors must be positive numbers.")
-  }
-  
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
     s <- rowSums(counts)
