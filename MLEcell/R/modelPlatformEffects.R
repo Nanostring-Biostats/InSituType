@@ -52,16 +52,16 @@ estimate_platform_effects <- function(mean_profiles, fixed_profiles) {
 #' @param bg Expected background
 #' @param celltype Vector of cell type assignments
 #' @return A matrix of mean expression profiles
-estimateCellTypeProfiles <- function(counts, s, bg, celltype) {
-  
-  # subtract background:
-  scaledandsubtractedcounts <- sweep(sweep(counts, 1, bg, "-"), 1, s, "/")
-  meanprofileslist <- by(scaledandsubtractedcounts, celltype, colMeans)
-  mean_profiles <- pmax((matrix(unlist(meanprofileslist), ncol = length(meanprofileslist))), 0)
-  colnames(mean_profiles) <- names(meanprofileslist)
-  rownames(mean_profiles) <- colnames(scaledandsubtractedcounts)  
-  return(mean_profiles)
-}
+#estimateCellTypeProfiles <- function(counts, s, bg, celltype) {
+#  
+#  # subtract background:
+#  scaledandsubtractedcounts <- sweep(sweep(counts, 1, bg, "-"), 1, s, "/")
+#  meanprofileslist <- by(scaledandsubtractedcounts, celltype, colMeans)
+#  mean_profiles <- pmax((matrix(unlist(meanprofileslist), ncol = length(meanprofileslist))), 0)
+#  colnames(mean_profiles) <- names(meanprofileslist)
+#  rownames(mean_profiles) <- colnames(scaledandsubtractedcounts)  
+#  return(mean_profiles)
+#}
 
 
 
