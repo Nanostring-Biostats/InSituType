@@ -2,7 +2,7 @@
 # function for calculating loglikelihood distance between cell profiles (mat) 
 # and a reference matrix (x).
 # (duplicate with the same function found in findCellTypes, so commenting out here)
-lldist <- function(x, mat, bg = 0.01, size = 10) {
+lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
@@ -21,7 +21,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10) {
   # loglik:
   lls = dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = T)
   
-  return(rowSums(lls))
+  return(round(rowSums(lls), digits))
 }
 
 
@@ -31,12 +31,11 @@ lldist <- function(x, mat, bg = 0.01, size = 10) {
 #' @param counts Counts matrix, cells * genes.
 #' @param means Matrix of mean cluster profiles,
 #'  with genes in rown and clusters in columns.
-#' @param s Vector of scaling factors for each cell, 
-#'   e.g. as defined by cell area. 
 #' @param bg Expected background
 #' @param size NB size parameter
+#' @param digits Round the output to this many digits (saves memory)
 #' @return Matrix of probabilities of each cell belonging to each cluster
-Mstep <- function(counts, means, bg = 0.01, size = 10) {
+Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
   
   # get logliks of cells * clusters 
   logliks <- apply(means, 2, function(x) {
@@ -50,7 +49,7 @@ Mstep <- function(counts, means, bg = 0.01, size = 10) {
   # convert to probs
   probs = sweep(liks, 1, rowSums(liks), "/")
   
-  return(probs)
+  return(round(probs, digits))
 }
 
 
@@ -61,11 +60,9 @@ Mstep <- function(counts, means, bg = 0.01, size = 10) {
 #' @param counts Counts matrix, cells * genes.
 #' @param clust Vector of cluster assignments, or a matrix of probabilities 
 #'   of cells (rows) belonging to clusters (columns).
-#' @param s Vector of scaling factors for each cell, 
-#'   e.g. as defined by cell area. 
 #' @param neg Vector of mean background counts
 #' @return A matrix of cluster profiles, genes * clusters
-Estep <- function(counts, clust, s, neg) {
+Estep <- function(counts, clust, neg) {
   
 
   # get cluster means:
@@ -92,8 +89,6 @@ Estep <- function(counts, clust, s, neg) {
 #' @param counts Counts matrix, cells * genes.
 #' @param clust Vector of cluster assignments, or a matrix of probabilities 
 #'   of cells (rows) belonging to clusters (columns).
-#' @param s Vector of scaling factors for each cell, 
-#'   e.g. as defined by cell area. 
 #' @param neg Vector of mean background counts
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
@@ -101,7 +96,7 @@ Estep <- function(counts, clust, s, neg) {
 #' @param shrinkage Fraction by which to shrink the average profiles towards
 #'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
 #' @return A matrix of cluster profiles, genes * clusters
-Estep_reference <- function(counts, clust, s, neg, fixed_profiles, shrinkage = 0.5) {
+Estep_reference <- function(counts, clust, neg, fixed_profiles, shrinkage = 0.5) {
   
 
   # get cluster means:
@@ -141,12 +136,10 @@ Estep_reference <- function(counts, clust, s, neg, fixed_profiles, shrinkage = 0
 #' @param counts Counts matrix, cells * genes.
 #' @param clust Vector of cluster assignments, or a matrix of probabilities 
 #'   of cells (rows) belonging to clusters (columns).
-#' @param s Vector of scaling factors for each cell, 
-#'   e.g. as defined by cell area. 
 #' @param bg Expected background
 #' @param means Matrix of means
 #' @return A scalar giving the mle for the size parameter
-Estep_size <- function(counts, clust, s, bg) {
+Estep_size <- function(counts, clust, bg) {
   
   # define the matrix of expected counts (mu in the NB model):
   if (is.vector(clust)) {
@@ -168,8 +161,6 @@ Estep_size <- function(counts, clust, s, bg) {
 #' 
 #' Cluster single cell gene expression data using an EM algorithm.
 #' @param counts Counts matrix, cells * genes.
-#' @param s Vector of scaling factors for each cell, 
-#'   e.g. as defined by cell area. 
 #' @param neg Vector of mean negprobe counts per cell   
 #' @param bg Expected background
 #' @param init_clust Vector of initial cluster assignments. 
@@ -192,18 +183,14 @@ Estep_size <- function(counts, clust, s, bg) {
 #' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
-nbclust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
+nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
                     method = "CEM", shrinkage = 0.8, 
                     updated_reference = NULL) {
   
-  # checks:
-  if (min(s) <= 0) {
-    stop("scaling factors must be positive numbers.")
-  }
-  
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
+    s <- rowSums(counts)
     bgmod <- lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
@@ -276,13 +263,11 @@ nbclust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NUL
       # update the new cluster profiles:
       new_profiles <- Estep(counts = counts, 
                             clust = tempprobs,
-                            s = s, 
                             neg = neg)
       # update the reference profiles / "fixed_profiles" 
       updated_reference <- 
         Estep_reference(counts = counts, 
                         clust = probs[, colnames(fixed_profiles)],
-                        s = s, 
                         neg = neg,
                         fixed_profiles = fixed_profiles,
                         shrinkage = shrinkage)
@@ -292,13 +277,11 @@ nbclust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NUL
       # update the new cluster profiles:  
       new_profiles <- Estep(counts = counts, 
                             clust = tempprobs,
-                            s = s, 
                             neg = neg)
       # update the reference profiles / "fixed_profiles" 
       updated_reference <- 
         Estep_reference(counts = counts, 
                         clust = probs[, colnames(fixed_profiles)],
-                        s = s, 
                         neg = neg,
                         fixed_profiles = fixed_profiles,
                         shrinkage = shrinkage)
@@ -312,9 +295,7 @@ nbclust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NUL
     profiles <- cbind(updated_reference, new_profiles)
 
     # get cluster assignment
-    clust = colnames(probs)[apply(probs, 1, function(x) {
-      order(x, decreasing = TRUE)[1]
-    })]
+    clust = colnames(probs)[apply(probs, 1, which.max)]
     
     # record number of switches
     n_changed = c(n_changed, sum(clust != clust_old))
@@ -362,8 +343,6 @@ whichismax <- function(x) {
 #' 
 #' A wrapper for nbclust, to manage subsampling and multiple random starts
 #' @param counts Counts matrix, cells * genes.
-#' @param s Vector of scaling factors for each cell, 
-#'   e.g. as defined by cell area. 
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param init_clust Vector of initial cluster assignments. 
@@ -372,6 +351,7 @@ whichismax <- function(x) {
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
+#' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution. 
 #' @param n_iters Numer of iterations
 #' @param method Whether to run a SEM algorithm (points given a probability 
@@ -396,7 +376,6 @@ whichismax <- function(x) {
 #' bg.predicted = rowSums(raw) * bgmodel
 # run unsupervised clustering with several random starts:
 #' unsup <- cellEMClust(counts = raw, 
-#'                      s = pmax(rowSums(raw), 1), 
 #'                      bg = bg.predicted,
 #'                      init_clust = NULL, n_clusts = 12,
 #'                      fixed_profiles = NULL, 
@@ -416,7 +395,6 @@ whichismax <- function(x) {
 #' head(ioprofiles)
 #' usegenes = intersect(rownames(ioprofiles), colnames(raw))
 #' semi <- cellEMClust(counts = raw[, usegenes], 
-#'                     s = pmax(rowSums(raw), 1), 
 #'                     bg = bg.predicted,
 #'                     init_clust = NULL, n_clusts = 6,
 #'                     fixed_profiles = ioprofiles[usegenes, ], 
@@ -436,17 +414,38 @@ whichismax <- function(x) {
 #' fp = flightpath_layout(probs = semi$probs, cluster_xpos = NULL, cluster_ypos = NULL)
 #' plot(fp$cellpos, pch = 16, col = alpha(scols[semi$clust], 0.5))
 #' text(fp$clustpos[, 1], fp$clustpos[, 2], rownames(fp$clustpos), cex = 1.5)
-cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
-                        fixed_profiles = NULL, nb_size = 10, n_iters = 20, 
+cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
+                        fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, n_iters = 20, 
                         method = "CEM", shrinkage = 0.8, 
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
                         n_final_iters = 3) {
   
-  # flag cells with no counts in the available genes, and remove from consideration
-
+  # align genes in counts and fixed_profiles
+  if (align_genes & !is.null(fixed_profiles)) {
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    
+    # subset:
+    counts <- counts[, sharedgenes]
+    fixed_profiles <- fixed_profiles[sharedgenes, ]
+    if (is.matrix(bg)) {
+      bg <- bg[, sharedgenes]
+    }
+    
+    # warn about genes being lost:
+    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted: ",
+                     paste0(lostgenes, collapse = ",")))
+    }
+    if (length(lostgenes) > 50) {
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted"))
+    }
+    
+  }
   
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
+    s <- rowMeans(counts)
     bgmod <- lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
@@ -475,7 +474,7 @@ cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts =
     }
     
     # run clustering:
-    tempclust <- nbclust(counts = counts[use, ], s = s[use], 
+    tempclust <- nbclust(counts = counts[use, ], 
                          neg = neg[use], bg = bg[use], 
                          init_clust = randinit, n_clusts = n_clusts,
                          fixed_profiles = fixed_profiles, 
@@ -512,7 +511,7 @@ cellEMClust <- function(counts, s, neg, bg = NULL, init_clust = NULL, n_clusts =
   
   # now run the final clustering:
   message("clustering all cells")
-  finalclust <- nbclust(counts = counts, s = s, neg = neg, bg = bg, 
+  finalclust <- nbclust(counts = counts, neg = neg, bg = bg, 
                         init_clust = final_clust_init, n_clusts = NULL,
                         fixed_profiles = fixed_profiles, nb_size = nb_size, 
                         n_iters = n_final_iters, 
