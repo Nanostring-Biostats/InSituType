@@ -70,11 +70,10 @@ lldist <- function( x , mat , bg = 0.01 , size = 10 )
 #' @param size NB size parameter
 #' @return Matrix of probabilities of each cell belonging to each cluster
 Mstep <- function( counts , means , bg = 0.01 , size = 10 ) {
-  
   # get logliks of cells * clusters 
   logliks <- apply( means , 2 , function( x ) {
-    lldist( x = x , mat = counts , bg = bg , size = size )
-  } , bg = bg , size = size )
+    lldist( x = x , mat = counts, bg = bg , size = size )
+  }  )
   
   # first rescale (ie recenter on log scale) to avoid rounding errors:
   logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
@@ -258,7 +257,7 @@ Estep_size <- function(counts, clust, s, bg) {
 nbclust <- function( counts , s , bg , init_clust = NULL , n_clusts = NULL ,
                      fixed_profiles = NULL , nb_size = 10 , n_iters = 20 , 
                      method = "CEM" , shrinkage = 0.8 , subset_size = 1000 ,
-                     percentChanged = 0.01 , seed = 1234 )
+                     percentChanged = 0.1 , seed = 1234 )
 {
   
   # checks:
@@ -323,10 +322,10 @@ nbclust <- function( counts , s , bg , init_clust = NULL , n_clusts = NULL ,
   
   clust_old <- init_clust
   n_changed <- c()
-  notConverged <- TRUE
+  Converged <- FALSE
   iter <- 1
   
-  while( notConverged )
+  while( !Converged )
   {
     message( paste( "iter" , iter ) )
     # M-step: get cell * cluster probs:
@@ -387,12 +386,19 @@ nbclust <- function( counts , s , bg , init_clust = NULL , n_clusts = NULL ,
     })]
     
     # record number of switches
-    n_changed <- c( n_changed , sum( clust != clust_old ) )
+    n_changed <- c( n_changed , mean( clust != clust_old ) )
     clust_old <- clust
-    
+
+  
+    if (iter != 1){
+      actualpercentChanged <- n_changed[iter - 1] - n_changed[iter]
+      Converged <- ( iter >= n_iters ) | (actualpercentChanged  <= percentChanged )
+      print(n_changed)
+      print(actualpercentChanged)
+      print(Converged)
+    }
     # Check for convergence or max iters
-    iter <- iter + 1
-    notConverged <- ( iter <= n_iters ) | ( n_changed / length( n_changed ) < percentChanged )
+    iter <- iter + 1 
   }
   
   # get loglik of each cell:
