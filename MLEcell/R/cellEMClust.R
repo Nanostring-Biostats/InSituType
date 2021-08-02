@@ -247,7 +247,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     } else {
       n_fixed_profiles <- 0
     }
-    clustnames <- makeClusterNames( colnames( fixed_profiles ) , n_clusts + ncol(fixed_profiles) )
+    clustnames <- makeClusterNames( colnames( fixed_profiles ) , n_clusts + n_fixed_profiles )
     # arbitrary but non-random initialization:
     init_clust = rep(clustnames, ceiling(nrow(counts) / length(clustnames)))[seq_len(nrow(counts))]
     }
