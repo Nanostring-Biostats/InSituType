@@ -1,25 +1,56 @@
 
-# function for calculating loglikelihood distance between cell profiles (mat)
-# and a reference matrix (x).
-# (duplicate with the same function found in findCellTypes, so commenting out here)
+#' Calculate the likelihood of the vector x using the reference vector of y
+#'
+#' @param x a vector of a reference cell type
+#' @param mat a matrix of expression levels in all cells
+#' @param bg background level (default: 0.01)
+#' @param size the parameters for dnbinom function (default: 10)
+#'
+#' @importFrom Matrix rowSums
+#'
+
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
-    mat = matrix(mat, nrow = 1)
+    mat <- matrix(mat, nrow = 1)
   }
-
+  # Check dimensions on bg and stop with informative error if not
+  #  conformant
+  if ( is.vector( bg ) )
+  {
+    if ( !identical( length( bg ) , nrow( mat ) ) )
+    {
+      errorMessage <- sprintf( "Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d" , nrow( mat ) , length( bg ) )
+      stop( errorMessage )
+    }
+  }
+  
   # calc scaling factor to put y on the scale of x:
-  bgsub = pmax(sweep(mat, 1, bg, "-"), 0)
-  s = Matrix::rowSums(bgsub) / sum(x)
+  if ( is.vector( bg ) )
+  {
+    bgsub <- pmax( sweep( mat , 1 , bg , "-" ) , 0 )
+  }
+  else
+  {
+    bgsub <- pmax( mat - bg , 0 )
+  }
+  s <- rowSums( bgsub ) / sum( x )
   # override it if s is negative:
   s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
 
   # expected counts:
-  yhat = sweep(s %*% t(x), 1, bg, "+")
-
+  if ( is.vector( bg ) )
+  {
+    yhat <- sweep( s %*% t( x ) , 1 , bg , "+" )
+  }
+  else
+  {
+    yhat <- s %*% t(x) + bg
+  }
+  
   # loglik:
-  lls = dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = T)
+  lls <- dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
 
   return(round(rowSums(lls), digits))
 }
