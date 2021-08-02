@@ -124,10 +124,10 @@ Estep <- function(counts, clust, neg) {
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
-#' @param shrinkage Fraction by which to shrink the average profiles towards
-#'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
+#'  
 #' @return A matrix of cluster profiles, genes * clusters
-Estep_reference <- function(counts, clust, neg, fixed_profiles, shrinkage = 0.5) {
+#' 
+Estep_reference <- function(counts, clust, neg, fixed_profiles) {
 
 
   # get cluster means:
