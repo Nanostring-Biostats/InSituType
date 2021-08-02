@@ -10,7 +10,6 @@
 #'
 
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
-
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
     mat <- matrix(mat, nrow = 1)
@@ -67,7 +66,6 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param digits Round the output to this many digits (saves memory)
 #' @return Matrix of probabilities of each cell belonging to each cluster
 Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
-
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
     lldist(x = x, mat = counts, bg = bg, size = size)
@@ -249,9 +247,9 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     } else {
       n_fixed_profiles <- 0
     }
-    clustnames <- makeClusterNames( colnames( fixed_profiles ) , n_clusts )
+    clustnames <- makeClusterNames( colnames( fixed_profiles ) , n_clusts + ncol(fixed_profiles) )
     # arbitrary but non-random initialization:
-    init_clust <- clustnames[sample( length( clustnames ) , size = nrow( counts ) , replace = TRUE )]  
+    init_clust = rep(clustnames, ceiling(nrow(counts) / length(clustnames)))[seq_len(nrow(counts))]
     }
 
   # for deriving initial profiles, subset on only the cells that aren't part of a pre-specified cluster:
@@ -271,7 +269,6 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                         neg = neg[tempuse])
   profiles <- cbind(updated_reference, new_profiles)
   #}
-
 
   # initialize iterations:
   clust_old = init_clust
