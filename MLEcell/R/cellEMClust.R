@@ -61,7 +61,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' Compute probability that each cell belongs to a given cluster
 #' @param counts Counts matrix, cells * genes.
 #' @param means Matrix of mean cluster profiles,
-#'  with genes in rown and clusters in columns.
+#'  with genes in rows and clusters in columns.
 #' @param bg Expected background
 #' @param size NB size parameter
 #' @param digits Round the output to this many digits (saves memory)
@@ -73,11 +73,11 @@ Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
     lldist(x = x, mat = counts, bg = bg, size = size)
   })
   # first rescale (ie recenter on log scale) to avoid rounding errors:
-  logliks = sweep(logliks, 1, apply(logliks, 1, max), "-")
+  logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
   # get on likelihood scale:
-  liks = exp(logliks)
+  liks <- exp( logliks )
   # convert to probs
-  probs = sweep(liks, 1, rowSums(liks), "/")
+  probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
 
   return(round(probs, digits))
 }
