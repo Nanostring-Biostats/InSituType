@@ -209,7 +209,7 @@ Estep_size <- function(counts, clust, bg) {
 #'  This argument is intended to be used by cellEMclust, not by the user.
 #' @return A list, with the following elements:
 #' \enumerate{
-#' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
+#' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
 nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
@@ -225,9 +225,10 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
   }
 
   # specify which profiles to leave fixed:
-  keep_profiles <- NULL
   if (!is.null(fixed_profiles)) {
     keep_profiles = colnames(fixed_profiles)
+  } else {
+    keep_profiles <- NULL
   }
 
   # start with updated_reference = fixed_profiles if not already specified
@@ -243,16 +244,15 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     if (is.null(n_clusts)) {
       stop("Must specify either init_clust or n_clusts.")
     }
-    n_fixed_profiles <- 0
     if (!is.null(fixed_profiles)) {
-      n_fixed_profiles = ncol(fixed_profiles)
+      n_fixed_profiles <- ncol(fixed_profiles)
+    } else {
+      n_fixed_profiles <- 0
     }
-    clustnames <- c(colnames(fixed_profiles),
-                   paste0("cluster_", c(letters, paste0(rep(letters, each = 26), letters))))[
-      seq_len(n_clusts + n_fixed_profiles)]
+    clustnames <- makeClusterNames( colnames( fixed_profiles ) , n_clusts )
     # arbitrary but non-random initialization:
-    init_clust = rep(clustnames, ceiling(nrow(counts) / length(clustnames)))[seq_len(nrow(counts))]
-  }
+    init_clust <- clustnames[sample( length( clustnames ) , size = nrow( counts ) , replace = TRUE )]  
+    }
 
   # for deriving initial profiles, subset on only the cells that aren't part of a pre-specified cluster:
   tempuse = !is.element(init_clust, keep_profiles)
@@ -360,9 +360,50 @@ whichismax <- function(x) {
   return(which(ismax(x))[1])
 }
 
-
-
-
+# makeClusterNames
+makeClusterNames <- function( cNames , nClust )
+{
+  if ( is.null( cNames ) )
+  {
+    cNames <- letters[seq_len( nClust )]
+    extraClustNames <- NULL
+  }
+  else if ( nClust > length( cNames ) )
+  {
+    nDiff <- nClust - length( cNames )
+    if ( nDiff > 26 )
+    {
+      repLetters <- floor( nDiff / 26 )
+      extraLetters <- nDiff %% 26
+      extraClustNames <- paste0( rep( letters[seq_len( repLetters )] , each = 26 ) , letters )
+      if ( extraLetters > 0 )
+      {
+        extraClustNames <- c( extraClustNames , paste0( letters[repLetters + 1] , letters[seq_len( extraLetters )] ) )
+      }
+    }
+    else
+    {
+      extraClustNames <- letters[nDiff]
+    }
+  }
+  else
+  {
+    if ( length( cNames ) < nClust )
+    {
+      stop( "nClust is smaller than nClust.  Do not know how to subset." )
+    }
+    extraClustNames <- NULL
+  }
+  clustnames <- c( cNames , extraClustNames )
+  # make sure unique name when ignore case
+  dup_flag <- duplicated( tolower( clustnames ) )
+  if ( any( dup_flag ) )
+  {
+    # update on the duplicated name
+    clustnames[dup_flag] <- make.unique( tolower( clustnames[dup_flag] ) , sep = '.' )
+  }
+  return( clustnames )
+}
 
 
 #' Clustering wrapper function
