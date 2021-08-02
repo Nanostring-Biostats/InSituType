@@ -14,11 +14,21 @@ estimate_platform_effects <- function(mean_profiles, fixed_profiles) {
     stop("Please ensure the dimensions of mean_profiles and fixed_profiles are the same.")
   }
 
-    # make data frame for model:
+  # make data frame for model:
   df <- data.frame(obs = as.vector(mean_profiles),
                   ref = as.vector(fixed_profiles),
                   gene = rep(rownames(mean_profiles), ncol(mean_profiles)),
                   cell = rep(colnames(mean_profiles), each = nrow(mean_profiles)))
+  
+  
+  ## find columns of mean_profiles with insufficient info, and remove:
+  # flag all-0 columns:
+  all_zero_columns <- colnames(mean_profiles)[colSums(mean_profiles) == 0]
+  # flag columns with too few non-zero values:
+  prop_nonzero <- colMeans(mean_profiles > 0)
+  poor_data_columns <- colnames(mean_profiles)[prop_nonzero < 0.1 * mean(prop_nonzero)]
+  # remove:
+  df <- df[!is.element(df$cell, c(all_zero_columns, poor_data_columns)), ]
   
   # remove rows where ref == 0:
   df <- df[df$ref > 0, ]
@@ -30,7 +40,7 @@ estimate_platform_effects <- function(mean_profiles, fixed_profiles) {
   df$logratio <- log(df$obs / df$ref)
   
   # fit the model:
-  mod <- lm(logratio ~ 0 + gene + cell, data = df, weights = log(ref))
+  mod <- lm(logratio ~ 0 + gene + cell, data = df, weights = log(ref) - min(log(ref)))
   coefs <- mod$coefficients[grepl("gene", names(mod$coefficients))]
   
   # add coefs for genes that got dropped due to all 0s in df:
