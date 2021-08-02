@@ -72,7 +72,6 @@ Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
   logliks <- apply(means, 2, function(x) {
     lldist(x = x, mat = counts, bg = bg, size = size)
   })
-
   # first rescale (ie recenter on log scale) to avoid rounding errors:
   logliks = sweep(logliks, 1, apply(logliks, 1, max), "-")
   # get on likelihood scale:
@@ -290,7 +289,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
 
     # E-step: update profiles:
     if (method == "CEM") {
-      tempprobs = probs[, setdiff(colnames(probs), keep_profiles)]
+      tempprobs = probs[, setdiff(colnames(probs), keep_profiles), drop = FALSE]
       # update the new cluster profiles:
       new_profiles <- Estep(counts = counts,
                             clust = tempprobs,
@@ -304,7 +303,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                         shrinkage = shrinkage)
     }
     if (method == "EM") {
-      tempprobs = 1 * t(apply(probs[, setdiff(colnames(probs), keep_profiles)], 1, ismax))
+      tempprobs = 1 * t(apply(probs[, setdiff(colnames(probs), keep_profiles), drop = FALSE], 1, ismax))
       # update the new cluster profiles:
       new_profiles <- Estep(counts = counts,
                             clust = tempprobs,
@@ -324,7 +323,6 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
 
 
     profiles <- cbind(updated_reference, new_profiles)
-
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, which.max)]
 
