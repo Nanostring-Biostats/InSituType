@@ -91,13 +91,14 @@ Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
 #' @param clust Vector of cluster assignments, or a matrix of probabilities
 #'   of cells (rows) belonging to clusters (columns).
 #' @param neg Vector of mean background counts
+#'
 #' @return A matrix of cluster profiles, genes * clusters
+#' 
 Estep <- function(counts, clust, neg) {
-
 
   # get cluster means:
   if (is.vector(clust)) {
-    means = sapply(unique(clust), function(cl) {
+    means <- sapply(unique(clust), function(cl) {
       pmax(colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
     })
   }
