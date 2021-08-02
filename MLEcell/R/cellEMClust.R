@@ -154,8 +154,6 @@ Estep_reference <- function(counts, clust, neg, fixed_profiles) {
   # rescale fixed profiles by platform effects:
   updated_profiles <- sweep(fixed_profiles, 1, gene_scaling_factors, "*")
 
-  # shrink means towards the fixed profiles:  (possibly, pending Zhi's JS estimator investigations)
-
   return(updated_profiles)
 }
 
@@ -300,8 +298,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
         Estep_reference(counts = counts,
                         clust = probs[, colnames(fixed_profiles)],
                         neg = neg,
-                        fixed_profiles = fixed_profiles,
-                        shrinkage = shrinkage)
+                        fixed_profiles = fixed_profiles)
     }
     if (method == "EM") {
       tempprobs = 1 * t(apply(probs[, setdiff(colnames(probs), keep_profiles), drop = FALSE], 1, ismax))
@@ -314,8 +311,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
         Estep_reference(counts = counts,
                         clust = probs[, colnames(fixed_profiles)],
                         neg = neg,
-                        fixed_profiles = fixed_profiles,
-                        shrinkage = shrinkage)
+                        fixed_profiles = fixed_profiles)
 
       # for any profiles that have been lost, replace them with their previous version:
       lostprofiles = names(which(colSums(!is.na(new_profiles)) == 0))
