@@ -1,12 +1,16 @@
 Package: MLEcell
 Type: Package
-Title: Functions to estimate basic count model
+Title: An R package for performing cell typing in SMI and other single cell data
 Version: 0.1.0
 Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut", "cre")),
              person("Zhi", "Yang", email = "zyang@nanostring.com", role = c("aut")))
 Description: An R package for performing cell typing in SMI and other single cell data
 Imports:
-  Matrix
+  Matrix,
+  RColorBrewer,
+  SpatialDecon,
+  scales,
+  umap
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
