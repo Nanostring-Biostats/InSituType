@@ -7,6 +7,7 @@
 #' @param size the parameters for dnbinom function (default: 10)
 #'
 #' @importFrom Matrix rowSums
+#' @importFrom stats dnbinom
 #'
 
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
@@ -49,7 +50,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   }
 
   # loglik:
-  lls <- dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
+  lls <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
 
   return(round(rowSums(lls), digits))
 }
@@ -205,6 +206,9 @@ Estep_size <- function(counts, clust, bg) {
 #'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
 #' @param updated_reference Rescaled, possibly shrunken version of fixed_profiles.
 #'  This argument is intended to be used by cellEMclust, not by the user.
+#'
+#'  @importFrom stats lm
+#'
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
@@ -218,7 +222,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
     s <- rowSums(counts)
-    bgmod <- lm(neg ~ s - 1)
+    bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
 
@@ -430,6 +434,9 @@ makeClusterNames <- function( cNames , nClust )
 #' @param subset_size To speed computations, each iteration will use a subset of only this many cells.
 #'  (The final iteration runs on all cells.) Set to NULL to use all cells in every iter.
 #'  (This option has not yet been enabled.)
+#'
+#'  @importFrom stats lm
+#'
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item cluster: a vector given cells' cluster assignments
@@ -441,7 +448,7 @@ makeClusterNames <- function( cNames , nClust )
 #' @export
 #' @examples
 #' # load data ("raw" and "cellannot"):
-#' load("inst/extdata/concise melanoma 300plex data.RData")
+#' data(ioprofiles)
 #' # predict per-cell bbackground:
 #' bgmodel = lm(rowSums(raw[, grepl("NegPrb", colnames(raw))]) ~ rowSums(raw) - 1)$coef
 #' bg.predicted = rowSums(raw) * bgmodel
@@ -517,7 +524,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
     s <- rowMeans(counts)
-    bgmod <- lm(neg ~ s - 1)
+    bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
 

@@ -2,8 +2,8 @@
 #'
 #' For a subset of the data, perform clustering under a range of cluster numbers.
 #'  Report on loglikelihood vs. number of clusters, and suggest a best choice.
-#' @param counts
-#' @param neg
+#' @param counts Counts matrix, cells * genes.
+#' @param neg Vector of mean negprobe counts per cell
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
@@ -17,8 +17,12 @@
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param ... Arguments passed to nbclust.
 #' @export
+#'
 #' @importFrom graphics plot
 #' @importFrom graphics lines
+#' @importFrom graphics par
+#' @importFrom stats lm
+#'
 #' @return A list, with the following elements:
 #' \itemize{
 #'  \item
@@ -29,7 +33,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,in
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
     s <- rowSums(counts)
-    bgmod <- lm(neg ~ s - 1)
+    bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
 
@@ -91,7 +95,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,in
 
   if (plotresults) {
     original_par <- par()$mfrow
-    par(mfrow = c(2,1))
+    graphics::par(mfrow = c(2,1))
     graphics::plot(n_clusts, totallogliks, xlab = "Number of clusters", ylab = "Log-likelihood")
     graphics::lines(n_clusts, totallogliks)
     graphics::plot(n_clusts, aic, xlab = "Number of clusters", ylab = "AIC")

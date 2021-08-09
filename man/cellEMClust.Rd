@@ -52,8 +52,10 @@ assigned to one cluster).}
 the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.}
 
 \item{subset_size}{To speed computations, each iteration will use a subset of only this many cells.
-(The final iteration runs on all cells.) Set to NULL to use all cells in every iter.
-(This option has not yet been enabled.)}
+ (The final iteration runs on all cells.) Set to NULL to use all cells in every iter.
+ (This option has not yet been enabled.)
+
+ @importFrom stats lm}
 }
 \value{
 A list, with the following elements:
@@ -70,7 +72,7 @@ A wrapper for nbclust, to manage subsampling and multiple random starts
 }
 \examples{
 # load data ("raw" and "cellannot"):
-load("inst/extdata/concise melanoma 300plex data.RData")
+data(ioprofiles)
 # predict per-cell bbackground:
 bgmodel = lm(rowSums(raw[, grepl("NegPrb", colnames(raw))]) ~ rowSums(raw) - 1)$coef
 bg.predicted = rowSums(raw) * bgmodel

@@ -20,6 +20,10 @@ chooseClusterNumber(
 )
 }
 \arguments{
+\item{counts}{Counts matrix, cells * genes.}
+
+\item{neg}{Vector of mean negprobe counts per cell}
+
 \item{fixed_profiles}{Matrix of expression profiles of pre-defined clusters,
 e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 Colnames must all be included in the init_clust variable.}

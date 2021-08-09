@@ -11,7 +11,7 @@ Imports:
   SpatialDecon,
   scales,
   umap
-License: GPL-3 + file LICENSE
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Suggests:

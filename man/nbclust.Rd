@@ -46,7 +46,9 @@ assigned to one cluster).}
 the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.}
 
 \item{updated_reference}{Rescaled, possibly shrunken version of fixed_profiles.
-This argument is intended to be used by cellEMclust, not by the user.}
+ This argument is intended to be used by cellEMclust, not by the user.
+
+ @importFrom stats lm}
 }
 \value{
 A list, with the following elements:
