@@ -5,6 +5,7 @@ data("mini_tma")
 counts <- t(as.matrix(mini_tma@expression$rna$raw[1:100, ]))
 neg <- Matrix::colMeans(mini_tma@expression$neg$raw)
 
+tmp_dir <- withr::local_tempdir(pattern="tmp_dir")
 test_that("chooseClusterNumber works with no fixed profiles", {
   expect_error(
     res <- chooseClusterNumber(counts = counts, neg = neg,
@@ -15,6 +16,7 @@ test_that("chooseClusterNumber works with no fixed profiles", {
 
 
 test_that("chooseClusterNumber works with fixed profiles", {
+  withr::local_dir(tmp_dir)
   data(ioprofiles)
   expect_error(
     res2 <- chooseClusterNumber(counts = counts, neg = neg,
@@ -30,6 +32,6 @@ test_that("chooseClusterNumber makes a sane choice", {
   res3 <- chooseClusterNumber(counts = counts, neg = neg,
                              n_clusts = c(2,6,20),
                              n_iters = 4, subset_size = 500)
-  expect_true(res$best_clust_number == 20)
+  expect_true(res3$best_clust_number == 20)
 })
 
