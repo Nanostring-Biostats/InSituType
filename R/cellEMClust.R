@@ -452,7 +452,7 @@ makeClusterNames <- function( cNames , nClust )
 #' # predict per-cell bbackground:
 #' bgmodel = lm(rowSums(raw[, grepl("NegPrb", colnames(raw))]) ~ rowSums(raw) - 1)$coef
 #' bg.predicted = rowSums(raw) * bgmodel
-# run unsupervised clustering with several random starts:
+#' # run unsupervised clustering with several random starts:
 #' unsup <- cellEMClust(counts = raw,
 #'                      bg = bg.predicted,
 #'                      init_clust = NULL, n_clusts = 12,
