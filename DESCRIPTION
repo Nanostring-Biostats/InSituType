@@ -1,0 +1,19 @@
+Package: MLEcell
+Type: Package
+Title: Functions to estimate basic count model
+Version: 0.1.0
+Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut", "cre")),
+             person("Zhi", "Yang", email = "zyang@nanostring.com", role = c("aut")))
+Description: An R package for performing cell typing in SMI and other single cell data
+Imports:
+  Matrix
+License: GPL-3 + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Suggests:
+  knitr,
+  rmarkdown
+VignetteBuilder: knitr
+Depends:
+  R (>= 2.10)
+RoxygenNote: 7.1.1
