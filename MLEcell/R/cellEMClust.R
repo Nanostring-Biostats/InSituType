@@ -24,7 +24,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
       stop( errorMessage )
     }
   }
-  
+
   # calc scaling factor to put y on the scale of x:
   if ( is.vector( bg ) )
   {
@@ -47,7 +47,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   {
     yhat <- s %*% t(x) + bg
   }
-  
+
   # loglik:
   lls <- dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
 
@@ -91,7 +91,7 @@ Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
 #' @param neg Vector of mean background counts
 #'
 #' @return A matrix of cluster profiles, genes * clusters
-#' 
+#'
 Estep <- function(counts, clust, neg) {
 
   # get cluster means:
@@ -122,9 +122,9 @@ Estep <- function(counts, clust, neg) {
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
-#'  
+#'
 #' @return A matrix of cluster profiles, genes * clusters
-#' 
+#'
 Estep_reference <- function(counts, clust, neg, fixed_profiles) {
 
 
@@ -291,11 +291,13 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                             clust = tempprobs,
                             neg = neg)
       # update the reference profiles / "fixed_profiles"
-      updated_reference <-
-        Estep_reference(counts = counts,
-                        clust = probs[, colnames(fixed_profiles)],
-                        neg = neg,
-                        fixed_profiles = fixed_profiles)
+      if( !is.null(updated_reference) ){
+        updated_reference <-
+          Estep_reference(counts = counts,
+                          clust = probs[, colnames(fixed_profiles)],
+                          neg = neg,
+                          fixed_profiles = fixed_profiles)
+      }
     }
     if (method == "EM") {
       tempprobs = 1 * t(apply(probs[, setdiff(colnames(probs), keep_profiles), drop = FALSE], 1, ismax))
@@ -304,11 +306,13 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                             clust = tempprobs,
                             neg = neg)
       # update the reference profiles / "fixed_profiles"
-      updated_reference <-
-        Estep_reference(counts = counts,
-                        clust = probs[, colnames(fixed_profiles)],
-                        neg = neg,
-                        fixed_profiles = fixed_profiles)
+      if( !is.null(updated_reference) ){
+        updated_reference <-
+          Estep_reference(counts = counts,
+                          clust = probs[, colnames(fixed_profiles)],
+                          neg = neg,
+                          fixed_profiles = fixed_profiles)
+      }
 
       # for any profiles that have been lost, replace them with their previous version:
       lostprofiles = names(which(colSums(!is.na(new_profiles)) == 0))
@@ -380,7 +384,7 @@ makeClusterNames <- function( cNames , nClust )
     }
     else
     {
-      extraClustNames <- letters[nDiff]
+      extraClustNames <- letters[seq_len(nDiff)]
     }
   }
   else
