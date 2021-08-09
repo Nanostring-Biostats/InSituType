@@ -13,18 +13,18 @@ the names give old cluster names. OK to omit cell types that aren't being merged
 \item{logliks}{Matrix of loglikelihoods}
 }
 \value{
-A list with two elements: 
+A list with two elements:
 \enumerate{
 \item clust: a vector of cluster assignments
 \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 }
 }
 \description{
-Take a user-defined list of cells types to rename/combine, then re-compute 
+Take a user-defined list of cells types to rename/combine, then re-compute
  cluster assignments and probabilities under the merged cell types.
 }
 \examples{
 # define a "merges" input:
-merges <- c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid"
+merges <- c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
              "B-cells" = "lymphoid")
 }
