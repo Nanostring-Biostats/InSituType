@@ -206,7 +206,7 @@ Estep_size <- function(counts, clust, bg) {
 #'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
 #' @param updated_reference Rescaled, possibly shrunken version of fixed_profiles.
 #'  This argument is intended to be used by cellEMclust, not by the user.
-#' @param prob_drop the probability decrease of teh previously best-guessed cell type
+#' @param n_drop the decrease of the previously best-guessed cell type
 #'
 #'  @importFrom stats lm
 #'
@@ -218,7 +218,7 @@ Estep_size <- function(counts, clust, bg) {
 nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20,
                     method = "CEM", shrinkage = 0.8,
-                    updated_reference = NULL, prob_drop = 0.05) {
+                    updated_reference = NULL, n_drop = 20) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
@@ -336,13 +336,12 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
       probs_max <- apply(probs, 1, max)
       probs_old_max <- apply(probs_old, 1, max)
       index_valid_changes <- which((probs_max - probs_old_max)[index_changes] > 0.05)
-      index_valid_changes <- length(index_valid_changes)/nrow(probs)
 
       # record number of switches
-      p_changed = c(p_changed, round(index_valid_changes, 3))
+      p_changed = c(p_changed, length(index_valid_changes))
 
-      if ( index_valid_changes <= prob_drop ){
-        message(sprintf("The change in percentage of best-guessed cell types is now less than %s%%.", prob_drop*100))
+      if ( index_valid_changes <= n_drop ){
+        message(sprintf("The change in percentage of best-guessed cell types is now less than %s.", n_drop))
         break
       }
     }
@@ -462,7 +461,7 @@ makeClusterNames <- function( cNames , nClust )
 #' @param n_starts the number of iterations
 #' @param n_benchmark_cells the number of cells for benchmarking
 #' @param n_final_iters the number of iterations on the final step
-#' @param prob_drop the probability decrease of teh previously best-guessed cell type
+#' @param n_drop the decrease of the previously best-guessed cell type
 #'
 #'  @importFrom stats lm
 #'
@@ -525,7 +524,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                         fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, n_iters = 20,
                         method = "CEM", shrinkage = 0.8,
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
-                        n_final_iters = 3, prob_drop = 0.05) {
+                        n_final_iters = 3, n_drop = 20) {
 
   # align genes in counts and fixed_profiles
   if (align_genes & !is.null(fixed_profiles)) {
@@ -624,7 +623,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                         n_iters = n_final_iters,
                         method = method, shrinkage = shrinkage,
                         updated_reference = best_clust$updated_reference,
-                        prob_drop = prob_drop)
+                        n_drop = n_drop)
 
   return(finalclust)
 }
