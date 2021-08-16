@@ -341,7 +341,8 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
       n_changed = c(n_changed, length(index_valid_changes))
 
       if ( length(index_valid_changes) <= n_drop ){
-        message(sprintf("The change in percentage of best-guessed cell types is now less than %s.", n_drop))
+        message(sprintf("Converged: the change in the best-guessed cell types < %s.", n_drop))
+        message(        "==========================================================")
         break
       }
     }
