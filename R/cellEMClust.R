@@ -539,10 +539,9 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
   }
 
   # define random starts:
-  randstarts = vector("list", n_starts)
-  for (i in seq_len(n_starts)) {
-    randstarts[[i]] <- sample(x = seq_len(nrow(counts)), size = subset_size, replace = FALSE)
-  }
+  randstarts <- lapply(seq_len(n_starts), function(i){
+    sample(x = seq_len(nrow(counts)), size = subset_size, replace = FALSE)
+  })
 
   # select subset of cells for comparing the random starts:
   benchmarking_cells <- sample(x = seq_len(nrow(counts)), size = n_benchmark_cells, replace = FALSE)
