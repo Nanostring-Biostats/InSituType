@@ -586,7 +586,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                          nb_size = nb_size, n_iters = n_iters,
                          method = method, shrinkage = shrinkage,
                          updated_reference = NULL,
-                         prob_drop = prob_drop)
+                         n_drop = n_drop)
 
     # now get the loglik of the benchmarking cells under this clustering scheme:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {
