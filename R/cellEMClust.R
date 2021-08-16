@@ -92,6 +92,8 @@ Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
 #'   of cells (rows) belonging to clusters (columns).
 #' @param neg Vector of mean background counts
 #'
+#' @importFrom Matrix rowSums
+#'
 #' @return A matrix of cluster profiles, genes * clusters
 #'
 Estep <- function(counts, clust, neg) {
@@ -99,13 +101,13 @@ Estep <- function(counts, clust, neg) {
   # get cluster means:
   if (is.vector(clust)) {
     means <- sapply(unique(clust), function(cl) {
-      pmax(colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
+      pmax(Matrix::colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
     })
   }
   if (is.matrix(clust)) {
     means <- apply(clust, 2, function(x) {
       wts <- x / sum(x)
-      pmax(colSums(sweep(counts, 1, wts, "*")) - sum(neg * wts), 0)
+      pmax(Matrix::colSums(sweep(counts, 1, wts, "*")) - sum(neg * wts), 0)
     })
   }
 
@@ -125,6 +127,8 @@ Estep <- function(counts, clust, neg) {
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
 #'
+#' @importFrom Matrix rowSums
+#'
 #' @return A matrix of cluster profiles, genes * clusters
 #'
 Estep_reference <- function(counts, clust, neg, fixed_profiles) {
@@ -134,14 +138,14 @@ Estep_reference <- function(counts, clust, neg, fixed_profiles) {
   # if clust has been passed as a vector of cluster names:
   if (is.vector(clust)) {
     means = sapply(unique(clust), function(cl) {
-      pmax(colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
+      pmax(Matrix::colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
     })
   }
   # if clust has been passed as a matrix of cluster probabilities:
   if (is.matrix(clust)) {
     means <- apply(clust, 2, function(x) {
       wts <- x / sum(x)
-      pmax(colSums(sweep(counts, 1, wts, "*")) - sum(neg * wts), 0)
+      pmax(Matrix::colSums(sweep(counts, 1, wts, "*")) - sum(neg * wts), 0)
     })
   }
 
@@ -447,6 +451,7 @@ makeClusterNames <- function( cNames , nClust )
 #'
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
+#' @importFrom Matrix colSums
 #'
 #' @return A list, with the following elements:
 #' \enumerate{
