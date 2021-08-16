@@ -445,7 +445,8 @@ makeClusterNames <- function( cNames , nClust )
 #' @param n_benchmark_cells the number of cells for benchmarking
 #' @param n_final_iters the number of iterations on the final step
 #'
-#'  @importFrom stats lm
+#' @importFrom stats lm
+#' @importFrom Matrix rowMeans
 #'
 #' @return A list, with the following elements:
 #' \enumerate{
@@ -533,7 +534,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
-    s <- rowMeans(counts)
+    s <- Matrix::rowMeans(counts)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
