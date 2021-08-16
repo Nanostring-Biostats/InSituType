@@ -330,7 +330,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     clust = colnames(probs)[apply(probs, 1, which.max)]
 
     if (iter == 1){
-      n_changed <- round(mean(clust != clust_old), 3)
+      n_changed <- length(which(clust != clust_old))
     } else {
       index_changes <- which(clust != clust_old)
       probs_max <- apply(probs, 1, max)
