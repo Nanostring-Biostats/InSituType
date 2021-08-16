@@ -277,7 +277,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
 
   # initialize iterations:
   clust_old = init_clust
-  p_changed = c()
+  n_changed = c()
 
   # run EM algorithm iterations:
   for (iter in seq_len(n_iters)) {
@@ -330,7 +330,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     clust = colnames(probs)[apply(probs, 1, which.max)]
 
     if (iter == 1){
-      p_changed <- round(mean(clust != clust_old), 3)
+      n_changed <- round(mean(clust != clust_old), 3)
     } else {
       index_changes <- which(clust != clust_old)
       probs_max <- apply(probs, 1, max)
@@ -338,9 +338,9 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
       index_valid_changes <- which((probs_max - probs_old_max)[index_changes] > 0.05)
 
       # record number of switches
-      p_changed = c(p_changed, length(index_valid_changes))
+      n_changed = c(n_changed, length(index_valid_changes))
 
-      if ( index_valid_changes <= n_drop ){
+      if ( length(index_valid_changes) <= n_drop ){
         message(sprintf("The change in percentage of best-guessed cell types is now less than %s.", n_drop))
         break
       }
@@ -349,7 +349,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     clust_old = clust
     probs_old = probs
   }
-  names(p_changed) <- paste0("Iter_", seq_len(iter))
+  names(n_changed) <- paste0("Iter_", seq_len(iter))
   # get loglik of each cell:
   logliks = unlist(sapply(seq_len(nrow(counts)), function(i) {
     if (length(bg) == 1) {
@@ -368,7 +368,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
   out = list(clust = clust,
              probs = probs,
              profiles = sweep(profiles, 2, colSums(profiles), "/") * 1000,
-             p_changed = p_changed,
+             n_changed = n_changed,
              logliks = logliks,
              updated_reference = updated_reference)
   return(out)
@@ -470,7 +470,7 @@ makeClusterNames <- function( cNames , nClust )
 #' \item cluster: a vector given cells' cluster assignments
 #' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
-#' \item p_changed: how many cells changed class at each step
+#' \item n_changed: how many cells changed class at each step
 #' \item logliks: a matrix of each cell's log-likelihood under each cluster
 #' }
 #' @export
