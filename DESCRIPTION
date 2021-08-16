@@ -8,7 +8,6 @@ Description: An R package for performing cell typing in SMI and other single cel
 Imports:
   Matrix,
   RColorBrewer,
-  SpatialDecon,
   scales,
   umap
 License: GPL-3
