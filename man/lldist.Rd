@@ -14,6 +14,8 @@ lldist(x, mat, bg = 0.01, size = 10, digits = 2)
 \item{bg}{background level (default: 0.01)}
 
 \item{size}{the parameters for dnbinom function (default: 10)}
+
+\item{digits}{the number of digits for rounding}
 }
 \description{
 Calculate the likelihood of the vector x using the reference vector of y

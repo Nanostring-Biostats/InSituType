@@ -52,8 +52,14 @@ assigned to one cluster).}
 the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.}
 
 \item{subset_size}{To speed computations, each iteration will use a subset of only this many cells.
- (The final iteration runs on all cells.) Set to NULL to use all cells in every iter.
- (This option has not yet been enabled.)
+(The final iteration runs on all cells.) Set to NULL to use all cells in every iter.
+(This option has not yet been enabled.)}
+
+\item{n_starts}{the number of iterations}
+
+\item{n_benchmark_cells}{the number of cells for benchmarking}
+
+\item{n_final_iters}{the number of iterations on the final step
 
  @importFrom stats lm}
 }

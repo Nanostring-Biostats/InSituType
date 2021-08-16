@@ -24,6 +24,8 @@ chooseClusterNumber(
 
 \item{neg}{Vector of mean negprobe counts per cell}
 
+\item{bg}{Expected background}
+
 \item{fixed_profiles}{Matrix of expression profiles of pre-defined clusters,
 e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 Colnames must all be included in the init_clust variable.}

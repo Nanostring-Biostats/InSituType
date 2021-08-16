@@ -5,6 +5,7 @@
 #' @param mat a matrix of expression levels in all cells
 #' @param bg background level (default: 0.01)
 #' @param size the parameters for dnbinom function (default: 10)
+#' @param digits the number of digits for rounding
 #'
 #' @importFrom Matrix rowSums
 #' @importFrom stats dnbinom
@@ -165,7 +166,6 @@ Estep_reference <- function(counts, clust, neg, fixed_profiles) {
 #' @param clust Vector of cluster assignments, or a matrix of probabilities
 #'   of cells (rows) belonging to clusters (columns).
 #' @param bg Expected background
-#' @param means Matrix of means
 #' @return A scalar giving the mle for the size parameter
 Estep_size <- function(counts, clust, bg) {
 
@@ -358,14 +358,21 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
 }
 
 #' For a numeric object, return a logical object of whether each element is the max or not.
+#' @param x a vector of values
+#' @return a vecetor of logical values
+#'
+
 ismax <- function(x) {
   return(x == max(x, na.rm = T))
 }
-whichismax <- function(x) {
-  return(which(ismax(x))[1])
-}
 
-# makeClusterNames
+
+#' makeClusterNames
+#' @param cNames existing cluster names
+#' @param nClust number of clusters
+#' @return a vector of complete cluster names
+#'
+
 makeClusterNames <- function( cNames , nClust )
 {
   if ( is.null( cNames ) )
@@ -434,6 +441,9 @@ makeClusterNames <- function( cNames , nClust )
 #' @param subset_size To speed computations, each iteration will use a subset of only this many cells.
 #'  (The final iteration runs on all cells.) Set to NULL to use all cells in every iter.
 #'  (This option has not yet been enabled.)
+#' @param n_starts the number of iterations
+#' @param n_benchmark_cells the number of cells for benchmarking
+#' @param n_final_iters the number of iterations on the final step
 #'
 #'  @importFrom stats lm
 #'

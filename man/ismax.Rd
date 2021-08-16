@@ -6,6 +6,12 @@
 \usage{
 ismax(x)
 }
+\arguments{
+\item{x}{a vector of values}
+}
+\value{
+a vecetor of logical values
+}
 \description{
 For a numeric object, return a logical object of whether each element is the max or not.
 }

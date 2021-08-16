@@ -13,8 +13,6 @@ Estep_size(counts, clust, bg)
 of cells (rows) belonging to clusters (columns).}
 
 \item{bg}{Expected background}
-
-\item{means}{Matrix of means}
 }
 \value{
 A scalar giving the mle for the size parameter
