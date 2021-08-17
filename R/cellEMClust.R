@@ -206,7 +206,8 @@ Estep_size <- function(counts, clust, bg) {
 #'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
 #' @param updated_reference Rescaled, possibly shrunken version of fixed_profiles.
 #'  This argument is intended to be used by cellEMclust, not by the user.
-#' @param n_drop the decrease of the previously best-guessed cell type
+#' @param pct_drop the percent of the decrease of the previously best-guessed cell type
+#' @param min_prob_increase increase in probability considered as a valid cell type switch over
 #'
 #'  @importFrom stats lm
 #'
@@ -218,7 +219,8 @@ Estep_size <- function(counts, clust, bg) {
 nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20,
                     method = "CEM", shrinkage = 0.8,
-                    updated_reference = NULL, n_drop = 20) {
+                    updated_reference = NULL, pct_drop = 1/10000,
+                    min_prob_increase = 0.05) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
@@ -277,7 +279,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
 
   # initialize iterations:
   clust_old = init_clust
-  n_changed = c()
+  pct_changed = c()
 
   # run EM algorithm iterations:
   for (iter in seq_len(n_iters)) {
@@ -330,18 +332,18 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     clust = colnames(probs)[apply(probs, 1, which.max)]
 
     if (iter == 1){
-      n_changed <- length(which(clust != clust_old))
+      pct_changed <- mean(clust != clust_old)
     } else {
       index_changes <- which(clust != clust_old)
       probs_max <- apply(probs, 1, max)
       probs_old_max <- apply(probs_old, 1, max)
-      index_valid_changes <- which((probs_max - probs_old_max)[index_changes] > 0.05)
+      index_valid_changes <- which((probs_max - probs_old_max)[index_changes] > min_prob_increase)
 
       # record number of switches
-      n_changed = c(n_changed, length(index_valid_changes))
+      pct_changed = c(pct_changed, round(length(index_valid_changes)/nrow(probs), 5))
 
-      if ( length(index_valid_changes) <= n_drop ){
-        message(sprintf("Converged: the change in the best-guessed cell types <= %s.", n_drop))
+      if ( length(index_valid_changes)/nrow(probs) <= pct_drop ){
+        message(sprintf("Converged: the change in the best-guessed cell types <= %s%%.", pct_drop*100))
         message(        "==========================================================")
         break
       }
@@ -350,7 +352,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     clust_old = clust
     probs_old = probs
   }
-  names(n_changed) <- paste0("Iter_", seq_len(iter))
+  names(pct_changed) <- paste0("Iter_", seq_len(iter))
   # get loglik of each cell:
   logliks = unlist(sapply(seq_len(nrow(counts)), function(i) {
     if (length(bg) == 1) {
@@ -369,7 +371,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
   out = list(clust = clust,
              probs = probs,
              profiles = sweep(profiles, 2, colSums(profiles), "/") * 1000,
-             n_changed = n_changed,
+             pct_changed = pct_changed,
              logliks = logliks,
              updated_reference = updated_reference)
   return(out)
@@ -462,7 +464,7 @@ makeClusterNames <- function( cNames , nClust )
 #' @param n_starts the number of iterations
 #' @param n_benchmark_cells the number of cells for benchmarking
 #' @param n_final_iters the number of iterations on the final step
-#' @param n_drop the decrease of the previously best-guessed cell type
+#' @param pct_drop the decrease of the previously best-guessed cell type
 #'
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
@@ -472,7 +474,7 @@ makeClusterNames <- function( cNames , nClust )
 #' \item cluster: a vector given cells' cluster assignments
 #' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
-#' \item n_changed: how many cells changed class at each step
+#' \item pct_changed: how many cells changed class at each step
 #' \item logliks: a matrix of each cell's log-likelihood under each cluster
 #' }
 #' @export
@@ -526,7 +528,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                         fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, n_iters = 20,
                         method = "CEM", shrinkage = 0.8,
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
-                        n_final_iters = 3, n_drop = 20) {
+                        n_final_iters = 3, pct_drop = 20) {
 
   # align genes in counts and fixed_profiles
   if (align_genes & !is.null(fixed_profiles)) {
@@ -588,7 +590,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                          nb_size = nb_size, n_iters = n_iters,
                          method = method, shrinkage = shrinkage,
                          updated_reference = NULL,
-                         n_drop = n_drop)
+                         pct_drop = pct_drop)
 
     # now get the loglik of the benchmarking cells under this clustering scheme:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {
@@ -625,7 +627,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                         n_iters = n_final_iters,
                         method = method, shrinkage = shrinkage,
                         updated_reference = best_clust$updated_reference,
-                        n_drop = n_drop)
+                        pct_drop = pct_drop)
 
   return(finalclust)
 }
