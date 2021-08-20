@@ -206,8 +206,12 @@ Estep_size <- function(counts, clust, bg) {
 #'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
 #' @param updated_reference Rescaled, possibly shrunken version of fixed_profiles.
 #'  This argument is intended to be used by cellEMclust, not by the user.
-#' @param pct_drop the percent of the decrease of the previously best-guessed cell type
-#' @param min_prob_increase increase in probability considered as a valid cell type switch over
+#' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
+#'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
+#'  switchover is only applicable when a cell has changed the assigned cell type with its
+#'  highest cell type probability increased by min_prob_increase. 
+#' @param min_prob_increase the threshold of probability used to determine a valid cell 
+#'  type switchover
 #'
 #'  @importFrom stats lm
 #'
@@ -336,21 +340,19 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     } else {
       index_changes <- which(clust != clust_old)
       probs_max <- apply(probs, 1, max)
-      probs_old_max <- apply(probs_old, 1, max)
       index_valid_changes <- which((probs_max - probs_old_max)[index_changes] > min_prob_increase)
 
       # record number of switches
       pct_changed = c(pct_changed, round(length(index_valid_changes)/nrow(probs), 5))
 
       if ( length(index_valid_changes)/nrow(probs) <= pct_drop ){
-        message(sprintf("Converged: the change in the best-guessed cell types <= %s%%.", pct_drop*100))
-        message(        "==========================================================")
+        message(sprintf("Converged: <= %s%% of cell type assignments changed in the last iteration.", pct_drop*100))
+        message(        "==========================================================================")
         break
       }
     }
-
-    clust_old = clust
-    probs_old = probs
+    clust_old = colnames(probs)[apply(probs, 1, which.max)]
+    probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
   # get loglik of each cell:
@@ -464,8 +466,13 @@ makeClusterNames <- function( cNames , nClust )
 #' @param n_starts the number of iterations
 #' @param n_benchmark_cells the number of cells for benchmarking
 #' @param n_final_iters the number of iterations on the final step
-#' @param pct_drop the decrease of the previously best-guessed cell type
-#'
+#' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
+#'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
+#'  switchover is only applicable when a cell has changed the assigned cell type with its
+#'  highest cell type probability increased by min_prob_increase. 
+#' @param min_prob_increase the threshold of probability used to determine a valid cell 
+#'  type switchover
+#'  
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
 #'
@@ -528,7 +535,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                         fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, n_iters = 20,
                         method = "CEM", shrinkage = 0.8,
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
-                        n_final_iters = 3, pct_drop = 20) {
+                        n_final_iters = 3, pct_drop = 1/10000, min_prob_increase = 0.05) {
 
   # align genes in counts and fixed_profiles
   if (align_genes & !is.null(fixed_profiles)) {
@@ -590,7 +597,8 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                          nb_size = nb_size, n_iters = n_iters,
                          method = method, shrinkage = shrinkage,
                          updated_reference = NULL,
-                         pct_drop = pct_drop)
+                         pct_drop = pct_drop, 
+                         min_prob_increase = min_prob_increase)
 
     # now get the loglik of the benchmarking cells under this clustering scheme:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {
@@ -627,7 +635,8 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                         n_iters = n_final_iters,
                         method = method, shrinkage = shrinkage,
                         updated_reference = best_clust$updated_reference,
-                        pct_drop = pct_drop)
+                        pct_drop = pct_drop,
+                        min_prob_increase = min_prob_increase)
 
   return(finalclust)
 }
