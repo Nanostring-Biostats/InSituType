@@ -38,7 +38,8 @@ estimate_platform_effects <- function(mean_profiles, fixed_profiles) {
   df <- df[df$ref > 0, ]
 
   # lower-threshold the observed means so 0 values don't go to -Inf:
-  df$obs <- pmax(df$obs, stats::quantile(df$obs[df$obs>0], 0.01))
+  
+  df$obs <- pmax(df$obs, stats::quantile(df$obs[df$obs>0], 0.01, na.rm = TRUE))
 
   # calc logratio
   df$logratio <- log(df$obs / df$ref)
