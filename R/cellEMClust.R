@@ -272,10 +272,14 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
 
   # if an initial clustering is available, use it to estimate initial profiles:
   #if (!is.null(init_clust)) {   #<----- this logical is never FALSE now, I think
-  new_profiles <- Estep(counts = counts[tempuse, ],
-                        clust = init_clust[tempuse],
-                        neg = neg[tempuse])
-  profiles <- cbind(updated_reference, new_profiles)
+  if (n_clusts !=0 ){
+    new_profiles <- Estep(counts = counts[tempuse, ],
+                          clust = init_clust[tempuse],
+                          neg = neg[tempuse])
+    profiles <- cbind(updated_reference, new_profiles)
+  } else {
+    profiles <- updated_reference
+  }
   #}
 
   # initialize iterations:
@@ -295,9 +299,11 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     if (method == "CEM") {
       tempprobs = probs[, setdiff(colnames(probs), keep_profiles), drop = FALSE]
       # update the new cluster profiles:
-      new_profiles <- Estep(counts = counts,
-                            clust = tempprobs,
-                            neg = neg)
+      if ( n_clusts!=0 ){
+        new_profiles <- Estep(counts = counts,
+                              clust = tempprobs,
+                              neg = neg)
+      }
       # update the reference profiles / "fixed_profiles"
       if( !is.null(updated_reference) ){
         updated_reference <-
@@ -308,11 +314,13 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
       }
     }
     if (method == "EM") {
-      tempprobs = 1 * t(apply(probs[, setdiff(colnames(probs), keep_profiles), drop = FALSE], 1, ismax))
       # update the new cluster profiles:
-      new_profiles <- Estep(counts = counts,
-                            clust = tempprobs,
-                            neg = neg)
+      if ( n_clusts!=0 ){
+        tempprobs = 1 * t(apply(probs[, setdiff(colnames(probs), keep_profiles), drop = FALSE], 1, ismax))
+        new_profiles <- Estep(counts = counts,
+                              clust = tempprobs,
+                              neg = neg)        
+      }
       # update the reference profiles / "fixed_profiles"
       if( !is.null(updated_reference) ){
         updated_reference <-
@@ -323,12 +331,18 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
       }
 
       # for any profiles that have been lost, replace them with their previous version:
-      lostprofiles = names(which(colSums(!is.na(new_profiles)) == 0))
-      new_profiles[, lostprofiles] = profiles[, lostprofiles]
+      if ( n_clusts!=0 ){
+        lostprofiles = names(which(colSums(!is.na(new_profiles)) == 0))
+        new_profiles[, lostprofiles] = profiles[, lostprofiles]
+      }
     }
 
 
-    profiles <- cbind(updated_reference, new_profiles)
+    if ( n_clusts!=0 ){
+      profiles <- cbind(updated_reference, new_profiles)
+    } else {
+      profiles <- updated_reference
+    }
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, which.max)]
 
@@ -605,7 +619,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
   # now run the final clustering:
   message("clustering all cells")
   finalclust <- nbclust(counts = counts, neg = neg, bg = bg,
-                        init_clust = final_clust_init, n_clusts = NULL,
+                        init_clust = final_clust_init, n_clusts = 0,
                         fixed_profiles = fixed_profiles, nb_size = nb_size,
                         n_iters = n_final_iters,
                         method = method, shrinkage = shrinkage,
