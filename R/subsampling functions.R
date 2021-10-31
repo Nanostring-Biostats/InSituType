@@ -73,8 +73,8 @@ insitutype <- function(counts, neg, bg = NULL,
   }
 
   # get a vector of cells IDs to be used in comparing the random starts:
-  eval_subset <- sample(rownames(counts), n_benchmark_cells, replace = F)
-  #eval_subset <- geoSketch(X = get(sketchingdataname),
+  benchmarking_subset <- sample(rownames(counts), n_benchmark_cells, replace = F)
+  #benchmarking_subset <- geoSketch(X = get(sketchingdataname),
   #                         N = n_benchmark_cells,
   #                         alpha=0.1,
   #                         max_iter=200,
@@ -105,9 +105,8 @@ insitutype <- function(counts, neg, bg = NULL,
   for (i in 1:n_starts) {
     templogliks <- apply(profiles_from_random_starts[[i]], 2, function(ref) {
       lldist(x = ref,
-             mat = counts[benchmarking_cells, ],
-             neg = neg[phase2_sample], 
-             bg = bg[benchmarking_cells],
+             mat = counts[benchmarking_subset, ],
+             bg = bg[benchmarking_subset],
              size = nb_size)
     })
     # take the sum of cells' best logliks:
@@ -133,22 +132,21 @@ insitutype <- function(counts, neg, bg = NULL,
   templogliks <- apply(tempprofiles, 2, function(ref) {
     lldist(x = ref,
            mat = counts[phase2_sample, ],
-           neg = neg[phase2_sample], 
            bg = bg[phase2_sample],
            size = nb_size)
   })
-  temp_init_clust <- colnames(tempprofiles)[apply(tempprofiles, 1, which.max)]
+  temp_init_clust <- colnames(templogliks)[apply(templogliks, 1, which.max)]
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
   clust2 <- nbclust(counts = counts[phase2_sample, ], 
                     neg = neg[phase2_sample], 
                     bg = bg[phase2_sample],
                     init_clust = temp_init_clust, 
-                    n_clusts = 0,
+                    n_clusts = n_clusts,
                     fixed_profiles = fixed_profiles, 
                     nb_size = nb_size,
                     method = method, 
-                    updated_reference = best_clust$updated_reference,
+                    updated_reference = NULL,   #<---- pretty sure this isn't needed
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
@@ -173,7 +171,6 @@ insitutype <- function(counts, neg, bg = NULL,
   templogliks <- apply(tempprofiles, 2, function(ref) {
     lldist(x = ref,
            mat = counts[phase3_sample, ],
-           neg = neg[phase3_sample], 
            bg = bg[phase3_sample],
            size = nb_size)
   })
