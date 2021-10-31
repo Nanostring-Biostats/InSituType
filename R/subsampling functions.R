@@ -5,8 +5,14 @@
 #' Clustering function with 4 levels of subsampling
 #' 
 #' 
-insitutype <- function(n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
-                       n_benchmark_cells = 50000) {
+insitutype <- function(counts, neg, bg = NULL, 
+                       init_clust = NULL, n_clusts = NULL,
+                       fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, 
+                       method = "CEM", 
+                       n_starts = 10, n_benchmark_cells = 50000,
+                       n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
+                       pct_drop = 1/10000, min_prob_increase = 0.05)
+  
   
   # get data for subsetting if not already provided
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
@@ -40,7 +46,19 @@ insitutype <- function(n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
   # run nbclust from each of the random subsets, and save the profiles:
   profiles_from_random_starts <- list()
   for (i in 1:n_starts) {
-    profiles_from_random_starts[[i]] <- nbclust()$profiles
+    profiles_from_random_starts[[i]] <- nbclust(
+      counts = counts[random_start_subsets[[i]], ], 
+      neg = neg[random_start_subsets[[i]]], 
+      bg = bg[random_start_subsets[[i]]],
+      init_clust = NULL, 
+      n_clusts = n_clusts,
+      fixed_profiles = fixed_profiles, 
+      nb_size = nb_size,
+      method = method, 
+      updated_reference = best_clust$updated_reference,
+      pct_drop = pct_drop,
+      min_prob_increase = min_prob_increase
+    )$profiles
   }
   
   # find which profile matrix does best in the benchmarking subset:
@@ -90,15 +108,17 @@ insitutype <- function(n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                     n_clusts = 0,
                     fixed_profiles = fixed_profiles, 
                     nb_size = nb_size,
-                    n_iters = n_final_iters,
                     method = method, 
-                    shrinkage = shrinkage,
                     updated_reference = best_clust$updated_reference,
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
   #<< what should we save from this step? >>
-
+  tempprofiles <- clust2$profiles
+  #if (!is.null(fixed_profiles)) {
+  #  tempprofiles[, colnames(fixed_profiles), drop = FALSE] <- fixed_profiles[rownames(tempprofiles), ]
+  #}   # <----- commented out this part since tempprofiles are used to get init_clusts in next round, so should benefit from platform effects estimation
+  
   #### phase 3: -----------------------------------------------------------------
   message(paste0("phase 3: finalizing clusters in a ", n_phase3, " cell subset"))
   
@@ -118,7 +138,7 @@ insitutype <- function(n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
            bg = bg[phase3_sample],
            size = nb_size)
   })
-  temp_init_clust <- colnames(tempprofiles)[apply(tempprofiles, 1, which.max)]
+  temp_init_clust <- colnames(templogliks)[apply(templogliks, 1, which.max)]
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
   clust3 <- nbclust(counts = counts[phase3_sample, ], 
@@ -136,13 +156,33 @@ insitutype <- function(n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                     min_prob_increase = min_prob_increase)
   
   #<< what should we save from this step? >>
-  
+  # (copy from previous)
   
   #### phase 4: -----------------------------------------------------------------
   message(paste0("phase 4: classifying all ", nrow(counts), " cells"))
   
+  profiles <- clust3$profiles
+  
+  logliks <- apply(profiles, 2, function(ref) {
+    lldist(x = ref,
+           mat = counts,
+           neg = neg, 
+           bg = bg,
+           size = nb_size)
+  })
+  clust <- colnames(logliks)[apply(logliks, 1, which.max)]
+  
+  templogliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
+  # get on likelihood scale:
+  liks <- exp(templogliks)
+  # convert to probs
+  probs <- sweep(liks, 1, rowSums(liks), "/")
   
   
+  out = list(clust = clust,
+             probs = probs,
+             profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles),
+             logliks = logliks)
   
 }
 
