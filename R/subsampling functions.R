@@ -13,10 +13,46 @@ insitutype <- function(counts, neg, bg = NULL,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        pct_drop = 1/10000, min_prob_increase = 0.05)
   
+  #### preliminaries ---------------------------
   
+  # align genes in counts and fixed_profiles
+  if (align_genes & !is.null(fixed_profiles)) {
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    
+    # subset:
+    counts <- counts[, sharedgenes]
+    fixed_profiles <- fixed_profiles[sharedgenes, ]
+    if (is.matrix(bg)) {
+      bg <- bg[, sharedgenes]
+    }
+    
+    # warn about genes being lost:
+    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted: ",
+                     paste0(lostgenes, collapse = ",")))
+    }
+    if (length(lostgenes) > 50) {
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted"))
+    }
+    
+  }
+
+  # infer bg if not provided: assume background is proportional to the scaling factor s
+  if (is.null(bg)) {
+    s <- Matrix::rowMeans(counts)
+    bgmod <- stats::lm(neg ~ s - 1)
+    bg <- bgmod$fitted
+  }
+
   # get data for subsetting if not already provided
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
+  sketchingdata <- prepDataForSketching(counts)
   
+  n_phase1 = min(n_phase1, nrow(counts))
+  n_phase2 = min(n_phase2, nrow(counts))
+  n_phase3 = min(n_phase3, nrow(counts))
+  n_benchmark_cells = min(n_benchmark_cells, nrow(counts))
   
   
   #### phase 1: many random starts in small subsets -----------------------------
@@ -25,23 +61,26 @@ insitutype <- function(counts, neg, bg = NULL,
   # get a list in which each element is the cell IDs to be used in a subset
   random_start_subsets <- list()
   for (i in 1:n_starts) {
-    random_start_subsets[[i]] = geoSketch(X = get(sketchingdataname),
-                                          N = n_phase1,
-                                          alpha=0.1,
-                                          max_iter=200,
-                                          returnBins=FALSE,
-                                          minCellsPerBin = 1,
-                                          seed=NULL)$sampledCells
+    #random_start_subsets[[i]] <- geoSketch(X = sketchingdata,
+    #                                      N = n_phase1,
+    #                                      alpha=0.1,
+    #                                      max_iter=200,
+    #                                      returnBins=FALSE,
+    #                                      minCellsPerBin = 1,
+    #                                      seed=NULL)$sampledCells
+    # NOTE: should probably run plaid calculation just once, then sample across plaids multiple times
+    random_start_subsets[[i]] <- sample(rownames(counts), n_phase1, replace = F)
   }
 
   # get a vector of cells IDs to be used in comparing the random starts:
-  eval_subset <- geoSketch(X = get(sketchingdataname),
-                           N = n_benchmark_cells,
-                           alpha=0.1,
-                           max_iter=200,
-                           returnBins=FALSE,
-                           minCellsPerBin = 1,
-                           seed=NULL)$sampledCells
+  eval_subset <- sample(rownames(counts), n_benchmark_cells, replace = F)
+  #eval_subset <- geoSketch(X = get(sketchingdataname),
+  #                         N = n_benchmark_cells,
+  #                         alpha=0.1,
+  #                         max_iter=200,
+  #                         returnBins=FALSE,
+  #                         minCellsPerBin = 1,
+  #                         seed=NULL)$sampledCells
   
   # run nbclust from each of the random subsets, and save the profiles:
   profiles_from_random_starts <- list()
@@ -55,7 +94,7 @@ insitutype <- function(counts, neg, bg = NULL,
       fixed_profiles = fixed_profiles, 
       nb_size = nb_size,
       method = method, 
-      updated_reference = best_clust$updated_reference,
+      updated_reference = NULL,
       pct_drop = pct_drop,
       min_prob_increase = min_prob_increase
     )$profiles
@@ -150,8 +189,8 @@ insitutype <- function(counts, neg, bg = NULL,
                     nb_size = nb_size,
                     n_iters = n_final_iters,
                     method = method, 
-                    shrinkage = shrinkage,
-                    updated_reference = best_clust$updated_reference,
+                    shrinkage = shrinkage, 
+                    updated_reference = clust2$updated_reference,  #<-------------- look into this
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
@@ -172,7 +211,7 @@ insitutype <- function(counts, neg, bg = NULL,
   })
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   
-  templogliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
+  templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
   # get on likelihood scale:
   liks <- exp(templogliks)
   # convert to probs
@@ -194,10 +233,13 @@ insitutype <- function(counts, neg, bg = NULL,
 #' @param counts Counts matrix
 #' @param method What kind of data to extract. 
 #' @return A matrix of data for geoSketch, with cells in rows and features in columns
-prepDataForSketching <- function(counts, method = "PCA") {
+prepDataForSketching <- function(counts, method = "counts") {
   
   if (method == "PCA") {
     
+  }
+  if (method == "counts") {
+    return(counts)
   }
 }
 
