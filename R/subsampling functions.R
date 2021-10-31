@@ -1,0 +1,296 @@
+# functions for handling the subsampling operations of the main clustering function
+
+
+
+#' Clustering function with 4 levels of subsampling
+#' 
+#' 
+insitutype <- function(n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
+                       n_benchmark_cells = 50000) {
+  
+  # get data for subsetting if not already provided
+  # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
+  
+  
+  
+  #### phase 1: many random starts in small subsets -----------------------------
+  message(paste0("phase 1: random starts in ", n_phase1, " cell subsets"))
+  
+  # get a list in which each element is the cell IDs to be used in a subset
+  random_start_subsets <- list()
+  for (i in 1:n_starts) {
+    random_start_subsets[[i]] = geoSketch(X = get(sketchingdataname),
+                                          N = n_phase1,
+                                          alpha=0.1,
+                                          max_iter=200,
+                                          returnBins=FALSE,
+                                          minCellsPerBin = 1,
+                                          seed=NULL)$sampledCells
+  }
+
+  # get a vector of cells IDs to be used in comparing the random starts:
+  eval_subset <- geoSketch(X = get(sketchingdataname),
+                           N = n_benchmark_cells,
+                           alpha=0.1,
+                           max_iter=200,
+                           returnBins=FALSE,
+                           minCellsPerBin = 1,
+                           seed=NULL)$sampledCells
+  
+  # run nbclust from each of the random subsets, and save the profiles:
+  profiles_from_random_starts <- list()
+  for (i in 1:n_starts) {
+    profiles_from_random_starts[[i]] <- nbclust()$profiles
+  }
+  
+  # find which profile matrix does best in the benchmarking subset:
+  benchmarking_logliks <- c()
+  for (i in 1:n_starts) {
+    templogliks <- apply(profiles_from_random_starts[[i]], 2, function(ref) {
+      lldist(x = ref,
+             mat = counts[benchmarking_cells, ],
+             neg = neg[phase2_sample], 
+             bg = bg[benchmarking_cells],
+             size = nb_size)
+    })
+    # take the sum of cells' best logliks:
+    benchmarking_logliks[i] = sum(apply(templogliks, 1, max))
+  }
+  best_start <- which.max(benchmarking_logliks)
+  tempprofiles <- profiles_from_random_starts[[best_start]]
+  
+  rm(profiles_from_random_starts)
+  
+  
+  #### phase 2: -----------------------------------------------------------------
+  message(paste0("phase 2: refining best random start in a ", n_phase2, " cell subset"))
+  phase2_sample <- geoSketch(X = get(sketchingdataname),
+                             N = n_phase2,
+                             alpha=0.1,
+                             max_iter=200,
+                             returnBins=FALSE,
+                             minCellsPerBin = 1,
+                             seed=NULL)$sampledCells
+  
+  # get initial cell type assignments:
+  templogliks <- apply(tempprofiles, 2, function(ref) {
+    lldist(x = ref,
+           mat = counts[phase2_sample, ],
+           neg = neg[phase2_sample], 
+           bg = bg[phase2_sample],
+           size = nb_size)
+  })
+  temp_init_clust <- colnames(tempprofiles)[apply(tempprofiles, 1, which.max)]
+  
+  # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
+  clust2 <- nbclust(counts = counts[phase2_sample, ], 
+                    neg = neg[phase2_sample], 
+                    bg = bg[phase2_sample],
+                    init_clust = temp_init_clust, 
+                    n_clusts = 0,
+                    fixed_profiles = fixed_profiles, 
+                    nb_size = nb_size,
+                    n_iters = n_final_iters,
+                    method = method, 
+                    shrinkage = shrinkage,
+                    updated_reference = best_clust$updated_reference,
+                    pct_drop = pct_drop,
+                    min_prob_increase = min_prob_increase)
+  
+  #<< what should we save from this step? >>
+
+  #### phase 3: -----------------------------------------------------------------
+  message(paste0("phase 3: finalizing clusters in a ", n_phase3, " cell subset"))
+  
+  phase3_sample <- geoSketch(X = get(sketchingdataname),
+                             N = n_phase3,
+                             alpha=0.1,
+                             max_iter=200,
+                             returnBins=FALSE,
+                             minCellsPerBin = 1,
+                             seed=NULL)$sampledCells
+  
+  # get initial cell type assignments:
+  templogliks <- apply(tempprofiles, 2, function(ref) {
+    lldist(x = ref,
+           mat = counts[phase3_sample, ],
+           neg = neg[phase3_sample], 
+           bg = bg[phase3_sample],
+           size = nb_size)
+  })
+  temp_init_clust <- colnames(tempprofiles)[apply(tempprofiles, 1, which.max)]
+  
+  # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
+  clust3 <- nbclust(counts = counts[phase3_sample, ], 
+                    neg = neg[phase3_sample], 
+                    bg = bg[phase3_sample],
+                    init_clust = temp_init_clust, 
+                    n_clusts = 0,
+                    fixed_profiles = fixed_profiles, 
+                    nb_size = nb_size,
+                    n_iters = n_final_iters,
+                    method = method, 
+                    shrinkage = shrinkage,
+                    updated_reference = best_clust$updated_reference,
+                    pct_drop = pct_drop,
+                    min_prob_increase = min_prob_increase)
+  
+  #<< what should we save from this step? >>
+  
+  
+  #### phase 4: -----------------------------------------------------------------
+  message(paste0("phase 4: classifying all ", nrow(counts), " cells"))
+  
+  
+  
+  
+}
+
+
+
+#' Prepare data for geoSketch 
+#' 
+#' Process raw counts data for input into geoSketching. 
+#' @param counts Counts matrix
+#' @param method What kind of data to extract. 
+#' @return A matrix of data for geoSketch, with cells in rows and features in columns
+prepDataForSketching <- function(counts, method = "PCA") {
+  
+  if (method == "PCA") {
+    
+  }
+}
+
+
+
+
+
+
+#' Function for creating a biased sample of a given dataset with the aim of retaining cells with unique expression vectors
+#'
+#' @export geoSketch
+
+
+#' @examples
+#' 
+#' # Example use of geometric sketching to return sampled list of cellIDs and binIDs
+#' library(Ptolemy) # Load library
+#' data(mini_tma) # Load data
+#' 
+#' mini_tma <- runPCA(mini_tma, expression_values="raw", ncp = 5) # Run PCA
+#' X <- Giotto:::select_dimReduction(mini_tma, name = "pca") # Use PCA results as expression matrix
+#' N <- 100 # Select the desired sample size
+#' 
+#' sampledCells <- geoSketch(X, N) # Generate list of sampled cells
+#' geoSketchRes <- geoSketch(X, N, returnBins=TRUE) # Generate list of sampled cells and return named vector of binIDs used for sampling
+
+
+#' @title geoSketch
+#' Function for sampling cells evenly across expression space
+#'
+#' Given an expression matrix, evenly bin cells across expression space and return bin labels and/or sampled cellIDs
+#' @param X feature matrix with cellIDs as rows and featureIDs as columns (can be counts, normalized expression, PCA, UMAP, etc.)
+#' @param N desired sample size
+#' @param alpha defines the acceptable minimum number of bins to sample from as `(1-alpha)*N`
+#' @param max_iter maximum number of iterations used to achieve an acceptable minimum number of bins
+#' @param returnBins determines whether or not to pass back bin labels for each cell
+#' @param minCellsPerBin the minimum number of cells required for a bin to be considered for sampling
+#' @param seed set seed for random sampling
+#' 
+#' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
+#' @return Plaid, a named vector of binIDs where names correspond to cellIDs
+geoSketch <- function(X, N,
+                      alpha=0.1,
+                      max_iter=200,
+                      returnBins=FALSE,
+                      minCellsPerBin = 1,
+                      seed=NULL){
+  
+  # Define seed for sampling if given
+  if (!is.null(seed)){
+    set.seed(seed)
+  }
+  
+  # Determine the total number of cells and compare it to the desired sample size 
+  nCells <- length(rownames(X))
+  
+  if (N > nCells){
+    # Stop the function and return and error is the desired sample size is greater than the total number of cells given
+    stop(paste0("N = ",N ," is greater than the number of cells in the feature matrix, nCells = ", nCells))
+  }
+  
+  # Normalize features on a range between 0 and 1 in order to facilitate even binning across expression space
+  X <- apply(X, 2, function(Y) (Y-min(Y))/(max(Y)-min(Y)))
+  
+  # Iterate the number of bins each feature is broken into until the total number of bins containing cells is larger than `(1-alpha)*N`
+  iter <- 1 # Set starting iteration
+  while (iter <= max_iter){ # Break loop when the number of iterations surpasses the defined maximum
+    message(paste0("Iteration Number ", as.character(iter))) # Report the current iteration the loop is on
+    
+    bins <- seq(0, 1, length=2+iter) # Define the bin ranges based on the current iteration
+    Xbins <- apply(X, 2, function(Y) .bincode(Y, bins, TRUE, TRUE)) # Bin cells across each feature using the given bin ranges
+    
+    Plaid <- apply(Xbins, 1, paste, collapse="") # Collapse the bin assignments to form a multidimensional binID
+    
+    PlaidCounts <- table(Plaid) # Count the number of cells per bin
+    PlaidMinCells <- names(PlaidCounts[PlaidCounts >= minCellsPerBin]) # Grab binIDs for bins that contain the minimum number of cells or more
+    
+    nPlaid <- length(PlaidMinCells) # Determine the number of unique bins containing at least the minimum number of cells
+    
+    # Check to see if the total number of bins containing cells is larger than `(1-alpha)*N`
+    if (nPlaid<(1-alpha)*N){
+      iter <- iter + 1 # If not continue onto the the next iteration
+    } else {
+      break # If the desired minimum number of bins has been reached end the loop
+    }
+    
+    nCellsInBins <- length(Plaid[Plaid %in% PlaidMinCells])
+    if (N > nCellsInBins){
+      # Stop the function and return and error is the desired sample size is greater than the total number of cells in the bins to be sampled from
+      stop(paste0("N = ",N ," is greater than the number of cells in bins above the minimum size, nCellsInBins = ", nCellsInBins,
+                  "\n  Please modify the parameters N, minCellsPerBin, and/or alpha before attempting to resample"))
+    }
+    
+  }
+  
+  # Determine and report back the average number of cells assigned to each unique bin
+  # This is a useful metric for understanding how distinct the geometric sketch will be from random sampling
+  # If the number of cells assigned to each unique bin is 1 then the geometric sketch is equivalent to random sampling
+  cellsPerPlaid <- round(mean(table(Plaid)),2)
+  message(paste0(cellsPerPlaid, " cells per geometric bin."))
+  
+  sampledCells = c() # Create the vector which sampled cells will be added to
+  names(Plaid) <- row.names(X) # Ensure binIDs are associated with their respective cells
+  
+  # Sample only from the cells left in bins with more than the the minimum number of cells
+  PlaidLeftover <- Plaid[Plaid %in% PlaidMinCells]
+  
+  sampledCells <- c() # Begin sampling cells
+  while (length(sampledCells) < N){
+    
+    # After each round of sampling ensure additional sampling is performed on unsampled cells only
+    PlaidLeftover <- PlaidLeftover[!(names(PlaidLeftover) %in% sampledCells)]
+    PlaidAddrsLeftover <- unique(PlaidLeftover)
+    
+    nCellsLeft <- N - (length(sampledCells)) # Calculate the number of cells left to sample
+    if (nCellsLeft > length(PlaidAddrsLeftover)){ # If the number of cells left to sample is greater than the number of bins left, sample one cell from each bin
+      sampleReamaining <- sapply(PlaidAddrsLeftover,
+                                 FUN = function(PlaidAddr){names(sample(PlaidLeftover[PlaidLeftover == PlaidAddr], 1))})
+    } else{ # Else sample the required number of cells one at a time from random remaining bins
+      sampleReamaining <- sapply(sample(PlaidAddrsLeftover)[1:nCellsLeft],
+                                 FUN = function(PlaidAddr){names(sample(PlaidLeftover[PlaidLeftover == PlaidAddr], 1))})
+    }
+    sampledCells <- c(sampledCells, sampleReamaining) # Add the newly sampled cells to the existing list of sampled cells
+  }
+  
+  if (length(sampledCells) > N){ # In the event where the number of Bins was greater than N, randomly sample N cells from the already sampled cells
+    sampledCells <- sample(sampledCells, N)
+  }
+  
+  # Return sampled cellIDs and also cell binIDs if requested
+  if (!returnBins){
+    return(sampledCells)
+  } else{
+    return(list(sampledCells = sampledCells, binIDs = Plaid))
+  }
+}
