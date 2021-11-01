@@ -2,10 +2,50 @@
 
 
 
-#' Clustering function with 4 levels of subsampling
-#' 
+#' Unsupervised and semi-supervised cell typing of single cell expression data.
+#'
+#' A wrapper for nbclust, to manage subsampling and multiple random starts.
+#' @param counts Counts matrix, cells * genes.
+#' @param neg Vector of mean negprobe counts per cell
+#' @param bg Expected background
+#' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
+#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
+#'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
+#'  Colnames must all be included in the init_clust variable.
 #' @param sketchingdata Optional matrix of data for use in non-random sampling via "sketching".
 #'  If not provided, then the data's first 20 PCs will be used. 
+#' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
+#' @param nb_size The size parameter to assume for the NB distribution.
+#' @param method Whether to run a SEM algorithm (points given a probability
+#'   of being in each cluster) or a classic EM algorithm (all points wholly
+#'   assigned to one cluster).
+#' @param init_clust Vector of initial cluster assignments.
+#' If NULL, initial assignments will be automatically inferred.
+#' @param n_starts the number of iterations
+#' @param n_benchmark_cells the number of cells for benchmarking
+#' @param n_phase1 Subsample size for phase 1 (random starts)
+#' @param n_phase2 Subsample size for phase 2 (refining in a larger subset)
+#' @param n_phase3 Subsample size for phase 3 (getting final solution in a very large subset)
+#' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
+#'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
+#'  switchover is only applicable when a cell has changed the assigned cell type with its
+#'  highest cell type probability increased by min_prob_increase. 
+#' @param min_prob_increase the threshold of probability used to determine a valid cell 
+#'  type switchover
+#'  
+#' @importFrom stats lm
+#' @importFrom Matrix rowMeans
+#' @importFrom Matrix colSums
+#'
+#' @return A list, with the following elements:
+#' \enumerate{
+#' \item cluster: a vector given cells' cluster assignments
+#' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
+#' \item profiles: a matrix of cluster-specific expression profiles
+#' \item pct_changed: how many cells changed class at each step
+#' \item logliks: a matrix of each cell's log-likelihood under each cluster
+#' }
+#' @export
 insitutype <- function(counts, neg, bg = NULL, 
                        n_clusts = NULL,
                        fixed_profiles = NULL, 
