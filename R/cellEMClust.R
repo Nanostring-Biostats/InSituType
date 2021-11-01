@@ -251,7 +251,7 @@ nbclust <- function(counts, neg, bg = NULL,
   }
 
   # start with updated_reference = fixed_profiles if not already specified
-  if (is.null(updated_reference)) {    #<--------------------------------------- updated_reference may be defunct
+  if (is.null(updated_reference)) {    
     updated_reference <- fixed_profiles
   }
 
@@ -293,7 +293,7 @@ nbclust <- function(counts, neg, bg = NULL,
     clust_old = init_clust
   }
   # append free and fixed profiles:
-  profiles <- cbind(fixed_profiles, free_profiles)
+  profiles <- cbind(updated_reference, free_profiles)
   #if (n_clusts > 0 ){
   #  profiles <- cbind(updated_reference, free_profiles)
   #} else {
