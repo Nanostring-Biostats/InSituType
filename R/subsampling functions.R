@@ -230,9 +230,9 @@ insitutype <- function(counts, neg, bg = NULL,
   
   
   out = list(clust = clust,
-             probs = probs,
+             probs = round(probs, 3),
              profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles),
-             logliks = logliks)
+             logliks = round(logliks, 3))
   
 }
 

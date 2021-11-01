@@ -189,12 +189,16 @@ Estep_size <- function(counts, clust, bg) {
   return(theta)
 }
 
-#' Cluster via EM alogorithm based on cell logliks
+#' Cluster via EM algorithm based on cell logliks
 #'
 #' Cluster single cell gene expression data using an EM algorithm.
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
+#' @param init_profiles Matrix of cluster profiles under which to begin iterations.
+#' Should NOT contain the fixed_profiles.
+#' If NULL, initial assignments will be automatically inferred, using init_clust 
+#' if available, and using random clusters if not. 
 #' @param init_clust Vector of initial cluster assignments.
 #' If NULL, initial assignments will be automatically inferred.
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
@@ -224,12 +228,14 @@ Estep_size <- function(counts, clust, bg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
-nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
+nbclust <- function(counts, neg, bg = NULL, 
+                    init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10, n_iters = 20,
                     method = "CEM", shrinkage = 0.8,
                     updated_reference = NULL, pct_drop = 1/10000,
                     min_prob_increase = 0.05) {
 
+  #### preliminaries -----------------------------------
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
     s <- rowSums(counts)
@@ -250,8 +256,11 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
   }
 
 
-  ### get initial profiles:
+  #### get initial profiles: ----------------------------------
 
+  if (is.null(init_profiles)) {
+    
+  }
   # if no initial clustering is available, quickly learn profiles:
   if (is.null(init_clust)) {
     if (is.null(n_clusts)) {
@@ -265,21 +274,12 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
     clustnames <- makeClusterNames( colnames( fixed_profiles ) , n_clusts + n_fixed_profiles )
     # arbitrary but non-random initialization:
     init_clust = rep(clustnames, ceiling(nrow(counts) / length(clustnames)))[seq_len(nrow(counts))]
-    }
+  }
 
   # for deriving initial profiles, subset on only the cells that aren't part of a pre-specified cluster:
   tempuse = !is.element(init_clust, keep_profiles)
-  #bgtemp = bg
-  #if (length(bg) == nrow(counts)) {
-  #  bgtemp = bg[tempuse]
-  #}
-  #if (is.matrix(bg)) {
-  #  bgtemp = bg[tempuse, ]
-  #}
-
   # if an initial clustering is available, use it to estimate initial profiles:
-  #if (!is.null(init_clust)) {   #<----- this logical is never FALSE now, I think
-  if (n_clusts !=0 ){
+  if (n_clusts > 0 ){
     new_profiles <- Estep(counts = counts[tempuse, ],
                           clust = init_clust[tempuse],
                           neg = neg[tempuse])
@@ -287,13 +287,12 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
   } else {
     profiles <- updated_reference
   }
-  #}
-
+  
   # initialize iterations:
   clust_old = init_clust
   pct_changed = c()
 
-  # run EM algorithm iterations:
+  #### run EM algorithm iterations: ----------------------------------
   for (iter in seq_len(n_iters)) {
     message(paste0("iter ", iter))
     # M-step: get cell * cluster probs:
@@ -374,7 +373,7 @@ nbclust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
   # get loglik of each cell:
-  logliks = unlist(sapply(seq_len(nrow(counts)), function(i) {
+  logliks = unlist(sapply(seq_len(nrow(counts)), function(i) {   #<-------------------- should just assume vector background
     if (length(bg) == 1) {
       bgtemp = bg
     }
