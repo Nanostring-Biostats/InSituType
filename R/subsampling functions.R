@@ -6,10 +6,11 @@
 #' 
 #' 
 insitutype <- function(counts, neg, bg = NULL, 
-                       init_clust = NULL, n_clusts = NULL,
-                       fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, 
+                       n_clusts = NULL,
+                       fixed_profiles = NULL, 
+                       align_genes = TRUE, nb_size = 10, 
                        method = "CEM", 
-                       n_starts = 10, n_benchmark_cells = 50000,
+                       init_clust = NULL, n_starts = 10, n_benchmark_cells = 50000,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        pct_drop = 1/10000, min_prob_increase = 0.05)
   
@@ -48,7 +49,6 @@ insitutype <- function(counts, neg, bg = NULL,
   # get data for subsetting if not already provided
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
   sketchingdata <- prepDataForSketching(counts)
-  
   n_phase1 = min(n_phase1, nrow(counts))
   n_phase2 = min(n_phase2, nrow(counts))
   n_phase3 = min(n_phase3, nrow(counts))
@@ -56,67 +56,77 @@ insitutype <- function(counts, neg, bg = NULL,
   
   
   #### phase 1: many random starts in small subsets -----------------------------
-  message(paste0("phase 1: random starts in ", n_phase1, " cell subsets"))
   
-  # get a list in which each element is the cell IDs to be used in a subset
-  random_start_subsets <- list()
-  for (i in 1:n_starts) {
-    #random_start_subsets[[i]] <- geoSketch(X = sketchingdata,
-    #                                      N = n_phase1,
-    #                                      alpha=0.1,
-    #                                      max_iter=200,
-    #                                      returnBins=FALSE,
-    #                                      minCellsPerBin = 1,
-    #                                      seed=NULL)$sampledCells
-    # NOTE: should probably run plaid calculation just once, then sample across plaids multiple times
-    random_start_subsets[[i]] <- sample(rownames(counts), n_phase1, replace = F)
-  }
+  if (!is.null(init_clust)) {
+    message("init_clust was provided, so phase 1 - random starts in small subsets - will be skipped.")
+    
+    tempprofiles <- sapply(by(counts[!is.na(init_clust), ], init_clust[!is.na(init_clust)], colMeans), cbind)
+    rownames(tempprofiles) <- colnames(counts)
 
-  # get a vector of cells IDs to be used in comparing the random starts:
-  benchmarking_subset <- sample(rownames(counts), n_benchmark_cells, replace = F)
-  #benchmarking_subset <- geoSketch(X = get(sketchingdataname),
-  #                         N = n_benchmark_cells,
-  #                         alpha=0.1,
-  #                         max_iter=200,
-  #                         returnBins=FALSE,
-  #                         minCellsPerBin = 1,
-  #                         seed=NULL)$sampledCells
-  
-  # run nbclust from each of the random subsets, and save the profiles:
-  profiles_from_random_starts <- list()
-  for (i in 1:n_starts) {
-    profiles_from_random_starts[[i]] <- nbclust(
-      counts = counts[random_start_subsets[[i]], ], 
-      neg = neg[random_start_subsets[[i]]], 
-      bg = bg[random_start_subsets[[i]]],
-      init_clust = NULL, 
-      n_clusts = n_clusts,
-      fixed_profiles = fixed_profiles, 
-      nb_size = nb_size,
-      method = method, 
-      updated_reference = NULL,
-      pct_drop = pct_drop,
-      min_prob_increase = min_prob_increase
-    )$profiles
   }
-  
-  # find which profile matrix does best in the benchmarking subset:
-  benchmarking_logliks <- c()
-  for (i in 1:n_starts) {
-    templogliks <- apply(profiles_from_random_starts[[i]], 2, function(ref) {
-      lldist(x = ref,
-             mat = counts[benchmarking_subset, ],
-             bg = bg[benchmarking_subset],
-             size = nb_size)
-    })
-    # take the sum of cells' best logliks:
-    benchmarking_logliks[i] = sum(apply(templogliks, 1, max))
+  else {
+    message(paste0("phase 1: random starts in ", n_phase1, " cell subsets"))
+    
+    # get a list in which each element is the cell IDs to be used in a subset
+    random_start_subsets <- list()
+    for (i in 1:n_starts) {
+      #random_start_subsets[[i]] <- geoSketch(X = sketchingdata,
+      #                                      N = n_phase1,
+      #                                      alpha=0.1,
+      #                                      max_iter=200,
+      #                                      returnBins=FALSE,
+      #                                      minCellsPerBin = 1,
+      #                                      seed=NULL)$sampledCells
+      # NOTE: should probably run plaid calculation just once, then sample across plaids multiple times
+      random_start_subsets[[i]] <- sample(rownames(counts), n_phase1, replace = F)
+    }
+    
+    # get a vector of cells IDs to be used in comparing the random starts:
+    benchmarking_subset <- sample(rownames(counts), n_benchmark_cells, replace = F)
+    #benchmarking_subset <- geoSketch(X = get(sketchingdataname),
+    #                         N = n_benchmark_cells,
+    #                         alpha=0.1,
+    #                         max_iter=200,
+    #                         returnBins=FALSE,
+    #                         minCellsPerBin = 1,
+    #                         seed=NULL)$sampledCells
+    
+    # run nbclust from each of the random subsets, and save the profiles:
+    profiles_from_random_starts <- list()
+    for (i in 1:n_starts) {
+      profiles_from_random_starts[[i]] <- nbclust(
+        counts = counts[random_start_subsets[[i]], ], 
+        neg = neg[random_start_subsets[[i]]], 
+        bg = bg[random_start_subsets[[i]]],
+        init_clust = NULL, 
+        n_clusts = n_clusts,
+        fixed_profiles = fixed_profiles, 
+        nb_size = nb_size,
+        method = method, 
+        updated_reference = NULL,
+        pct_drop = pct_drop,
+        min_prob_increase = min_prob_increase
+      )$profiles
+    }
+    
+    # find which profile matrix does best in the benchmarking subset:
+    benchmarking_logliks <- c()
+    for (i in 1:n_starts) {
+      templogliks <- apply(profiles_from_random_starts[[i]], 2, function(ref) {
+        lldist(x = ref,
+               mat = counts[benchmarking_subset, ],
+               bg = bg[benchmarking_subset],
+               size = nb_size)
+      })
+      # take the sum of cells' best logliks:
+      benchmarking_logliks[i] = sum(apply(templogliks, 1, max))
+    }
+    best_start <- which.max(benchmarking_logliks)
+    tempprofiles <- profiles_from_random_starts[[best_start]]
+    
+    rm(profiles_from_random_starts)
+    rm(templogliks)
   }
-  best_start <- which.max(benchmarking_logliks)
-  tempprofiles <- profiles_from_random_starts[[best_start]]
-  
-  rm(profiles_from_random_starts)
-  
   
   #### phase 2: -----------------------------------------------------------------
   message(paste0("phase 2: refining best random start in a ", n_phase2, " cell subset"))
@@ -129,13 +139,18 @@ insitutype <- function(counts, neg, bg = NULL,
                              seed=NULL)$sampledCells
   
   # get initial cell type assignments:
-  templogliks <- apply(tempprofiles, 2, function(ref) {
-    lldist(x = ref,
-           mat = counts[phase2_sample, ],
-           bg = bg[phase2_sample],
-           size = nb_size)
-  })
-  temp_init_clust <- colnames(templogliks)[apply(templogliks, 1, which.max)]
+  if (!is.null(init_clust)) {
+    temp_init_clust = init_clust[phase2_sample]
+  } else {
+    templogliks <- apply(tempprofiles, 2, function(ref) {
+      lldist(x = ref,
+             mat = counts[phase2_sample, ],
+             bg = bg[phase2_sample],
+             size = nb_size)
+    })
+    temp_init_clust <- colnames(templogliks)[apply(templogliks, 1, which.max)]
+    rm(templogliks)
+  }
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
   clust2 <- nbclust(counts = counts[phase2_sample, ], 
@@ -159,13 +174,14 @@ insitutype <- function(counts, neg, bg = NULL,
   #### phase 3: -----------------------------------------------------------------
   message(paste0("phase 3: finalizing clusters in a ", n_phase3, " cell subset"))
   
-  phase3_sample <- geoSketch(X = get(sketchingdataname),
-                             N = n_phase3,
-                             alpha=0.1,
-                             max_iter=200,
-                             returnBins=FALSE,
-                             minCellsPerBin = 1,
-                             seed=NULL)$sampledCells
+  #phase3_sample <- geoSketch(X = get(sketchingdataname),
+  #                           N = n_phase3,
+  #                           alpha=0.1,
+  #                           max_iter=200,
+  #                           returnBins=FALSE,
+  #                           minCellsPerBin = 1,
+  #                           seed=NULL)$sampledCells
+  phase3_sample <- sample(rownames(counts), n_phase3)
   
   # get initial cell type assignments:
   templogliks <- apply(tempprofiles, 2, function(ref) {
@@ -175,6 +191,7 @@ insitutype <- function(counts, neg, bg = NULL,
            size = nb_size)
   })
   temp_init_clust <- colnames(templogliks)[apply(templogliks, 1, which.max)]
+  rm(templogliks)
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
   clust3 <- nbclust(counts = counts[phase3_sample, ], 
@@ -184,10 +201,8 @@ insitutype <- function(counts, neg, bg = NULL,
                     n_clusts = 0,
                     fixed_profiles = fixed_profiles, 
                     nb_size = nb_size,
-                    n_iters = n_final_iters,
                     method = method, 
-                    shrinkage = shrinkage, 
-                    updated_reference = clust2$updated_reference,  #<-------------- look into this
+                    updated_reference = NULL, #clust2$updated_reference,  #<-------------- look into this
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
@@ -202,7 +217,6 @@ insitutype <- function(counts, neg, bg = NULL,
   logliks <- apply(profiles, 2, function(ref) {
     lldist(x = ref,
            mat = counts,
-           neg = neg, 
            bg = bg,
            size = nb_size)
   })
