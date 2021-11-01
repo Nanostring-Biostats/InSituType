@@ -4,10 +4,12 @@
 
 #' Clustering function with 4 levels of subsampling
 #' 
-#' 
+#' @param sketchingdata Optional matrix of data for use in non-random sampling via "sketching".
+#'  If not provided, then the data's first 20 PCs will be used. 
 insitutype <- function(counts, neg, bg = NULL, 
                        n_clusts = NULL,
                        fixed_profiles = NULL, 
+                       sketchingdata = NULL,
                        align_genes = TRUE, nb_size = 10, 
                        method = "CEM", 
                        init_clust = NULL, n_starts = 10, n_benchmark_cells = 50000,
@@ -48,7 +50,16 @@ insitutype <- function(counts, neg, bg = NULL,
 
   # get data for subsetting if not already provided
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
-  sketchingdata <- prepDataForSketching(counts)
+  if (!is.null(sketchingdata) {
+    # check that it's correct:
+    if (nrow(sketchingdata) != nrow(counts)) {
+      warning("counts and sketchingdata have different numbers of row. Discarding sketchingdata.")
+      sketchingdata <- NULL
+    }
+  }
+  if (is.null(sketchingdata)) {
+    sketchingdata <- prepDataForSketching(counts)
+  }
   n_phase1 = min(n_phase1, nrow(counts))
   n_phase2 = min(n_phase2, nrow(counts))
   n_phase3 = min(n_phase3, nrow(counts))
@@ -70,26 +81,26 @@ insitutype <- function(counts, neg, bg = NULL,
     # get a list in which each element is the cell IDs to be used in a subset
     random_start_subsets <- list()
     for (i in 1:n_starts) {
-      #random_start_subsets[[i]] <- geoSketch(X = sketchingdata,
-      #                                      N = n_phase1,
-      #                                      alpha=0.1,
-      #                                      max_iter=200,
-      #                                      returnBins=FALSE,
-      #                                      minCellsPerBin = 1,
-      #                                      seed=NULL)$sampledCells
+      random_start_subsets[[i]] <- geoSketch(X = sketchingdata,
+                                            N = n_phase1,
+                                            alpha=0.1,
+                                            max_iter=200,
+                                            returnBins=FALSE,
+                                            minCellsPerBin = 1,
+                                            seed=NULL)#$sampledCells
       # NOTE: should probably run plaid calculation just once, then sample across plaids multiple times
-      random_start_subsets[[i]] <- sample(rownames(counts), n_phase1, replace = F)
+      #random_start_subsets[[i]] <- sample(rownames(counts), n_phase1, replace = F)
     }
     
     # get a vector of cells IDs to be used in comparing the random starts:
-    benchmarking_subset <- sample(rownames(counts), n_benchmark_cells, replace = F)
-    #benchmarking_subset <- geoSketch(X = get(sketchingdataname),
-    #                         N = n_benchmark_cells,
-    #                         alpha=0.1,
-    #                         max_iter=200,
-    #                         returnBins=FALSE,
-    #                         minCellsPerBin = 1,
-    #                         seed=NULL)$sampledCells
+    #benchmarking_subset <- sample(rownames(counts), n_benchmark_cells, replace = F)
+    benchmarking_subset <- geoSketch(X = sketchingdata,
+                             N = n_benchmark_cells,
+                             alpha=0.1,
+                             max_iter=200,
+                             returnBins=FALSE,
+                             minCellsPerBin = 1,
+                             seed=NULL)
     
     # run nbclust from each of the random subsets, and save the profiles:
     profiles_from_random_starts <- list()
@@ -130,13 +141,13 @@ insitutype <- function(counts, neg, bg = NULL,
   
   #### phase 2: -----------------------------------------------------------------
   message(paste0("phase 2: refining best random start in a ", n_phase2, " cell subset"))
-  phase2_sample <- geoSketch(X = get(sketchingdataname),
+  phase2_sample <- geoSketch(X = sketchingdata,
                              N = n_phase2,
                              alpha=0.1,
                              max_iter=200,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
-                             seed=NULL)$sampledCells
+                             seed=NULL)
   
   # get initial cell type assignments:
   if (!is.null(init_clust)) {
@@ -161,7 +172,7 @@ insitutype <- function(counts, neg, bg = NULL,
                     fixed_profiles = fixed_profiles, 
                     nb_size = nb_size,
                     method = method, 
-                    updated_reference = NULL,   #<---- pretty sure this isn't needed
+                    updated_reference = NULL,   #<---- for now, decision is to not use updated_reference from phase1 due to instability arising from small n.
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
@@ -202,7 +213,7 @@ insitutype <- function(counts, neg, bg = NULL,
                     fixed_profiles = fixed_profiles, 
                     nb_size = nb_size,
                     method = method, 
-                    updated_reference = NULL, #clust2$updated_reference,  #<-------------- look into this
+                    updated_reference = clust2$updated_reference, 
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
@@ -244,14 +255,13 @@ insitutype <- function(counts, neg, bg = NULL,
 #' @param counts Counts matrix
 #' @param method What kind of data to extract. 
 #' @return A matrix of data for geoSketch, with cells in rows and features in columns
-prepDataForSketching <- function(counts, method = "counts") {
-  
-  if (method == "PCA") {
-    
-  }
-  if (method == "counts") {
-    return(counts)
-  }
+#' @importFrom irlba prcomp_irlba
+prepDataForSketching <- function(counts) {
+  # get PCs:
+  scaling_factors <- pmax(apply(counts, 2, quantile, 0.99), 5)
+  pcres <- irlba::prcomp_irlba(x = sweep(counts, 2, scaling_factors), n = 20, retx = TRUE, center = TRUE, scale. = FALSE)$x
+  rownames(pcres) <- rownames(counts)
+  return(pcres)
 }
 
 
