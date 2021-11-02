@@ -19,7 +19,9 @@ cellEMClust(
   subset_size = 1000,
   n_starts = 10,
   n_benchmark_cells = 500,
-  n_final_iters = 3
+  n_final_iters = 3,
+  pct_drop = 1/10000,
+  min_prob_increase = 0.05
 )
 }
 \arguments{
@@ -59,9 +61,15 @@ the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profil
 
 \item{n_benchmark_cells}{the number of cells for benchmarking}
 
-\item{n_final_iters}{the number of iterations on the final step
+\item{n_final_iters}{the number of iterations on the final step}
 
- @importFrom stats lm}
+\item{pct_drop}{the decrease in percentage of cell types with a valid switchover to 
+another cell type compared to the last iteration. Default value: 1/10000. A valid 
+switchover is only applicable when a cell has changed the assigned cell type with its
+highest cell type probability increased by min_prob_increase.}
+
+\item{min_prob_increase}{the threshold of probability used to determine a valid cell 
+type switchover}
 }
 \value{
 A list, with the following elements:
@@ -69,7 +77,7 @@ A list, with the following elements:
 \item cluster: a vector given cells' cluster assignments
 \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 \item profiles: a matrix of cluster-specific expression profiles
-\item n_changed: how many cells changed class at each step
+\item pct_changed: how many cells changed class at each step
 \item logliks: a matrix of each cell's log-likelihood under each cluster
 }
 }

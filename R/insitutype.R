@@ -52,7 +52,7 @@ insitutype <- function(counts, neg, bg = NULL,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        pct_drop = 1/10000, min_prob_increase = 0.05) {
   
-  #### preliminaries ---------------------------
+  #### preliminaries ---------------------------dd
   
   # align genes in counts and fixed_profiles
   if (align_genes & !is.null(fixed_profiles)) {

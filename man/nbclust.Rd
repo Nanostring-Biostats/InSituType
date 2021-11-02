@@ -2,12 +2,13 @@
 % Please edit documentation in R/cellEMClust.R
 \name{nbclust}
 \alias{nbclust}
-\title{Cluster via EM alogorithm based on cell logliks}
+\title{Cluster via EM algorithm based on cell logliks}
 \usage{
 nbclust(
   counts,
   neg,
   bg = NULL,
+  init_free_profiles = NULL,
   init_clust = NULL,
   n_clusts = NULL,
   fixed_profiles = NULL,
@@ -15,7 +16,9 @@ nbclust(
   n_iters = 20,
   method = "CEM",
   shrinkage = 0.8,
-  updated_reference = NULL
+  updated_reference = NULL,
+  pct_drop = 1/10000,
+  min_prob_increase = 0.05
 )
 }
 \arguments{
@@ -24,6 +27,11 @@ nbclust(
 \item{neg}{Vector of mean negprobe counts per cell}
 
 \item{bg}{Expected background}
+
+\item{init_free_profiles}{Matrix of cluster profiles under which to begin iterations.
+Should NOT contain the fixed_profiles.
+If NULL, initial assignments will be automatically inferred, using init_clust 
+if available, and using random clusters if not.}
 
 \item{init_clust}{Vector of initial cluster assignments.
 If NULL, initial assignments will be automatically inferred.}
@@ -46,7 +54,15 @@ assigned to one cluster).}
 the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.}
 
 \item{updated_reference}{Rescaled, possibly shrunken version of fixed_profiles.
- This argument is intended to be used by cellEMclust, not by the user.
+This argument is intended to be used by cellEMclust, not by the user.}
+
+\item{pct_drop}{the decrease in percentage of cell types with a valid switchover to 
+another cell type compared to the last iteration. Default value: 1/10000. A valid 
+switchover is only applicable when a cell has changed the assigned cell type with its
+highest cell type probability increased by min_prob_increase.}
+
+\item{min_prob_increase}{the threshold of probability used to determine a valid cell 
+ type switchover
 
  @importFrom stats lm}
 }
