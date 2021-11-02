@@ -206,12 +206,10 @@ Estep_size <- function(counts, clust, bg) {
 #' If NULL, initial assignments will be automatically inferred.
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param n_iters Numer of iterations
+#' @param  Numer of iterations
 #' @param method Whether to run a SEM algorithm (points given a probability
 #'   of being in each cluster) or a classic EM algorithm (all points wholly
 #'   assigned to one cluster).
-#' @param shrinkage Fraction by which to shrink the average profiles towards
-#'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
 #' @param updated_reference Rescaled, possibly shrunken version of fixed_profiles.
 #'  This argument is intended to be used by cellEMclust, not by the user.
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
@@ -220,6 +218,7 @@ Estep_size <- function(counts, clust, bg) {
 #'  highest cell type probability increased by min_prob_increase. 
 #' @param min_prob_increase the threshold of probability used to determine a valid cell 
 #'  type switchover
+#' @param max_iters Maximum number of iterations
 #'
 #'  @importFrom stats lm
 #'
@@ -230,10 +229,10 @@ Estep_size <- function(counts, clust, bg) {
 #' }
 nbclust <- function(counts, neg, bg = NULL, 
                     init_free_profiles = NULL, init_clust = NULL, n_clusts = NULL,
-                    fixed_profiles = NULL, nb_size = 10, n_iters = 20,
-                    method = "CEM", shrinkage = 0.8,
+                    fixed_profiles = NULL, nb_size = 10
+                    method = "CEM", 
                     updated_reference = NULL, pct_drop = 1/10000,   
-                    min_prob_increase = 0.05) {
+                    min_prob_increase = 0.05, max_iters = 40) {
 
   #### preliminaries -----------------------------------
   # infer bg if not provided: assume background is proportional to the scaling factor s
@@ -306,7 +305,7 @@ nbclust <- function(counts, neg, bg = NULL,
   
   #### run EM algorithm iterations: ----------------------------------
   pct_changed = c()
-  for (iter in seq_len(n_iters)) {
+  for (iter in seq_len(max_iters)) {
     message(paste0("iter ", iter))
     # M-step: get cell * cluster probs:
     probs <- Mstep(counts = counts,
@@ -484,12 +483,10 @@ makeClusterNames <- function( cNames , nClust )
 #'  Colnames must all be included in the init_clust variable.
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param n_iters Numer of iterations
+#' @param max_iters Maximum number of iterations
 #' @param method Whether to run a SEM algorithm (points given a probability
 #'   of being in each cluster) or a classic EM algorithm (all points wholly
 #'   assigned to one cluster).
-#' @param shrinkage Fraction by which to shrink the average profiles towards
-#'  the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.
 #' @param subset_size To speed computations, each iteration will use a subset of only this many cells.
 #'  (The final iteration runs on all cells.) Set to NULL to use all cells in every iter.
 #'  (This option has not yet been enabled.)
@@ -528,7 +525,7 @@ makeClusterNames <- function( cNames , nClust )
 #'                      init_clust = NULL, n_clusts = 12,
 #'                      fixed_profiles = NULL,
 #'                      nb_size = 10,
-#'                      n_iters = 10,  # this is not enough
+#'                      max_iters = 10,  # this is not enough
 #'                      method = "EM", shrinkage = 0.5,
 #'                      subset_size = 1000,  # smaller than ideal
 #'                      n_starts = 4,
@@ -547,7 +544,7 @@ makeClusterNames <- function( cNames , nClust )
 #'                     init_clust = NULL, n_clusts = 6,
 #'                     fixed_profiles = ioprofiles[usegenes, ],
 #'                     nb_size = 10,
-#'                     n_iters = 10,  # this is not enough
+#'                     max_iters = 10,  # this is not enough
 #'                     method = "EM",
 #'                     shrinkage = 0.5,
 #'                     subset_size = 1000,
@@ -563,7 +560,7 @@ makeClusterNames <- function( cNames , nClust )
 #' plot(fp$cellpos, pch = 16, col = alpha(scols[semi$clust], 0.5))
 #' text(fp$clustpos[, 1], fp$clustpos[, 2], rownames(fp$clustpos), cex = 1.5)
 cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NULL,
-                        fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, n_iters = 20,
+                        fixed_profiles = NULL, align_genes = TRUE, nb_size = 10, max_iters = 20,
                         method = "CEM", shrinkage = 0.8,
                         subset_size = 1000, n_starts = 10, n_benchmark_cells = 500,
                         n_final_iters = 3, pct_drop = 1/10000, min_prob_increase = 0.05) {
@@ -624,7 +621,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
                          neg = neg[use], bg = bg[use],
                          init_clust = randinit, n_clusts = n_clusts,
                          fixed_profiles = fixed_profiles,
-                         nb_size = nb_size, n_iters = n_iters,
+                         nb_size = nb_size, max_iters = max_iters,
                          method = method, shrinkage = shrinkage,
                          updated_reference = NULL,
                          pct_drop = pct_drop, 
@@ -662,7 +659,7 @@ cellEMClust <- function(counts, neg, bg = NULL, init_clust = NULL, n_clusts = NU
   finalclust <- nbclust(counts = counts, neg = neg, bg = bg,
                         init_clust = final_clust_init, n_clusts = 0,
                         fixed_profiles = fixed_profiles, nb_size = nb_size,
-                        n_iters = n_final_iters,
+                        max_iters = n_final_iters,
                         method = method, shrinkage = shrinkage,
                         updated_reference = best_clust$updated_reference,
                         pct_drop = pct_drop,

@@ -28,6 +28,7 @@
 #'  highest cell type probability increased by min_prob_increase. 
 #' @param min_prob_increase the threshold of probability used to determine a valid cell 
 #'  type switchover
+#' @param max_iters Maximum number of iterations.
 #'  
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
@@ -50,7 +51,7 @@ insitutype <- function(counts, neg, bg = NULL,
                        method = "CEM", 
                        init_clust = NULL, n_starts = 10, n_benchmark_cells = 50000,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
-                       pct_drop = 1/10000, min_prob_increase = 0.05) {
+                       pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40) {
   
   #### preliminaries ---------------------------dd
   

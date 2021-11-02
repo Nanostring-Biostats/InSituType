@@ -19,7 +19,8 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     n_phase2 = 100,
                     n_phase3 = 200,
                     pct_drop = 1/10000, 
-                    min_prob_increase = 0.05)   
+                    min_prob_increase = 0.05,
+                    max_iters = 10)   
 
 
 
@@ -41,7 +42,8 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     n_phase2 = 100,
                     n_phase3 = 200,
                     pct_drop = 1/10000, 
-                    min_prob_increase = 0.05)   
+                    min_prob_increase = 0.05,
+                    max_iters = 10)   
 
 # plot clusters:
 if (FALSE) {
@@ -67,7 +69,8 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    n_phase2 = 1000,
                    n_phase3 = 2000,
                    pct_drop = 1/10000, 
-                   min_prob_increase = 0.05)   
+                   min_prob_increase = 0.05,
+                   max_iters = 10)   
 
 # run semisupervised clustering with init_clust specified:
 init_clust <- rep(letters[1:3], each = nrow(mini_nsclc$counts) / 3)[1:nrow(mini_nsclc$counts)]
@@ -85,4 +88,5 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    n_phase2 = 1000,
                    n_phase3 = 2000,
                    pct_drop = 1/10000, 
-                   min_prob_increase = 0.05)   
+                   min_prob_increase = 0.05,
+                   max_iters = 10)   
