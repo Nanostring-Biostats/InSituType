@@ -122,6 +122,9 @@ insitutype <- function(counts, neg, bg = NULL,
                                              returnBins=FALSE,
                                              minCellsPerBin = 1,
                                              seed=NULL)
+      # convert IDs to row indices:
+      random_start_subsets[[i]] <- match(random_start_subsets[[i]], rownames(counts))
+      
     }
     
     # get a vector of cells IDs to be used in comparing the random starts:
@@ -132,6 +135,8 @@ insitutype <- function(counts, neg, bg = NULL,
                                      returnBins=FALSE,
                                      minCellsPerBin = 1,
                                      seed=NULL)
+    # convert IDs to row indices:
+    benchmarking_subset <- match(benchmarking_subset, rownames(counts))
     
     # run nbclust from each of the random subsets, and save the profiles:
     profiles_from_random_starts <- list()
@@ -180,28 +185,22 @@ insitutype <- function(counts, neg, bg = NULL,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
                              seed=NULL)
+  # convert IDs to row indices:
+  phase2_sample <- match(phase2_sample, rownames(counts))
   
   # get initial cell type assignments:
+  temp_init_clust <- NULL
   if (!is.null(init_clust)) {
     temp_init_clust <- init_clust[phase2_sample]
     tempprofiles <- NULL
-  }# else {
-  # templogliks <- apply(tempprofiles, 2, function(ref) {
-   #   lldist(x = ref,
-   #          mat = counts[phase2_sample, ],
-   #          bg = bg[phase2_sample],
-  #           size = nb_size)
-  #  })
-  #  temp_init_clust <- colnames(templogliks)[apply(templogliks, 1, which.max)]
-  #  rm(templogliks)
-  #}
+  }
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
   clust2 <- nbclust(counts = counts[phase2_sample, ], 
                     neg = neg[phase2_sample], 
                     bg = bg[phase2_sample],
                     init_free_profiles = tempprofiles[, setdiff(colnames(tempprofiles), colnames(fixed_profiles))],
-                    init_clust = NULL, #temp_init_clust, 
+                    init_clust = temp_init_clust, 
                     n_clusts = n_clusts,
                     fixed_profiles = fixed_profiles, 
                     nb_size = nb_size,
@@ -221,7 +220,9 @@ insitutype <- function(counts, neg, bg = NULL,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
                              seed=NULL)
-
+  # convert IDs to row indices:
+  phase3_sample <- match(phase3_sample, rownames(counts))
+  
   ## get initial cell type assignments:
   #templogliks <- apply(tempprofiles, 2, function(ref) {
   #  lldist(x = ref,

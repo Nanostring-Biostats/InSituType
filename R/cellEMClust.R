@@ -264,6 +264,7 @@ nbclust <- function(counts, neg, bg = NULL,
     free_profile_names <- colnames(init_free_profiles)
     clust_old <- rep("unassigned", nrow(counts))
     names(clust_old) <- rownames(counts)
+    clustnames <- colnames(init_free_profiles)
   } 
   # if no init_free_profiles are provided, derive them:
   if (is.null(init_free_profiles)) {
@@ -282,7 +283,8 @@ nbclust <- function(counts, neg, bg = NULL,
       # arbitrary but non-random initialization:
       init_clust = rep(clustnames, ceiling(nrow(counts) / length(clustnames)))[seq_len(nrow(counts))]
     }
-  
+    clustnames <- unique(init_clust)
+    
     # subset on only the cells that aren't part of a pre-specified cluster:
     tempuse = !is.element(init_clust, fixed_profile_names)    #<------------------ randomizing in blocks might help discover cell types that are together in space. This is the most null randomization possible. 
     # use this subset to derive first free_profiles from init_clust
