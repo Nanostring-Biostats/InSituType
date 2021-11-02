@@ -101,7 +101,6 @@ insitutype <- function(counts, neg, bg = NULL,
   n_phase3 = min(n_phase3, nrow(counts))
   n_benchmark_cells = min(n_benchmark_cells, nrow(counts))
   
-  
   #### phase 1: many random starts in small subsets -----------------------------
   
   if (!is.null(init_clust)) {
@@ -141,6 +140,7 @@ insitutype <- function(counts, neg, bg = NULL,
         counts = counts[random_start_subsets[[i]], ], 
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
+        init_free_profiles = NULL,
         init_clust = NULL, 
         n_clusts = n_clusts,
         fixed_profiles = fixed_profiles, 
@@ -220,7 +220,7 @@ insitutype <- function(counts, neg, bg = NULL,
                              max_iter=200,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
-                             seed=NULL)$sampledCells
+                             seed=NULL)
 
   ## get initial cell type assignments:
   #templogliks <- apply(tempprofiles, 2, function(ref) {
@@ -238,7 +238,7 @@ insitutype <- function(counts, neg, bg = NULL,
                     bg = bg[phase3_sample],
                     init_free_profiles = tempprofiles[, setdiff(colnames(tempprofiles), colnames(fixed_profiles))],
                     init_clust = NULL,  #temp_init_clust, 
-                    n_clusts = 0,
+                    n_clusts = n_clusts,
                     fixed_profiles = fixed_profiles, 
                     nb_size = nb_size,
                     method = method, 
@@ -270,5 +270,5 @@ insitutype <- function(counts, neg, bg = NULL,
              probs = round(probs, 3),
              profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles),
              logliks = round(logliks, 3))
-  
+  return(out)
 }

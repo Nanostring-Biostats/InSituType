@@ -20,3 +20,11 @@
 #'
 #' @format A matrix of 27161 genes x 16 cell types. 
 "ioprofiles"
+
+#' Default colors for the cell types in the ioprofiles matrix
+#'
+#' A named vector of colors, giving colors for the cell types of the ioprofiles
+#'  matrix.
+#'
+#' @format A named vector
+"iocolors"

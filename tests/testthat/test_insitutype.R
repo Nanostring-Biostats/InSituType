@@ -1,27 +1,31 @@
 # load data ("raw" and "cellannot"):
 data("ioprofiles")
+data("iocolors")
 data("mini_nsclc")
 
 # run unsupervised clustering with several random starts:
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = rowMeans(mini_nsclc$neg),
                     bg = NULL,
-                    init_clust = NULL, n_clusts = 12,
+                    init_clust = NULL, n_clusts = 6,
                     fixed_profiles = NULL,
                     nb_size = 10,
                     method = "EM",
                     n_starts = 2,
-                    n_benchmark_cells = 500,
-                    n_phase1 = 100,
-                    n_phase2 = 200,
-                    n_phase3 = 300)   
-# plot clusters:
-scols = c(cellcols, brewer.pal(12, "Set3")[-2], brewer.pal(8, "Set2"))[1:length(unique(unsup$clust))]
+                    n_benchmark_cells = 100,
+                    n_phase1 = 50,
+                    n_phase2 = 100,
+                    n_phase3 = 200,
+                    pct_drop = 1/10000, 
+                    min_prob_increase = 0.05)   
+# plot clusters:ls()
+scols = c(iocolors, 
+          '#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#66C2A5','#FC8D62','#8DA0CB','#E78AC3','#A6D854','#FFD92F','#E5C494','#B3B3B3')
+scols <- scols[1:length(unique(unsup$clust))]
 names(scols) = unique(unsup$clust)
 plot(mini_nsclc$x, mini_nsclc$y, pch = 16, col = scols[unsup$clust])
 
 # view immune oncology cell profiles (in ptolemy package data):
-head(ioprofiles)
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = rowMeans(mini_nsclc$neg),
                    bg = NULL,
@@ -31,6 +35,8 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    method = "EM",
                    n_starts = 2,
                    n_benchmark_cells = 500,
-                   n_phase1 = 100,
-                   n_phase2 = 200,
-                   n_phase3 = 300)   
+                   n_phase1 = 50,
+                   n_phase2 = 100,
+                   n_phase3 = 200,
+                   pct_drop = 1/10000, 
+                   min_prob_increase = 0.05)   

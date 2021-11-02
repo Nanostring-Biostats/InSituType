@@ -261,6 +261,7 @@ nbclust <- function(counts, neg, bg = NULL,
   # if init_free_profiles are provided, take them:
   if (!is.null(init_free_profiles)) {
     free_profiles <- init_free_profiles
+    free_profile_names <- colnames(init_free_profiles)
     clust_old <- rep("unassigned", nrow(counts))
     names(clust_old) <- rownames(counts)
   } 
@@ -277,7 +278,6 @@ nbclust <- function(counts, neg, bg = NULL,
         n_fixed_profiles <- 0
       }
       clustnames <- makeClusterNames( fixed_profile_names , n_clusts + n_fixed_profiles )
-      free_profile_names <- setdiff(clustnames, fixed_profile_names)
       
       # arbitrary but non-random initialization:
       init_clust = rep(clustnames, ceiling(nrow(counts) / length(clustnames)))[seq_len(nrow(counts))]
@@ -289,9 +289,10 @@ nbclust <- function(counts, neg, bg = NULL,
     free_profiles <- Estep(counts = counts[tempuse, ],
                            clust = init_clust[tempuse],
                            neg = neg[tempuse])
-    
+    free_profile_names <- setdiff(clustnames, fixed_profile_names)
     clust_old = init_clust
   }
+  
   # append free and fixed profiles:
   profiles <- cbind(updated_reference, free_profiles)
   #if (n_clusts > 0 ){
@@ -313,7 +314,7 @@ nbclust <- function(counts, neg, bg = NULL,
 
     # E-step: update profiles:
     if (method == "CEM") {
-      tempprobs = probs[, free_profile_names, drop = FALSE]
+      tempprobs = probs[s, free_profile_names, drop = FALSE]
       # update the new cluster profiles:
       if (n_clusts != 0){
         free_profiles <- Estep(counts = counts,
