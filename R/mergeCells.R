@@ -49,3 +49,8 @@ mergeCells <- function(merges, logliks) {
 
 
 
+
+# get a probabilities matrix from a logliks matrix
+probs2logliks <- function(probs) {
+  return(log(probs))
+}

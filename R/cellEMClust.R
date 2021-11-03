@@ -427,7 +427,6 @@ ismax <- function(x) {
 #' @param nClust number of clusters
 #' @return a vector of complete cluster names
 #'
-
 makeClusterNames <- function( cNames , nClust )
 {
   if ( is.null( cNames ) )
