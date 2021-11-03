@@ -4,7 +4,7 @@
 #'  cluster assignments and probabilities under the merged cell types.
 #' @param merges A named vector in which the elements give new cluster names and
 #'  the names give old cluster names. OK to omit cell types that aren't being merged.
-#' @param logliks Matrix of loglikelihoods
+#' @param probs Matrix of probabilities
 #' @return A list with two elements:
 #' \enumerate{
 #' \item clust: a vector of cluster assignments
@@ -15,8 +15,11 @@
 #' # define a "merges" input:
 #' merges <- c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
 #'              "B-cells" = "lymphoid")
-mergeCells <- function(merges, logliks) {
+mergeCells <- function(merges, probs) {
 
+  # convert probs to logliks:
+  logliks <- probs2logliks(probs) 
+    
   # check that merges names are all in logliks:
   if (any(!is.element(names(merges), colnames(logliks)))) {
     mismatch <- setdiff(names(merges), colnames(logliks))
