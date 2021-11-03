@@ -67,9 +67,9 @@ insitutype <- function(counts, neg, bg = NULL,
     # subset:
     counts <- counts[, sharedgenes]
     fixed_profiles <- fixed_profiles[sharedgenes, ]
-    if (is.matrix(bg)) {
-      bg <- bg[, sharedgenes]
-    }
+    #if (is.matrix(bg)) {
+    #  bg <- bg[, sharedgenes]
+    #}
     
     # warn about genes being lost:
     if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
@@ -86,6 +86,10 @@ insitutype <- function(counts, neg, bg = NULL,
     s <- Matrix::rowMeans(counts)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
+  }
+  if (length(bg) == 1) {
+    bg <- rep(bg, nrow(counts))
+    names(bg) <- rownames(counts)
   }
   
   #### run purely supervised cell typing if no new clusters are needed -----------------------------
@@ -328,8 +332,7 @@ insitutype <- function(counts, neg, bg = NULL,
   probs <- logliks2probs(logliks)
   out = list(clust = clust,
              probs = round(probs, 3),
-             profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles),
-             logliks = round(logliks, 3))
+             profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles)) #,logliks = round(logliks, 3))
   return(out)
 }
 

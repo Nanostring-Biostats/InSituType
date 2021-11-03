@@ -241,6 +241,9 @@ nbclust <- function(counts, neg, bg = NULL,
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
+  if (length(bg) == 1) {
+    bg = rep(bg, nrow(counts))
+  }
 
   # specify which profiles to leave fixed:
   if (!is.null(fixed_profiles)) {
@@ -384,26 +387,27 @@ nbclust <- function(counts, neg, bg = NULL,
     probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
-  # get loglik of each cell:
-  logliks = unlist(sapply(seq_len(nrow(counts)), function(i) {   #<-------------------- should just assume vector background
-    if (length(bg) == 1) {
-      bgtemp = bg
-    }
-    if (length(bg) == nrow(counts)) {
-      bgtemp = bg[i]
-    }
-    if (is.matrix(bg)) {
-      bgtemp = bg[i, ]
-    }
-    lldist(mat = counts[i, ], x = profiles[, clust[i]], bg = bgtemp, size = nb_size)
-  }))
+  ## get loglik of each cell:
+  #logliks = unlist(sapply(seq_len(nrow(counts)), function(i) {   #<-------------------- should just assume vector background
+  #  #if (length(bg) == 1) {
+  #  #  bgtemp = bg
+  #  #}
+  #  #if (length(bg) == nrow(counts)) {
+  #  #  bgtemp = bg[i]
+  #  #}
+  #  #if (is.matrix(bg)) {
+  #  #  bgtemp = bg[i, ]
+  #  #}
+  #  bgtemp = bg[i]  # <--- now assuming vector-form background
+  #  lldist(mat = counts[i, ], x = profiles[, clust[i]], bg = bgtemp, size = nb_size)
+  #}))
 
 
   out = list(clust = clust,
              probs = probs,
              profiles = sweep(profiles, 2, colSums(profiles), "/") * 1000,
              pct_changed = pct_changed,
-             logliks = logliks,
+             #logliks = logliks,
              updated_reference = updated_reference)
   return(out)
 }

@@ -23,10 +23,9 @@ sup <- insitutype(counts = mini_nsclc$counts,
                   max_iters = 10)   
 
 testthat::test_that("supervised cell typing produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs", "logliks"), names(sup))))
+  expect_true(all(is.element(c("clust", "probs"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.matrix(sup$probs))
-  expect_true(is.matrix(sup$logliks))
 })
 
 
@@ -51,10 +50,9 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     max_iters = 10)   
 
 testthat::test_that("unsupervised cell typing produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs", "logliks", "profiles"), names(unsup))))
+  expect_true(all(is.element(c("clust", "probs", "profiles"), names(unsup))))
   expect_true(is.vector(unsup$clust))
   expect_true(is.matrix(unsup$probs))
-  expect_true(is.matrix(unsup$logliks))
   expect_true(is.matrix(unsup$profiles))
 })
 
@@ -65,7 +63,7 @@ testthat::test_that("unsupervised cell typing produces correct outputs", {
 init_clust <- rep(c("name1", "xxx", "ooo"), each = nrow(mini_nsclc$counts) / 3)[1:nrow(mini_nsclc$counts)]
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
-                    bg = NULL,
+                    bg = 0.03,
                     init_clust = init_clust, 
                     n_clusts = 6,
                     fixed_profiles = NULL,
@@ -84,10 +82,9 @@ unsup <- insitutype(counts = mini_nsclc$counts,
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs", "logliks", "profiles"), names(unsup))))
+  expect_true(all(is.element(c("clust", "probs", "profiles"), names(unsup))))
   expect_true(is.vector(unsup$clust))
   expect_true(is.matrix(unsup$probs))
-  expect_true(is.matrix(unsup$logliks))
   expect_true(is.matrix(unsup$profiles))
   expect_true(all(sort(unique(unsup$clust)) == sort(unique(init_clust))))
 })
