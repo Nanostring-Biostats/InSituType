@@ -38,12 +38,7 @@ mergeCells <- function(merges, probs) {
   newlogliks <- cbind(newlogliks, logliks[, setdiff(colnames(logliks), names(merges)), drop = FALSE])
 
   ## convert to probs:
-  # first rescale (ie recenter on log scale) to avoid rounding errors:
-  newlogliks <- sweep(newlogliks, 1, apply(newlogliks, 1, max), "-")
-  # get on likelihood scale:
-  liks <- exp(newlogliks)
-  # convert to probs
-  probs <- sweep(liks, 1, rowSums(liks), "/")
+  probs <- logliks2probs(newlogliks)
   clust <- colnames(probs)[apply(probs, 1, which.max)]
   names(clust) <- rownames(probs)
   out <- list(clust = clust, probs = round(probs, 2))  # (rounding probs to save memory)
@@ -51,9 +46,18 @@ mergeCells <- function(merges, probs) {
 }
 
 
-
-
 # get a probabilities matrix from a logliks matrix
 probs2logliks <- function(probs) {
   return(log(probs))
+}
+
+
+# get a probabilities matrix from a logliks matrix
+logliks2probs <- function(logliks) {
+  templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
+  # get on likelihood scale:
+  liks <- exp(templogliks)
+  # convert to probs
+  probs <- sweep(liks, 1, rowSums(liks), "/")
+  return(probs)
 }
