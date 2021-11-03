@@ -22,6 +22,7 @@
 #' @param n_phase1 Subsample size for phase 1 (random starts)
 #' @param n_phase2 Subsample size for phase 2 (refining in a larger subset)
 #' @param n_phase3 Subsample size for phase 3 (getting final solution in a very large subset)
+#' @param n_chooseclusternumber Subsample size for choosing an optimal number of clusters
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
 #'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
 #'  switchover is only applicable when a cell has changed the assigned cell type with its
@@ -51,11 +52,12 @@ insitutype <- function(counts, neg, bg = NULL,
                        method = "CEM", 
                        init_clust = NULL, n_starts = 10, n_benchmark_cells = 50000,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
+                       n_chooseclusternumber = 2000,
                        pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40) {
   
-  #### preliminaries ---------------------------dd
+  #### preliminaries ---------------------------
   
-  # align genes in counts and fixed_profiles
+  ### align genes in counts and fixed_profiles
   if (align_genes & !is.null(fixed_profiles)) {
     sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
     lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
@@ -75,16 +77,16 @@ insitutype <- function(counts, neg, bg = NULL,
     if (length(lostgenes) > 50) {
       message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted"))
     }
-    
   }
   
-  # infer bg if not provided: assume background is proportional to the scaling factor s
+  ### infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
     s <- Matrix::rowMeans(counts)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
   
+  ### set up subsetting:
   # get data for subsetting if not already provided
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
   if (!is.null(sketchingdata)) {
@@ -100,7 +102,44 @@ insitutype <- function(counts, neg, bg = NULL,
   n_phase1 = min(n_phase1, nrow(counts))
   n_phase2 = min(n_phase2, nrow(counts))
   n_phase3 = min(n_phase3, nrow(counts))
+  n_chooseclusternumber <- min(n_chooseclusternumber, nrow(counts))
   n_benchmark_cells = min(n_benchmark_cells, nrow(counts))
+  
+  
+  ### choose cluster number if needed: 
+  if (!is.null(init_clust)) {
+    if (is.null(n_clusts)) {
+      message("init_clust was specified; this will overrule the n_clusts argument.")
+    }
+    n_clusts <- setdiff(unique(init_clust), colnames(fixed_profiles))
+  }
+  if (is.null(n_clusts)) {
+    n_clusts <- 1:12 + (is.null(fixed_profiles))
+  }
+  # choose a cluster number if needed
+  if (length(n_clusts) > 0) {
+    
+    message("Selecting optimal number of clusters from a range of ", min(n_clusts), " - ", max(n_clusts))
+    
+    chooseclusternumber_subset <- geoSketch(X = sketchingdata,
+                                     N = n_benchmark_cells,
+                                     alpha=0.1,
+                                     max_iter=200,
+                                     returnBins=FALSE,
+                                     minCellsPerBin = 1,
+                                     seed=NULL)
+    
+    n_clusts <- chooseClusterNumber(
+      counts = counts[chooseclusternumber_subset, ], 
+      neg = neg[chooseclusternumber_subset], 
+      bg = bg[chooseclusternumber_subset], 
+      fixed_profiles = fixed_profiles,
+      init_clust = init_clust, 
+      n_clusts = n_clusts,
+      max_iters = 10,
+      subset_size = length(chooseclusternumber_subset), 
+      align_genes = TRUE, plotresults = FALSE, nb_size = nb_size)$best_clust_number 
+  }
   
   #### phase 1: many random starts in small subsets -----------------------------
   

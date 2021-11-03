@@ -68,6 +68,7 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    n_phase1 = 500,
                    n_phase2 = 1000,
                    n_phase3 = 2000,
+                   n_chooseclusternumber = 100,
                    pct_drop = 1/10000, 
                    min_prob_increase = 0.05,
                    max_iters = 10)   
