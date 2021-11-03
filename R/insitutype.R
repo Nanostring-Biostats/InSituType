@@ -5,6 +5,8 @@
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
+#'  Enter 0 to run purely supervised cell typing from fixed profiles. 
+#'  Enter a range of integers to automatically select the optimal number of clusters. 
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
@@ -45,7 +47,7 @@
 #' }
 #' @export
 insitutype <- function(counts, neg, bg = NULL, 
-                       n_clusts = NULL,
+                       n_clusts,
                        fixed_profiles = NULL, 
                        sketchingdata = NULL,
                        align_genes = TRUE, nb_size = 10, 
@@ -86,7 +88,31 @@ insitutype <- function(counts, neg, bg = NULL,
     bg <- bgmod$fitted
   }
   
-  ### set up subsetting:
+  #### run purely supervised cell typing if no new clusters are needed -----------------------------
+  if (all(n_clusts == 0)) {
+    if (is.null(fixed_profiles)) {
+      stop("Either set n_clusts > 0 to perform unsupervised clustering or supply a fixed_profiles matrix for supervised classification.")
+    }
+    
+    # get logliks
+    logliks <- apply(fixed_profiles, 2, function(ref) {
+      lldist(x = ref,
+             mat = counts,
+             bg = bg,
+             size = nb_size)
+    })
+    # get remaining outputs
+    clust <- colnames(logliks)[apply(logliks, 1, which.max)]
+    probs <- logliks2probs(logliks)
+    out = list(clust = clust,
+               probs = round(probs, 3),
+               profiles = fixed_profiles,
+               logliks = round(logliks, 3))
+    return(out)    
+    break()
+  }
+  
+  #### set up subsetting: ---------------------------------
   # get data for subsetting if not already provided
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
   if (!is.null(sketchingdata)) {
@@ -106,17 +132,17 @@ insitutype <- function(counts, neg, bg = NULL,
   n_benchmark_cells = min(n_benchmark_cells, nrow(counts))
   
   
-  ### choose cluster number if needed: 
+  ### choose cluster number: -----------------------------
   if (!is.null(init_clust)) {
-    if (is.null(n_clusts)) {
+    if (!is.null(n_clusts)) {
       message("init_clust was specified; this will overrule the n_clusts argument.")
     }
-    n_clusts <- setdiff(unique(init_clust), colnames(fixed_profiles))
+    n_clusts <- length(setdiff(unique(init_clust), colnames(fixed_profiles)))
   }
   if (is.null(n_clusts)) {
     n_clusts <- 1:12 + (is.null(fixed_profiles))
   }
-  # choose a cluster number if needed
+  # get optimal numebr of clusters
   if (length(n_clusts) > 0) {
     
     message("Selecting optimal number of clusters from a range of ", min(n_clusts), " - ", max(n_clusts))
@@ -299,17 +325,20 @@ insitutype <- function(counts, neg, bg = NULL,
            size = nb_size)
   })
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
-  
-  templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
-  # get on likelihood scale:
-  liks <- exp(templogliks)
-  # convert to probs
-  probs <- sweep(liks, 1, rowSums(liks), "/")
-  
-  
+  probs <- logliks2probs(logliks)
   out = list(clust = clust,
              probs = round(probs, 3),
              profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles),
              logliks = round(logliks, 3))
   return(out)
+}
+
+# get a probabilities matrix from a logliks matrix
+logliks2probs <- function(logliks) {
+  templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
+  # get on likelihood scale:
+  liks <- exp(templogliks)
+  # convert to probs
+  probs <- sweep(liks, 1, rowSums(liks), "/")
+  return(probs)
 }
