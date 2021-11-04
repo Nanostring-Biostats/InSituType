@@ -229,7 +229,7 @@ Estep_size <- function(counts, clust, bg) {
 #' }
 nbclust <- function(counts, neg, bg = NULL, 
                     init_free_profiles = NULL, init_clust = NULL, n_clusts = NULL,
-                    fixed_profiles = NULL, nb_size = 10
+                    fixed_profiles = NULL, nb_size = 10,
                     method = "CEM", 
                     updated_reference = NULL, pct_drop = 1/10000,   
                     min_prob_increase = 0.05, max_iters = 40) {
