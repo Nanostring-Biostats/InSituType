@@ -2,20 +2,22 @@
 % Please edit documentation in R/cellEMClust.R
 \name{nbclust}
 \alias{nbclust}
-\title{Cluster via EM alogorithm based on cell logliks}
+\title{Cluster via EM algorithm based on cell logliks}
 \usage{
 nbclust(
   counts,
   neg,
   bg = NULL,
+  init_free_profiles = NULL,
   init_clust = NULL,
   n_clusts = NULL,
   fixed_profiles = NULL,
   nb_size = 10,
-  n_iters = 20,
   method = "CEM",
-  shrinkage = 0.8,
-  updated_reference = NULL
+  updated_reference = NULL,
+  pct_drop = 1/10000,
+  min_prob_increase = 0.05,
+  max_iters = 40
 )
 }
 \arguments{
@@ -24,6 +26,11 @@ nbclust(
 \item{neg}{Vector of mean negprobe counts per cell}
 
 \item{bg}{Expected background}
+
+\item{init_free_profiles}{Matrix of cluster profiles under which to begin iterations.
+Should NOT contain the fixed_profiles.
+If NULL, initial assignments will be automatically inferred, using init_clust 
+if available, and using random clusters if not.}
 
 \item{init_clust}{Vector of initial cluster assignments.
 If NULL, initial assignments will be automatically inferred.}
@@ -36,19 +43,26 @@ Colnames must all be included in the init_clust variable.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
-\item{n_iters}{Numer of iterations}
-
 \item{method}{Whether to run a SEM algorithm (points given a probability
 of being in each cluster) or a classic EM algorithm (all points wholly
 assigned to one cluster).}
 
-\item{shrinkage}{Fraction by which to shrink the average profiles towards
-the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.}
-
 \item{updated_reference}{Rescaled, possibly shrunken version of fixed_profiles.
- This argument is intended to be used by cellEMclust, not by the user.
+This argument is intended to be used by cellEMclust, not by the user.}
+
+\item{pct_drop}{the decrease in percentage of cell types with a valid switchover to 
+another cell type compared to the last iteration. Default value: 1/10000. A valid 
+switchover is only applicable when a cell has changed the assigned cell type with its
+highest cell type probability increased by min_prob_increase.}
+
+\item{min_prob_increase}{the threshold of probability used to determine a valid cell 
+type switchover}
+
+\item{max_iters}{Maximum number of iterations
 
  @importFrom stats lm}
+
+\item{Numer}{of iterations}
 }
 \value{
 A list, with the following elements:

@@ -4,7 +4,7 @@
 #'  cluster assignments and probabilities under the merged cell types.
 #' @param merges A named vector in which the elements give new cluster names and
 #'  the names give old cluster names. OK to omit cell types that aren't being merged.
-#' @param logliks Matrix of loglikelihoods
+#' @param probs Matrix of probabilities
 #' @return A list with two elements:
 #' \enumerate{
 #' \item clust: a vector of cluster assignments
@@ -15,8 +15,11 @@
 #' # define a "merges" input:
 #' merges <- c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
 #'              "B-cells" = "lymphoid")
-mergeCells <- function(merges, logliks) {
+mergeCells <- function(merges, probs) {
 
+  # convert probs to logliks:
+  logliks <- probs2logliks(probs) 
+    
   # check that merges names are all in logliks:
   if (any(!is.element(names(merges), colnames(logliks)))) {
     mismatch <- setdiff(names(merges), colnames(logliks))
@@ -35,12 +38,7 @@ mergeCells <- function(merges, logliks) {
   newlogliks <- cbind(newlogliks, logliks[, setdiff(colnames(logliks), names(merges)), drop = FALSE])
 
   ## convert to probs:
-  # first rescale (ie recenter on log scale) to avoid rounding errors:
-  newlogliks <- sweep(newlogliks, 1, apply(newlogliks, 1, max), "-")
-  # get on likelihood scale:
-  liks <- exp(newlogliks)
-  # convert to probs
-  probs <- sweep(liks, 1, rowSums(liks), "/")
+  probs <- logliks2probs(newlogliks)
   clust <- colnames(probs)[apply(probs, 1, which.max)]
   names(clust) <- rownames(probs)
   out <- list(clust = clust, probs = round(probs, 2))  # (rounding probs to save memory)
@@ -48,4 +46,18 @@ mergeCells <- function(merges, logliks) {
 }
 
 
+# get a probabilities matrix from a logliks matrix
+probs2logliks <- function(probs) {
+  return(log(probs))
+}
 
+
+# get a probabilities matrix from a logliks matrix
+logliks2probs <- function(logliks) {
+  templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
+  # get on likelihood scale:
+  liks <- exp(templogliks)
+  # convert to probs
+  probs <- sweep(liks, 1, rowSums(liks), "/")
+  return(probs)
+}

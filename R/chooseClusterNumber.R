@@ -10,7 +10,7 @@
 #'  Colnames must all be included in the init_clust variable.
 #' @param init_clust Vector of initial cluster assignments.
 #' @param n_clusts Vector giving a range of cluster numbers to consider.
-#' @param n_iters Number of iterations in each clustering attempt. Recommended to choose
+#' @param max_iters Number of iterations in each clustering attempt. Recommended to choose
 #'  a smaller number for a quicker, approximate clustering.
 #' @param subset_size Number of cells to include in clustering.
 #' @param align_genes Logical, for whether to align the genes in fixed_profiles with the colnames in count
@@ -28,8 +28,8 @@
 #' \itemize{
 #'  \item
 #' }
-chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,init_clust = NULL, n_clusts = 6:20,
-                                n_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, ...) {
+chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,init_clust = NULL, n_clusts = 2:12,
+                                max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, ...) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
@@ -71,7 +71,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,in
   # cluster under each iteration, and save loglik:
   totallogliks <- sapply(n_clusts, function(x) {
     # run nbclust:
-    message(sprintf("Fitting the model for n_clust = %s", x))
+    message(sprintf("Clustering with n_clust = %s", x))
     tempclust <- nbclust(
       counts = counts, neg = neg, bg = bg,
       n_clusts = x, fixed_profiles = fixed_profiles,

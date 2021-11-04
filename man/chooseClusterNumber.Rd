@@ -10,8 +10,8 @@ chooseClusterNumber(
   bg = NULL,
   fixed_profiles = NULL,
   init_clust = NULL,
-  n_clusts = 6:20,
-  n_iters = 10,
+  n_clusts = 2:12,
+  max_iters = 10,
   subset_size = 1000,
   align_genes = TRUE,
   plotresults = FALSE,
@@ -34,7 +34,7 @@ Colnames must all be included in the init_clust variable.}
 
 \item{n_clusts}{Vector giving a range of cluster numbers to consider.}
 
-\item{n_iters}{Number of iterations in each clustering attempt. Recommended to choose
+\item{max_iters}{Number of iterations in each clustering attempt. Recommended to choose
 a smaller number for a quicker, approximate clustering.}
 
 \item{subset_size}{Number of cells to include in clustering.}
