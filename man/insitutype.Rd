@@ -8,7 +8,7 @@ insitutype(
   counts,
   neg,
   bg = NULL,
-  n_clusts = NULL,
+  n_clusts,
   fixed_profiles = NULL,
   sketchingdata = NULL,
   align_genes = TRUE,
@@ -20,8 +20,10 @@ insitutype(
   n_phase1 = 5000,
   n_phase2 = 20000,
   n_phase3 = 1e+05,
+  n_chooseclusternumber = 2000,
   pct_drop = 1/10000,
-  min_prob_increase = 0.05
+  min_prob_increase = 0.05,
+  max_iters = 40
 )
 }
 \arguments{
@@ -31,7 +33,9 @@ insitutype(
 
 \item{bg}{Expected background}
 
-\item{n_clusts}{Number of clusters, in addition to any pre-specified cell types.}
+\item{n_clusts}{Number of clusters, in addition to any pre-specified cell types.
+Enter 0 to run purely supervised cell typing from fixed profiles. 
+Enter a range of integers to automatically select the optimal number of clusters.}
 
 \item{fixed_profiles}{Matrix of expression profiles of pre-defined clusters,
 e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
@@ -61,6 +65,8 @@ If NULL, initial assignments will be automatically inferred.}
 
 \item{n_phase3}{Subsample size for phase 3 (getting final solution in a very large subset)}
 
+\item{n_chooseclusternumber}{Subsample size for choosing an optimal number of clusters}
+
 \item{pct_drop}{the decrease in percentage of cell types with a valid switchover to 
 another cell type compared to the last iteration. Default value: 1/10000. A valid 
 switchover is only applicable when a cell has changed the assigned cell type with its
@@ -68,6 +74,8 @@ highest cell type probability increased by min_prob_increase.}
 
 \item{min_prob_increase}{the threshold of probability used to determine a valid cell 
 type switchover}
+
+\item{max_iters}{Maximum number of iterations.}
 }
 \value{
 A list, with the following elements:

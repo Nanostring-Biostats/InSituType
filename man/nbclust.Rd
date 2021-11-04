@@ -13,12 +13,11 @@ nbclust(
   n_clusts = NULL,
   fixed_profiles = NULL,
   nb_size = 10,
-  n_iters = 20,
   method = "CEM",
-  shrinkage = 0.8,
   updated_reference = NULL,
   pct_drop = 1/10000,
-  min_prob_increase = 0.05
+  min_prob_increase = 0.05,
+  max_iters = 40
 )
 }
 \arguments{
@@ -44,14 +43,9 @@ Colnames must all be included in the init_clust variable.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
-\item{n_iters}{Numer of iterations}
-
 \item{method}{Whether to run a SEM algorithm (points given a probability
 of being in each cluster) or a classic EM algorithm (all points wholly
 assigned to one cluster).}
-
-\item{shrinkage}{Fraction by which to shrink the average profiles towards
-the fixed profiles. 1 = keep the fixed profile; 0 = don't shrink the mean profile.}
 
 \item{updated_reference}{Rescaled, possibly shrunken version of fixed_profiles.
 This argument is intended to be used by cellEMclust, not by the user.}
@@ -62,9 +56,13 @@ switchover is only applicable when a cell has changed the assigned cell type wit
 highest cell type probability increased by min_prob_increase.}
 
 \item{min_prob_increase}{the threshold of probability used to determine a valid cell 
- type switchover
+type switchover}
+
+\item{max_iters}{Maximum number of iterations
 
  @importFrom stats lm}
+
+\item{Numer}{of iterations}
 }
 \value{
 A list, with the following elements:

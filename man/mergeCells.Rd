@@ -4,13 +4,13 @@
 \alias{mergeCells}
 \title{Merge cell types in a clustering result}
 \usage{
-mergeCells(merges, logliks)
+mergeCells(merges, probs)
 }
 \arguments{
 \item{merges}{A named vector in which the elements give new cluster names and
 the names give old cluster names. OK to omit cell types that aren't being merged.}
 
-\item{logliks}{Matrix of loglikelihoods}
+\item{probs}{Matrix of probabilities}
 }
 \value{
 A list with two elements:
