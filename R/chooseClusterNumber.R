@@ -32,11 +32,12 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,in
                                 max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, ...) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
+  s <- rowSums(counts)
+  
   if (is.null(bg)) {
-    s <- rowSums(counts)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
-  }
+  } 
 
   # align genes in counts and fixed_profiles
   if (align_genes & !is.null(fixed_profiles)) {
