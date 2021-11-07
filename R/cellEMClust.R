@@ -236,8 +236,8 @@ nbclust <- function(counts, neg, bg = NULL,
 
   #### preliminaries -----------------------------------
   # infer bg if not provided: assume background is proportional to the scaling factor s
+  s <- rowSums(counts)
   if (is.null(bg)) {
-    s <- rowSums(counts)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
   }
@@ -318,7 +318,7 @@ nbclust <- function(counts, neg, bg = NULL,
 
     # E-step: update profiles:
     if (method == "CEM") {
-      tempprobs = probs[s, free_profile_names, drop = FALSE]
+      tempprobs = probs[, free_profile_names, drop = FALSE]
       # update the new cluster profiles:
       if (n_clusts != 0){
         free_profiles <- Estep(counts = counts,

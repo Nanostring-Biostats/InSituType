@@ -75,8 +75,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,in
     message(sprintf("Clustering with n_clust = %s", x))
     tempclust <- nbclust(
       counts = counts, neg = neg, bg = bg,
-      n_clusts = x, fixed_profiles = fixed_profiles,
-      n_iters = n_iters)  # ,...
+      n_clusts = x, fixed_profiles = fixed_profiles)  # ,...
 
     # get the loglik of the clustering result:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {
