@@ -32,11 +32,12 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,in
                                 max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, ...) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
+  s <- rowSums(counts)
+  
   if (is.null(bg)) {
-    s <- rowSums(counts)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
-  }
+  } 
 
   # align genes in counts and fixed_profiles
   if (align_genes & !is.null(fixed_profiles)) {
@@ -74,8 +75,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,in
     message(sprintf("Clustering with n_clust = %s", x))
     tempclust <- nbclust(
       counts = counts, neg = neg, bg = bg,
-      n_clusts = x, fixed_profiles = fixed_profiles,
-      n_iters = n_iters)  # ,...
+      n_clusts = x, fixed_profiles = fixed_profiles)  # ,...
 
     # get the loglik of the clustering result:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {
