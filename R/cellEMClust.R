@@ -66,20 +66,24 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param bg Expected background
 #' @param size NB size parameter
 #' @param digits Round the output to this many digits (saves memory)
+#' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
-Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
+Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
     lldist(x = x, mat = counts, bg = bg, size = size)
   })
-  # first rescale (ie recenter on log scale) to avoid rounding errors:
-  logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
-  # get on likelihood scale:
-  liks <- exp( logliks )
-  # convert to probs
-  probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
-
-  return(round(probs, digits))
+  if (return_loglik) {
+    return(round(logliks, digits))
+  } else {
+    # first rescale (ie recenter on log scale) to avoid rounding errors:
+    logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
+    # get on likelihood scale:
+    liks <- exp( logliks )
+    # convert to probs
+    probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
+    return(round(probs, digits))
+  }
 }
 
 

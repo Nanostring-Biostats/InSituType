@@ -147,7 +147,7 @@ insitutype <- function(counts, neg, bg = NULL,
     n_clusts <- 1:12 + (is.null(fixed_profiles))
   }
   # get optimal numebr of clusters
-  if (length(n_clusts) > 0) {
+  if (length(n_clusts) > 1) {
     
     message("Selecting optimal number of clusters from a range of ", min(n_clusts), " - ", max(n_clusts))
     
@@ -211,12 +211,25 @@ insitutype <- function(counts, neg, bg = NULL,
     # run nbclust from each of the random subsets, and save the profiles:
     profiles_from_random_starts <- list()
     for (i in 1:n_starts) {
+      
+      tempinit <- NULL
+      if (!is.null(fixed_profiles)) {
+        tempinit <- choose_init_clust(counts = counts[random_start_subsets[[i]], ], 
+                                      fixed_profiles = fixed_profiles, 
+                                      bg = bg[random_start_subsets[[i]]], 
+                                      size = nb_size, 
+                                      n_clusts = n_clusts, 
+                                      thresh = 0.9) 
+        
+      }
+
+      
       profiles_from_random_starts[[i]] <- nbclust(
         counts = counts[random_start_subsets[[i]], ], 
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
         init_free_profiles = NULL,
-        init_clust = NULL, 
+        init_clust = tempinit, 
         n_clusts = n_clusts,
         fixed_profiles = fixed_profiles, 
         nb_size = nb_size,
