@@ -303,12 +303,6 @@ nbclust <- function(counts, neg, bg = NULL,
   
   # append free and fixed profiles:
   profiles <- cbind(updated_reference, free_profiles)
-  #if (n_clusts > 0 ){
-  #  profiles <- cbind(updated_reference, free_profiles)
-  #} else {
-  #  profiles <- updated_reference
-  #}
-  
   
   #### run EM algorithm iterations: ----------------------------------
   pct_changed = c()
@@ -319,6 +313,11 @@ nbclust <- function(counts, neg, bg = NULL,
                    means = profiles,
                    bg = bg,
                    size = nb_size)
+    # override assignments for anchor cells
+    for (cell in setdiff(unique(anchors), NA)) {
+      probs[(anchors == cell) & !is.na(anchors), cell] <- rep(1, sum((anchors == cell) & !is.na(anchors)))
+      probs[(anchors == cell) & !is.na(anchors), setdiff(colnames(probs), cell)] <- 0
+    }
 
     # E-step: update profiles:
     if (method == "CEM") {

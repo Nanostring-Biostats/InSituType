@@ -208,7 +208,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                      max_iter=200,
                                      returnBins=FALSE,
                                      minCellsPerBin = 1,
-                                     seed=NULL)
+                        i             seed=NULL)
     # convert IDs to row indices:
     benchmarking_subset <- match(benchmarking_subset, rownames(counts))
     
@@ -224,6 +224,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                       size = nb_size, 
                                       n_clusts = n_clusts, 
                                       thresh = 0.9) 
+        tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
         
       }
 
@@ -232,10 +233,11 @@ insitutype <- function(counts, neg, bg = NULL,
         counts = counts[random_start_subsets[[i]], ], 
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
+        anchors = anchors[random_start_subsets[[i]]], 
         init_free_profiles = NULL,
         init_clust = tempinit, 
         n_clusts = n_clusts,
-        fixed_profiles = fixed_profiles, 
+        fixed_profiles = NULL, 
         nb_size = nb_size,
         method = method, 
         updated_reference = NULL,
