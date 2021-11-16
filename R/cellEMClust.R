@@ -199,6 +199,9 @@ Estep_size <- function(counts, clust, bg) {
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
+#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
+#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+#'  for cells to be held constant throughout iterations. 
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
@@ -236,7 +239,7 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     fixed_profiles = NULL, nb_size = 10,
                     method = "CEM", 
                     updated_reference = NULL, pct_drop = 1/10000,   
-                    min_prob_increase = 0.05, max_iters = 40) {
+                    min_prob_increase = 0.05, max_iters = 40, logresults = FALSE) {
 
   #### preliminaries -----------------------------------
   # infer bg if not provided: assume background is proportional to the scaling factor s
@@ -261,6 +264,7 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     updated_reference <- fixed_profiles
   }
 
+  clusterlog = NULL
 
   #### get initial profiles: ----------------------------------
 
@@ -306,6 +310,9 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
   
   #### run EM algorithm iterations: ----------------------------------
   pct_changed = c()
+  if (logresults) {
+    clusterlog <- init_clust
+  }
   for (iter in seq_len(max_iters)) {
     message(paste0("iter ", iter))
     # M-step: get cell * cluster probs:
@@ -316,9 +323,15 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     # override assignments for anchor cells
     if (!is.null(anchors)) {
       for (cell in setdiff(unique(anchors), NA)) {
-        probs[(anchors == cell) & !is.na(anchors), cell] <- rep(1, sum((anchors == cell) & !is.na(anchors)))
-        probs[(anchors == cell) & !is.na(anchors), setdiff(colnames(probs), cell)] <- 0
+        #print(cell)
+        #print(colnames(probs))
+        temprows <- which((anchors == cell) & !is.na(anchors))
+        probs[temprows, cell] <- 1 #rep(1, sum((anchors == cell) & !is.na(anchors)))
+        probs[temprows, setdiff(colnames(probs), cell)] <- 0
       }
+    }
+    if (logresults) {
+      clusterlog <- cbind(clusterlog, colnames(probs)[apply(probs, 1, which.max)])
     }
 
     # E-step: update profiles:
@@ -413,7 +426,8 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
              profiles = sweep(profiles, 2, colSums(profiles), "/") * 1000,
              pct_changed = pct_changed,
              #logliks = logliks,
-             updated_reference = updated_reference)
+             updated_reference = updated_reference,
+             clusterlog = clusterlog)
   return(out)
 }
 

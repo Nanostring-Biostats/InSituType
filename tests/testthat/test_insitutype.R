@@ -20,7 +20,8 @@ sup <- insitutype(counts = mini_nsclc$counts,
                   n_phase3 = 2000,
                   pct_drop = 1/10000, 
                   min_prob_increase = 0.05,
-                  max_iters = 10)   
+                  max_iters = 10,
+                  n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
 
 testthat::test_that("supervised cell typing produces correct outputs", {
   expect_true(all(is.element(c("clust", "probs"), names(sup))))

@@ -5,6 +5,9 @@
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
+#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
+#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+#'  for cells to be held constant throughout iterations. 
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
@@ -28,7 +31,7 @@
 #' \itemize{
 #'  \item
 #' }
-chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,init_clust = NULL, n_clusts = 2:12,
+chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_profiles = NULL,init_clust = NULL, n_clusts = 2:12,
                                 max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, ...) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
@@ -71,11 +74,34 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL,in
 
   # cluster under each iteration, and save loglik:
   totallogliks <- sapply(n_clusts, function(x) {
+    
+    # get init clust:
+    tempinit <- NULL
+    if (!is.null(fixed_profiles)) {
+      tempinit <- choose_init_clust(counts = counts[chooseclusternumber_subset, ], 
+                                    fixed_profiles = fixed_profiles, 
+                                    bg = bg[chooseclusternumber_subset], 
+                                    size = nb_size, 
+                                    n_clusts = x, 
+                                    thresh = 0.9) 
+      tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
+    }
+    
     # run nbclust:
     message(sprintf("Clustering with n_clust = %s", x))
     tempclust <- nbclust(
-      counts = counts, neg = neg, bg = bg,
-      n_clusts = x, fixed_profiles = fixed_profiles)  # ,...
+      counts = counts, 
+      neg = neg, 
+      bg = bg, 
+      anchors = anchors,
+      n_clusts = x, 
+      fixed_profiles = NULL, 
+      init_clust = tempinit,
+      method = method, 
+      updated_reference = NULL,
+      nb_size = nb_size,
+      pct_drop = pct_drop,
+      min_prob_increase = min_prob_increase)  
 
     # get the loglik of the clustering result:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {

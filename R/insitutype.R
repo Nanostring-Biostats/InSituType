@@ -4,6 +4,9 @@
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
+#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
+#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+#'  for cells to be held constant throughout iterations. 
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #'  Enter 0 to run purely supervised cell typing from fixed profiles. 
 #'  Enter a range of integers to automatically select the optimal number of clusters. 
@@ -73,6 +76,7 @@ insitutype <- function(counts, neg, bg = NULL,
     s <- Matrix::rowMeans(counts)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
+    names(bg) = rownames(counts)
   }
   if (length(bg) == 1) {
     bg <- rep(bg, nrow(counts))
@@ -111,7 +115,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                  neg = NULL, 
                                  bg = bg, 
                                  profiles = fixed_profiles, 
-                                 size = size, 
+                                 size = nb_size, 
                                  n_cells = n_anchor_cells, 
                                  min_cosine = min_anchor_cosine, 
                                  min_scaled_llr = min_anchor_llr) 
@@ -171,8 +175,9 @@ insitutype <- function(counts, neg, bg = NULL,
       counts = counts[chooseclusternumber_subset, ], 
       neg = neg[chooseclusternumber_subset], 
       bg = bg[chooseclusternumber_subset], 
+      anchors = anchors[chooseclusternumber_subset], 
       fixed_profiles = fixed_profiles,
-      init_clust = init_clust, 
+      init_clust = tempinit, 
       n_clusts = n_clusts,
       max_iters = 10,
       subset_size = length(chooseclusternumber_subset), 
@@ -229,7 +234,6 @@ insitutype <- function(counts, neg, bg = NULL,
                                       n_clusts = n_clusts, 
                                       thresh = 0.9) 
         tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
-        
       }
 
       
