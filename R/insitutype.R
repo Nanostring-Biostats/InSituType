@@ -32,7 +32,9 @@
 #' @param min_prob_increase the threshold of probability used to determine a valid cell 
 #'  type switchover
 #' @param max_iters Maximum number of iterations.
-#'  
+#' @param n_anchor_cells For semi-supervised learning. Maximum number of anchor cells to use for each cell type. 
+#' @param min_anchor_cosine For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.
+#' @param min_anchor_llr For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
 #' @importFrom Matrix colSums
@@ -55,31 +57,11 @@ insitutype <- function(counts, neg, bg = NULL,
                        init_clust = NULL, n_starts = 10, n_benchmark_cells = 50000,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        n_chooseclusternumber = 2000,
-                       pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40) {
+                       pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
+                       n_anchor_cells = 500, min_anchor_cosine = 0.3, min_scaled_llr = 0.01) {
   
   #### preliminaries ---------------------------
   
-  ### align genes in counts and fixed_profiles
-  if (align_genes & !is.null(fixed_profiles)) {
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
-    
-    # subset:
-    counts <- counts[, sharedgenes]
-    fixed_profiles <- fixed_profiles[sharedgenes, ]
-    #if (is.matrix(bg)) {
-    #  bg <- bg[, sharedgenes]
-    #}
-    
-    # warn about genes being lost:
-    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted: ",
-                     paste0(lostgenes, collapse = ",")))
-    }
-    if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted"))
-    }
-  }
   
   ### infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
@@ -119,10 +101,22 @@ insitutype <- function(counts, neg, bg = NULL,
   
   #### select anchor cells if not provided: ------------------------------
   if (is.null(anchors)) {
-    anchors <- find_anchor_cells(counts = counts,
-                                 )
+    message("automatically selecting anchor cells with the best fits to fixed profiles")
+    anchors <- find_anchor_cells(counts = counts, 
+                                 neg = NULL, 
+                                 bg = bg, 
+                                 profiles = fixed_profiles, 
+                                 size = size, 
+                                 n_cells = n_anchor_cells, 
+                                 min_cosine = min_anchor_cosine, 
+                                 min_scaled_llr = 0.01) 
   }
-  
+  # test anchors are valid:
+  if (length(anchors) != nrow(counts)) {
+    stop("anchors must have length equal to the number of cells (row) in counts")
+  }
+  names(anchors) <- rownames(counts)
+  anchorcellnames <- names(anchors)[!is.na(anchors)]
   
   #### set up subsetting: ---------------------------------
   # get data for subsetting if not already provided
@@ -166,6 +160,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                      returnBins=FALSE,
                                      minCellsPerBin = 1,
                                      seed=NULL)
+    chooseclusternumber_subset <- unique(c(chooseclusternumber_subset, anchorcellnames))
     
     n_clusts <- chooseClusterNumber(
       counts = counts[chooseclusternumber_subset, ], 

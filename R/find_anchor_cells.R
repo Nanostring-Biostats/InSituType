@@ -30,19 +30,39 @@ find_anchor_cells(counts, neg = NULL, bg = NULL, profiles, size = 10, n_cells = 
     names(bg) <- rownames(counts)
   }
   
-  # get logliks
-  sharedgenes <- intersect(colnames(counts), rownames(profiles))
-  logliks <- Mstep(counts = counts[, sharedgenes], 
-                   means = profiles[sharedgenes, ],
+  ### align genes in counts and fixed_profiles
+  if (align_genes & !is.null(fixed_profiles)) {
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    
+    # subset:
+    counts <- counts[, sharedgenes]
+    profiles <- profiles[sharedgenes, ]
+    
+    # warn about genes being lost:
+    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
+                     paste0(lostgenes, collapse = ",")))
+    }
+    if (length(lostgenes) > 50) {
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
+    }
+  }
+  
+  # get cosine distances:
+  cos <- matrix(NA, nrow(counts), ncol(profiles),
+                dimnames = list(rownames(counts), colnames(profiles)))
+  cos <- sapply(colnames(profiles), function(cell) {
+    cos[, cell] <- apply(counts, 1, cosine, profiles[, cell])
+  })
+  
+  # get logliks  
+  logliks <- Mstep(counts = counts, 
+                   means = profiles,
                    bg = bg, 
                    size = size, 
                    digits = 2, return_loglik = T) 
-  
-  # get cosine distances:
-  cos <- logliks * NA
-  cos <- sapply(colnames(profiles), function(cell) {
-    cos[, cell] <- apply(counts[, sharedgenes], 1, cosine, ioprofiles[sharedgenes, cell])
-  })
+  # note: the above could be greatly sped up by only computing logliks when the cosine distance is high
   
   
   # choose anchors for each cell type:
