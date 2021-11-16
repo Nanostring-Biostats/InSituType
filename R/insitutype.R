@@ -116,6 +116,14 @@ insitutype <- function(counts, neg, bg = NULL,
     break()
   }
   
+  
+  #### select anchor cells if not provided: ------------------------------
+  if (is.null(anchors)) {
+    anchors <- find_anchor_cells(counts = counts,
+                                 )
+  }
+  
+  
   #### set up subsetting: ---------------------------------
   # get data for subsetting if not already provided
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
