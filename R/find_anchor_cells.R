@@ -14,7 +14,7 @@
 #' @return A vector holding anchor cell assignments (or NA) for each cell in the counts matrix
 #' @importFrom lsa cosine
 #' @export
-find_anchor_cells(counts, neg = NULL, bg = NULL, profiles, size = 10, n_cells = 500, min_cosine = 0.3, min_scaled_llr = 0.01) {
+find_anchor_cells <- function(counts, neg = NULL, bg = NULL, profiles, size = 10, n_cells = 500, min_cosine = 0.3, min_scaled_llr = 0.01) {
   
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg) & is.null(neg)) {

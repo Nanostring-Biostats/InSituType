@@ -58,10 +58,11 @@ insitutype <- function(counts, neg, bg = NULL,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        n_chooseclusternumber = 2000,
                        pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
-                       n_anchor_cells = 500, min_anchor_cosine = 0.3, min_scaled_llr = 0.01) {
+                       n_anchor_cells = 500, min_anchor_cosine = 0.3, min_anchor_llr = 0.01) {
   
   #### preliminaries ---------------------------
   
+  # (note: no longer aligning counts matrix to fixed profiles except within the find_anchor_cells function.)
   
   ### infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
@@ -109,7 +110,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                  size = size, 
                                  n_cells = n_anchor_cells, 
                                  min_cosine = min_anchor_cosine, 
-                                 min_scaled_llr = 0.01) 
+                                 min_scaled_llr = min_anchor_llr) 
   }
   # test anchors are valid:
   if (length(anchors) != nrow(counts)) {

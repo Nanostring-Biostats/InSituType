@@ -85,7 +85,7 @@ geoSketch <- function(X, N,
   # Iterate the number of bins each feature is broken into until the total number of bins containing cells is larger than `(1-alpha)*N`
   iter <- 1 # Set starting iteration
   while (iter <= max_iter){ # Break loop when the number of iterations surpasses the defined maximum
-    message(paste0("Iteration Number ", as.character(iter))) # Report the current iteration the loop is on
+    #message(paste0("Iteration Number ", as.character(iter))) # Report the current iteration the loop is on
     
     bins <- seq(0, 1, length=2+iter) # Define the bin ranges based on the current iteration
     Xbins <- apply(X, 2, function(Y) .bincode(Y, bins, TRUE, TRUE)) # Bin cells across each feature using the given bin ranges
