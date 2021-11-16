@@ -231,7 +231,7 @@ Estep_size <- function(counts, clust, bg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
-nbclust <- function(counts, neg, bg = NULL, 
+nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     init_free_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     fixed_profiles = NULL, nb_size = 10,
                     method = "CEM", 
@@ -314,9 +314,11 @@ nbclust <- function(counts, neg, bg = NULL,
                    bg = bg,
                    size = nb_size)
     # override assignments for anchor cells
-    for (cell in setdiff(unique(anchors), NA)) {
-      probs[(anchors == cell) & !is.na(anchors), cell] <- rep(1, sum((anchors == cell) & !is.na(anchors)))
-      probs[(anchors == cell) & !is.na(anchors), setdiff(colnames(probs), cell)] <- 0
+    if (!is.null(anchors)) {
+      for (cell in setdiff(unique(anchors), NA)) {
+        probs[(anchors == cell) & !is.na(anchors), cell] <- rep(1, sum((anchors == cell) & !is.na(anchors)))
+        probs[(anchors == cell) & !is.na(anchors), setdiff(colnames(probs), cell)] <- 0
+      }
     }
 
     # E-step: update profiles:

@@ -13,6 +13,15 @@
 #' @return A vector of initial cluster assignments
 choose_init_clust <- function(counts, fixed_profiles, bg, size, n_clusts, thresh = 0.9) {#<------------------------- consider thresh carefully
   
+  if (align_genes & !is.null(fixed_profiles)) {
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    
+    # subset:
+    counts <- counts[, sharedgenes]
+    fixed_profiles <- fixed_profiles[sharedgenes, ]
+    
+  }
   # get logliks under all fixed profiles
   logliks <- Mstep(counts = counts, 
                    means = fixed_profiles, 

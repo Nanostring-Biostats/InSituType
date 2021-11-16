@@ -31,9 +31,9 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, profiles, size = 10
   }
   
   ### align genes in counts and fixed_profiles
-  if (align_genes & !is.null(fixed_profiles)) {
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+  if (align_genes & !is.null(profiles)) {
+    sharedgenes <- intersect(rownames(profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(profiles))
     
     # subset:
     counts <- counts[, sharedgenes]

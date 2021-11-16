@@ -62,6 +62,10 @@ insitutype <- function(counts, neg, bg = NULL,
   
   #### preliminaries ---------------------------
   
+  if (any(rowSums(counts) == 0)) {
+    stop("Cells with 0 counts were found. Please remove.")
+  }
+  
   # (note: no longer aligning counts matrix to fixed profiles except within the find_anchor_cells function.)
   
   ### infer bg if not provided: assume background is proportional to the scaling factor s
@@ -208,7 +212,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                      max_iter=200,
                                      returnBins=FALSE,
                                      minCellsPerBin = 1,
-                        i             seed=NULL)
+                                     seed=NULL)
     # convert IDs to row indices:
     benchmarking_subset <- match(benchmarking_subset, rownames(counts))
     
@@ -274,6 +278,8 @@ insitutype <- function(counts, neg, bg = NULL,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
                              seed=NULL)
+  phase2_sample <- unique(c(phase2_sample, anchorcellnames))
+  
   # convert IDs to row indices:
   phase2_sample <- match(phase2_sample, rownames(counts))
   
@@ -288,10 +294,11 @@ insitutype <- function(counts, neg, bg = NULL,
   clust2 <- nbclust(counts = counts[phase2_sample, ], 
                     neg = neg[phase2_sample], 
                     bg = bg[phase2_sample],
-                    init_free_profiles = tempprofiles[, setdiff(colnames(tempprofiles), colnames(fixed_profiles))],
+                    anchors = anchors[phase2_sample],
+                    init_free_profiles = NULL, #tempprofiles[, setdiff(colnames(tempprofiles), colnames(fixed_profiles))],
                     init_clust = temp_init_clust, 
                     n_clusts = n_clusts,
-                    fixed_profiles = fixed_profiles, 
+                    fixed_profiles = NULL, 
                     nb_size = nb_size,
                     method = method, 
                     updated_reference = NULL,   #<---- for now, decision is to not use updated_reference from phase1 due to instability arising from small n.
@@ -309,30 +316,24 @@ insitutype <- function(counts, neg, bg = NULL,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
                              seed=NULL)
+  phase3_sample <- unique(c(phase3_sample, anchorcellnames))
+  
   # convert IDs to row indices:
   phase3_sample <- match(phase3_sample, rownames(counts))
   
-  ## get initial cell type assignments:
-  #templogliks <- apply(tempprofiles, 2, function(ref) {
-  #  lldist(x = ref,
-  #         mat = counts[phase3_sample, ],
-  #         bg = bg[phase3_sample],
-  #         size = nb_size)
-  #})
-  #temp_init_clust <- colnames(templogliks)[apply(templogliks, 1, which.max)]
-  #rm(templogliks)
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
   clust3 <- nbclust(counts = counts[phase3_sample, ], 
                     neg = neg[phase3_sample], 
                     bg = bg[phase3_sample],
-                    init_free_profiles = tempprofiles[, setdiff(colnames(tempprofiles), colnames(fixed_profiles))],
+                    anchors = anchors[phase3_sample],
+                    init_free_profiles = tempprofiles, #tempprofiles[, setdiff(colnames(tempprofiles), colnames(fixed_profiles))],
                     init_clust = NULL,  #temp_init_clust, 
                     n_clusts = n_clusts,
-                    fixed_profiles = fixed_profiles, 
+                    fixed_profiles = NULL, #fixed_profiles, 
                     nb_size = nb_size,
                     method = method, 
-                    updated_reference = clust2$updated_reference, 
+                    updated_reference = NULL, #clust2$updated_reference, 
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
