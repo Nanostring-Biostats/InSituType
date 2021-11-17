@@ -207,6 +207,8 @@ insitutype <- function(counts, neg, bg = NULL,
                                              returnBins=FALSE,
                                              minCellsPerBin = 1,
                                              seed=NULL)
+      random_start_subsets[[i]] <- unique(c(random_start_subsets[[i]], anchorcellnames))
+      
       # convert IDs to row indices:
       random_start_subsets[[i]] <- match(random_start_subsets[[i]], rownames(counts))
       
