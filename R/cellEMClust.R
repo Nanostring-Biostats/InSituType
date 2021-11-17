@@ -315,7 +315,6 @@ nbclust <- function(counts, neg, bg = NULL,
                    means = profiles,
                    bg = bg,
                    size = nb_size)
-
     # E-step: update profiles:
     if (method == "CEM") {
       tempprobs = probs[, free_profile_names, drop = FALSE]
@@ -337,10 +336,14 @@ nbclust <- function(counts, neg, bg = NULL,
     if (method == "EM") {
       # update the new cluster profiles:
       if (n_clusts != 0){
-        tempprobs = 1 * t(apply(probs[, free_profile_names, drop = FALSE], 1, ismax))
+        tempprobs <- 1 * t(apply(probs[, free_profile_names, drop = FALSE], 1, ismax))
+        if( nrow(tempprobs) == 1 ){
+          tempprobs <- t(tempprobs)
+          colnames(tempprobs) <- free_profile_names
+        }
         free_profiles <- Estep(counts = counts,
                               clust = tempprobs,
-                              neg = neg)        
+                              neg = neg)  
       }
       # update the reference profiles / "fixed_profiles"
       if( !is.null(updated_reference) ){
