@@ -8,6 +8,7 @@ chooseClusterNumber(
   counts,
   neg,
   bg = NULL,
+  anchors = NULL,
   fixed_profiles = NULL,
   init_clust = NULL,
   n_clusts = 2:12,
@@ -25,6 +26,10 @@ chooseClusterNumber(
 \item{neg}{Vector of mean negprobe counts per cell}
 
 \item{bg}{Expected background}
+
+\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
+Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+for cells to be held constant throughout iterations.}
 
 \item{fixed_profiles}{Matrix of expression profiles of pre-defined clusters,
 e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.

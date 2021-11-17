@@ -52,6 +52,7 @@
 #' }
 #' @export
 insitutype <- function(counts, neg, bg = NULL, 
+                       anchors = NULL,
                        n_clusts,
                        fixed_profiles = NULL, 
                        sketchingdata = NULL,
@@ -109,7 +110,7 @@ insitutype <- function(counts, neg, bg = NULL,
   
   
   #### select anchor cells if not provided: ------------------------------
-  if (is.null(anchors)) {
+  if (is.null(anchors) & !is.null(fixed_profiles)) {
     message("automatically selecting anchor cells with the best fits to fixed profiles")
     anchors <- find_anchor_cells(counts = counts, 
                                  neg = NULL, 
@@ -121,11 +122,12 @@ insitutype <- function(counts, neg, bg = NULL,
                                  min_scaled_llr = min_anchor_llr) 
   }
   # test anchors are valid:
-  if (length(anchors) != nrow(counts)) {
+  anchorcellnames = NULL
+  if (!is.null(anchors) & (length(anchors) != nrow(counts))) {
     stop("anchors must have length equal to the number of cells (row) in counts")
+    names(anchors) <- rownames(counts)
+    anchorcellnames <- names(anchors)[!is.na(anchors)]
   }
-  names(anchors) <- rownames(counts)
-  anchorcellnames <- names(anchors)[!is.na(anchors)]
   
   #### set up subsetting: ---------------------------------
   # get data for subsetting if not already provided
@@ -177,7 +179,7 @@ insitutype <- function(counts, neg, bg = NULL,
       bg = bg[chooseclusternumber_subset], 
       anchors = anchors[chooseclusternumber_subset], 
       fixed_profiles = fixed_profiles,
-      init_clust = tempinit, 
+      init_clust = NULL, 
       n_clusts = n_clusts,
       max_iters = 10,
       subset_size = length(chooseclusternumber_subset), 

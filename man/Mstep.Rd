@@ -4,7 +4,7 @@
 \alias{Mstep}
 \title{M step}
 \usage{
-Mstep(counts, means, bg = 0.01, size = 10, digits = 2)
+Mstep(counts, means, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE)
 }
 \arguments{
 \item{counts}{Counts matrix, cells * genes.}
@@ -17,6 +17,8 @@ with genes in rows and clusters in columns.}
 \item{size}{NB size parameter}
 
 \item{digits}{Round the output to this many digits (saves memory)}
+
+\item{return_loglik}{If TRUE, logliks will be returned. If FALSE, probabilities will be returned.}
 }
 \value{
 Matrix of probabilities of each cell belonging to each cluster

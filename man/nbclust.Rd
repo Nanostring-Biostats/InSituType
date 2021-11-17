@@ -8,6 +8,7 @@ nbclust(
   counts,
   neg,
   bg = NULL,
+  anchors = NULL,
   init_free_profiles = NULL,
   init_clust = NULL,
   n_clusts = NULL,
@@ -17,7 +18,8 @@ nbclust(
   updated_reference = NULL,
   pct_drop = 1/10000,
   min_prob_increase = 0.05,
-  max_iters = 40
+  max_iters = 40,
+  logresults = FALSE
 )
 }
 \arguments{
@@ -26,6 +28,10 @@ nbclust(
 \item{neg}{Vector of mean negprobe counts per cell}
 
 \item{bg}{Expected background}
+
+\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
+Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+for cells to be held constant throughout iterations.}
 
 \item{init_free_profiles}{Matrix of cluster profiles under which to begin iterations.
 Should NOT contain the fixed_profiles.

@@ -11,7 +11,7 @@
 #' @param n_clusts Number of free clusters
 #' @param thresh Threshold above which cells will be called as well-fit by fixed_profiles and initialized as a fixed_profile.
 #' @return A vector of initial cluster assignments
-choose_init_clust <- function(counts, fixed_profiles, bg, size, n_clusts, thresh = 0.9) {#<------------------------- consider thresh carefully
+choose_init_clust <- function(counts, fixed_profiles, bg, align_genes = TRUE, size, n_clusts, thresh = 0.9) {#<------------------------- consider thresh carefully
   
   if (align_genes & !is.null(fixed_profiles)) {
     sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))

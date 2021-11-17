@@ -32,7 +32,8 @@
 #'  \item
 #' }
 chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_profiles = NULL,init_clust = NULL, n_clusts = 2:12,
-                                max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, ...) {
+                                max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, 
+                                pct_drop = 0.005, min_prob_increase = 0.05,  ...) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
   s <- rowSums(counts)
@@ -97,7 +98,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
       n_clusts = x, 
       fixed_profiles = NULL, 
       init_clust = tempinit,
-      method = method, 
+      method = "EM", 
       updated_reference = NULL,
       nb_size = nb_size,
       pct_drop = pct_drop,
