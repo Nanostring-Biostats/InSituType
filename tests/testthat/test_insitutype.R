@@ -103,6 +103,7 @@ if (FALSE) {
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
+                   anchors = NULL,
                    init_clust = NULL, n_clusts = 2,
                    fixed_profiles = ioprofiles[, 1:3],
                    nb_size = 10,
@@ -116,7 +117,8 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    n_chooseclusternumber = 100,
                    pct_drop = 1/5000, 
                    min_prob_increase = 0.05,
-                   max_iters = 10)   
+                   max_iters = 10,
+                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
 
 ## run semisupervised clustering with init_clust specified:
 #init_clust <- rep(letters[1:3], each = nrow(mini_nsclc$counts) / 3)[1:nrow(mini_nsclc$counts)]
