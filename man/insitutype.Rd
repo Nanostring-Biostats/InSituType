@@ -8,6 +8,7 @@ insitutype(
   counts,
   neg,
   bg = NULL,
+  anchors = NULL,
   n_clusts,
   fixed_profiles = NULL,
   sketchingdata = NULL,
@@ -35,6 +36,10 @@ insitutype(
 \item{neg}{Vector of mean negprobe counts per cell}
 
 \item{bg}{Expected background}
+
+\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
+Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+for cells to be held constant throughout iterations.}
 
 \item{n_clusts}{Number of clusters, in addition to any pre-specified cell types.
 Enter 0 to run purely supervised cell typing from fixed profiles. 
@@ -85,10 +90,6 @@ type switchover}
 \item{min_anchor_cosine}{For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.}
 
 \item{min_anchor_llr}{For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor}
-
-\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
-Vector elements will be mainly NA's (for non-anchored cells) and cell type names
-for cells to be held constant throughout iterations.}
 }
 \value{
 A list, with the following elements:
