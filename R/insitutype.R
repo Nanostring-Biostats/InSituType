@@ -90,6 +90,23 @@ insitutype <- function(counts, neg, bg = NULL,
       stop("Either set n_clusts > 0 to perform unsupervised clustering or supply a fixed_profiles matrix for supervised classification.")
     }
     
+    # align genes:
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    
+    # subset:
+    counts <- counts[, sharedgenes]
+    fixed_profiles <- fixed_profiles[sharedgenes, ]
+    
+    # warn about genes being lost:
+    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
+                     paste0(lostgenes, collapse = ",")))
+    }
+    if (length(lostgenes) > 50) {
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
+    }
+    
     # get logliks
     logliks <- apply(fixed_profiles, 2, function(ref) {
       lldist(x = ref,
