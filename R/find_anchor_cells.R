@@ -59,6 +59,7 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   # get logliks  
   logliks <- Mstep(counts = counts, 
                    means = profiles,
+                   freq = rep(1, ncol(profiles))/ncol(profiles),
                    bg = bg, 
                    size = size, 
                    digits = 2, return_loglik = T) 

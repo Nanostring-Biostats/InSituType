@@ -25,6 +25,7 @@ choose_init_clust <- function(counts, fixed_profiles, bg, align_genes = TRUE, si
   # get logliks under all fixed profiles
   logliks <- Mstep(counts = counts, 
                    means = fixed_profiles, 
+                   freq = rep(1, ncol(profiles))/ncol(profiles),
                    bg = bg, 
                    size = size, 
                    digits = 2, 
@@ -46,9 +47,11 @@ choose_init_clust <- function(counts, fixed_profiles, bg, align_genes = TRUE, si
   init_clust[assigntofixed] <- colnames(logliks)[apply(logliks[assigntofixed, ], 1, which.max)]
   
   # randomly initialize poorly-fit cells to new clusters
-  newandfixedclusternames <- makeClusterNames( colnames(fixed_profiles) , ncol(fixed_profiles) + n_clusts)
-  newclusternames <- setdiff(newandfixedclusternames, colnames(fixed_profiles))
-  init_clust[!assigntofixed] <- sample(newclusternames, sum(!assigntofixed), replace = TRUE)
+  if (n_clusts >0 ){
+    newandfixedclusternames <- makeClusterNames( colnames(fixed_profiles) , ncol(fixed_profiles) + n_clusts)
+    newclusternames <- setdiff(newandfixedclusternames, colnames(fixed_profiles))
+    init_clust[!assigntofixed] <- sample(newclusternames, sum(!assigntofixed), replace = TRUE)
+  }
   
   return(init_clust)  
 }

@@ -63,16 +63,18 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param counts Counts matrix, cells * genes.
 #' @param means Matrix of mean cluster profiles,
 #'  with genes in rows and clusters in columns.
+#' @param freq the cell frequencies 
 #' @param bg Expected background
 #' @param size NB size parameter
 #' @param digits Round the output to this many digits (saves memory)
 #' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
-Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
+Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
     lldist(x = x, mat = counts, bg = bg, size = size)
   })
+  logliks <- sweep(logliks, 2, freq, "*")
   if (return_loglik) {
     return(round(logliks, digits))
   } else {
@@ -307,17 +309,22 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
   
   # append free and fixed profiles:
   profiles <- cbind(updated_reference, free_profiles)
-  
+
   #### run EM algorithm iterations: ----------------------------------
   pct_changed = c()
   if (logresults) {
     clusterlog <- init_clust
   }
+  
+  profiles_freq <- setNames(rep(1/ncol(profiles), ncol(profiles)), colnames(profiles))
+
   for (iter in seq_len(max_iters)) {
     message(paste0("iter ", iter))
     # M-step: get cell * cluster probs:
+    
     probs <- Mstep(counts = counts,
                    means = profiles,
+                   freq = profiles_freq, 
                    bg = bg,
                    size = nb_size)
     # override assignments for anchor cells
@@ -384,7 +391,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     }
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, which.max)]
-
     if (iter == 1){
       pct_changed <- mean(clust != clust_old)
     } else {
@@ -402,6 +408,9 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
       }
     }
     clust_old = colnames(probs)[apply(probs, 1, which.max)]
+    profiles_freq <- setNames(data.frame(prop.table(table(clust_old)))$Freq, 
+                              data.frame(prop.table(table(clust_old)))$clust_old)
+    profiles_freq <- profiles_freq[colnames(profiles)]
     probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
