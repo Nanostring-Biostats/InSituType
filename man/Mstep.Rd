@@ -4,13 +4,23 @@
 \alias{Mstep}
 \title{M step}
 \usage{
-Mstep(counts, means, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE)
+Mstep(
+  counts,
+  means,
+  freq,
+  bg = 0.01,
+  size = 10,
+  digits = 2,
+  return_loglik = FALSE
+)
 }
 \arguments{
 \item{counts}{Counts matrix, cells * genes.}
 
 \item{means}{Matrix of mean cluster profiles,
 with genes in rows and clusters in columns.}
+
+\item{freq}{a vector of cells frequencies summing up equal to 1.}
 
 \item{bg}{Expected background}
 

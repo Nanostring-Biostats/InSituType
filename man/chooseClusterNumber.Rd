@@ -17,6 +17,8 @@ chooseClusterNumber(
   align_genes = TRUE,
   plotresults = FALSE,
   nb_size = 10,
+  pct_drop = 0.005,
+  min_prob_increase = 0.05,
   ...
 )
 }

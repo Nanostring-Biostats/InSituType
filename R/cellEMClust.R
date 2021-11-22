@@ -63,7 +63,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param counts Counts matrix, cells * genes.
 #' @param means Matrix of mean cluster profiles,
 #'  with genes in rows and clusters in columns.
-#' @param freq the cell frequencies 
+#' @param freq a vector of cells frequencies summing up equal to 1. 
 #' @param bg Expected background
 #' @param size NB size parameter
 #' @param digits Round the output to this many digits (saves memory)
