@@ -74,14 +74,13 @@ Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_
   logliks <- apply(means, 2, function(x) {
     lldist(x = x, mat = counts, bg = bg, size = size)
   })
-  logliks <- sweep(logliks, 2, freq, "*")
   if (return_loglik) {
     return(round(logliks, digits))
   } else {
     # first rescale (ie recenter on log scale) to avoid rounding errors:
     logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
     # get on likelihood scale:
-    liks <- exp( logliks )
+    liks <- sweep(exp( logliks ), 2, freq, "*")
     # convert to probs
     probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
     return(round(probs, digits))
