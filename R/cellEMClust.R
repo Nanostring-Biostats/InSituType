@@ -410,6 +410,8 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     profiles_freq <- setNames(data.frame(prop.table(table(clust_old)))$Freq, 
                               data.frame(prop.table(table(clust_old)))$clust_old)
     profiles_freq <- profiles_freq[colnames(profiles)]
+    # prevent any freqs from going all the way to zero:
+    profiles_freq <- pmax(profiles_freq, 1e-3)
     probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
