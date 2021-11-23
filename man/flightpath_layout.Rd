@@ -4,14 +4,21 @@
 \alias{flightpath_layout}
 \title{"Flightpath" (umap-like) plot of clustering results}
 \usage{
-flightpath_layout(probs, cluster_xpos = NULL, cluster_ypos = NULL)
+flightpath_layout(
+  probs,
+  profiles = NULL,
+  cluster_xpos = NULL,
+  cluster_ypos = NULL
+)
 }
 \arguments{
 \item{probs}{Matrix of cells' probabilities of belonging to each cluster.}
 
-\item{cluster_xpos}{Vector of cluster centroids' x position (i.e. where you want each cell type to appear in the plot)}
+\item{profiles}{Matrix of cell type mean expression profiles. If provided, profiles rather than probs will be used to lay out the centroids.}
 
-\item{cluster_ypos}{Vector of cluster centroids' y position}
+\item{cluster_xpos}{Vector of cluster centroids' x positions (i.e. where you want each cell type to appear in the plot)}
+
+\item{cluster_ypos}{Vector of cluster centroids' y positions}
 }
 \value{
 A list with two elements:

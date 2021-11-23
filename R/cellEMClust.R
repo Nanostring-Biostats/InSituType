@@ -10,7 +10,7 @@
 #' @importFrom Matrix rowSums
 #' @importFrom stats dnbinom
 #'
-
+#' @export
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
@@ -63,23 +63,29 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param counts Counts matrix, cells * genes.
 #' @param means Matrix of mean cluster profiles,
 #'  with genes in rows and clusters in columns.
+#' @param freq a vector of cells frequencies summing up equal to 1. 
 #' @param bg Expected background
 #' @param size NB size parameter
 #' @param digits Round the output to this many digits (saves memory)
+#' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
-Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
+#' @export
+Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
     lldist(x = x, mat = counts, bg = bg, size = size)
   })
-  # first rescale (ie recenter on log scale) to avoid rounding errors:
-  logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
-  # get on likelihood scale:
-  liks <- exp( logliks )
-  # convert to probs
-  probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
-
-  return(round(probs, digits))
+  if (return_loglik) {
+    return(round(logliks, digits))
+  } else {
+    # first rescale (ie recenter on log scale) to avoid rounding errors:
+    logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
+    # get on likelihood scale:
+    liks <- sweep(exp( logliks ), 2, freq, "*")
+    # convert to probs
+    probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
+    return(round(probs, digits))
+  }
 }
 
 
@@ -96,6 +102,7 @@ Mstep <- function(counts, means, bg = 0.01, size = 10, digits = 2) {
 #'
 #' @return A matrix of cluster profiles, genes * clusters
 #'
+#' @export
 Estep <- function(counts, clust, neg) {
 
   # get cluster means:
@@ -115,51 +122,6 @@ Estep <- function(counts, clust, neg) {
 }
 
 
-#' E step: update reference cell profiles
-#'
-#' Given cell assignments (or posterior probabilities), update the pre-defined
-#'  reference cell profiles.
-#' @param counts Counts matrix, cells * genes.
-#' @param clust Vector of cluster assignments, or a matrix of probabilities
-#'   of cells (rows) belonging to clusters (columns).
-#' @param neg Vector of mean background counts
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
-#'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-#'  Colnames must all be included in the init_clust variable.
-#'
-#' @importFrom Matrix rowSums
-#'
-#' @return A matrix of cluster profiles, genes * clusters
-#'
-Estep_reference <- function(counts, clust, neg, fixed_profiles) {
-
-
-  # get cluster means:
-  # if clust has been passed as a vector of cluster names:
-  if (is.vector(clust)) {
-    means = sapply(unique(clust), function(cl) {
-      pmax(Matrix::colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
-    })
-  }
-  # if clust has been passed as a matrix of cluster probabilities:
-  if (is.matrix(clust)) {
-    means <- apply(clust, 2, function(x) {
-      wts <- x / sum(x)
-      pmax(Matrix::colSums(sweep(counts, 1, wts, "*")) - sum(neg * wts), 0)
-    })
-  }
-
-  # estimate gene scaling effects
-  gene_scaling_factors <- estimate_platform_effects(
-    mean_profiles = means,
-    fixed_profiles = fixed_profiles
-  )
-
-  # rescale fixed profiles by platform effects:
-  updated_profiles <- sweep(fixed_profiles, 1, gene_scaling_factors, "*")
-
-  return(updated_profiles)
-}
 
 
 #' Estimate NB size parameter
@@ -171,6 +133,7 @@ Estep_reference <- function(counts, clust, neg, fixed_profiles) {
 #'   of cells (rows) belonging to clusters (columns).
 #' @param bg Expected background
 #' @return A scalar giving the mle for the size parameter
+#' @export
 Estep_size <- function(counts, clust, bg) {
 
   # define the matrix of expected counts (mu in the NB model):
@@ -195,11 +158,10 @@ Estep_size <- function(counts, clust, bg) {
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
-#'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-#'  Colnames must all be included in the init_clust variable.
-#' @param init_free_profiles Matrix of cluster profiles under which to begin iterations.
-#' Should NOT contain the fixed_profiles.
+#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
+#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+#'  for cells to be held constant throughout iterations. 
+#' @param init_profiles Matrix of cluster profiles under which to begin iterations.
 #' If NULL, initial assignments will be automatically inferred, using init_clust 
 #' if available, and using random clusters if not. 
 #' @param init_clust Vector of initial cluster assignments.
@@ -210,8 +172,6 @@ Estep_size <- function(counts, clust, bg) {
 #' @param method Whether to run a SEM algorithm (points given a probability
 #'   of being in each cluster) or a classic EM algorithm (all points wholly
 #'   assigned to one cluster).
-#' @param updated_reference Rescaled, possibly shrunken version of fixed_profiles.
-#'  This argument is intended to be used by cellEMclust, not by the user.
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
 #'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
 #'  switchover is only applicable when a cell has changed the assigned cell type with its
@@ -227,12 +187,13 @@ Estep_size <- function(counts, clust, bg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
-nbclust <- function(counts, neg, bg = NULL, 
-                    init_free_profiles = NULL, init_clust = NULL, n_clusts = NULL,
-                    fixed_profiles = NULL, nb_size = 10,
+#' @export
+nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
+                    init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
+                    nb_size = 10,
                     method = "CEM", 
-                    updated_reference = NULL, pct_drop = 1/10000,   
-                    min_prob_increase = 0.05, max_iters = 40) {
+                    pct_drop = 1/10000,   
+                    min_prob_increase = 0.05, max_iters = 40, logresults = FALSE) {
 
   #### preliminaries -----------------------------------
   # infer bg if not provided: assume background is proportional to the scaling factor s
@@ -245,131 +206,91 @@ nbclust <- function(counts, neg, bg = NULL,
     bg = rep(bg, nrow(counts))
   }
 
-  # specify which profiles to leave fixed:
-  if (!is.null(fixed_profiles)) {
-    fixed_profile_names = colnames(fixed_profiles)
-  } else {
-    fixed_profile_names <- NULL
-  }
-
-  # start with updated_reference = fixed_profiles if not already specified
-  if (is.null(updated_reference)) {    
-    updated_reference <- fixed_profiles
-  }
-
+  clusterlog = NULL
 
   #### get initial profiles: ----------------------------------
+  
+  if (is.null(init_profiles) & is.null(init_clust)) {
+    stop("Must specify either init_clust or init_profiles")
+  }
+    
 
-  # if init_free_profiles are provided, take them:
-  if (!is.null(init_free_profiles)) {
-    free_profiles <- init_free_profiles
-    free_profile_names <- colnames(init_free_profiles)
+  # if init_profiles are provided, take them:
+  if (!is.null(init_profiles)) {
     clust_old <- rep("unassigned", nrow(counts))
     names(clust_old) <- rownames(counts)
-    clustnames <- colnames(init_free_profiles)
+    profiles <- init_profiles
+    clustnames <- colnames(init_profiles)
   } 
-  # if no init_free_profiles are provided, derive them:
-  if (is.null(init_free_profiles)) {
-    # if no initial clustering is available, define it randomly:
-    if (is.null(init_clust)) {
-      if (is.null(n_clusts)) {
-        stop("Must specify either init_clust or n_clusts.")
-      }
-      if (!is.null(fixed_profiles)) {
-        n_fixed_profiles <- ncol(fixed_profiles)
-      } else {
-        n_fixed_profiles <- 0
-      }
-      clustnames <- makeClusterNames( fixed_profile_names , n_clusts + n_fixed_profiles )
-      
-      # arbitrary but non-random initialization:
-      init_clust = rep(clustnames, ceiling(nrow(counts) / length(clustnames)))[seq_len(nrow(counts))]
-    }
-    clustnames <- unique(init_clust)
-    
-    # subset on only the cells that aren't part of a pre-specified cluster:
-    tempuse = !is.element(init_clust, fixed_profile_names)    #<------------------ randomizing in blocks might help discover cell types that are together in space. This is the most null randomization possible. 
-    # use this subset to derive first free_profiles from init_clust
-    free_profiles <- Estep(counts = counts[tempuse, ],
-                           clust = init_clust[tempuse],
-                           neg = neg[tempuse])
-    free_profile_names <- setdiff(clustnames, fixed_profile_names)
+  # if no init_profiles are provided, derive them:
+  if (is.null(init_profiles)) {
     clust_old = init_clust
+    names(clust_old) <- rownames(counts)
+    # derive first profiles from init_clust
+    profiles <- Estep(counts = counts,
+                           clust = init_clust,
+                           neg = neg)
+    clustnames <- unique(init_clust)
   }
-  
-  # append free and fixed profiles:
-  profiles <- cbind(updated_reference, free_profiles)
-  #if (n_clusts > 0 ){
-  #  profiles <- cbind(updated_reference, free_profiles)
-  #} else {
-  #  profiles <- updated_reference
-  #}
-  
   
   #### run EM algorithm iterations: ----------------------------------
   pct_changed = c()
+  if (logresults) {
+    clusterlog <- init_clust
+  }
+  
+  profiles_freq <- setNames(rep(1/ncol(profiles), ncol(profiles)), colnames(profiles))
+
   for (iter in seq_len(max_iters)) {
     message(paste0("iter ", iter))
     # M-step: get cell * cluster probs:
+    
     probs <- Mstep(counts = counts,
                    means = profiles,
+                   freq = profiles_freq, 
                    bg = bg,
                    size = nb_size)
-    # E-step: update profiles:
-    if (method == "CEM") {
-      tempprobs = probs[, free_profile_names, drop = FALSE]
-      # update the new cluster profiles:
-      if (n_clusts != 0){
-        free_profiles <- Estep(counts = counts,
-                              clust = tempprobs,
-                              neg = neg)
-      }
-      # update the reference profiles / "fixed_profiles"
-      if( !is.null(updated_reference) ){
-        updated_reference <-
-          Estep_reference(counts = counts,
-                          clust = probs[, fixed_profile_names],
-                          neg = neg,
-                          fixed_profiles = fixed_profiles)
+    # override assignments for anchor cells
+    if (!is.null(anchors)) {
+      for (cell in setdiff(unique(anchors), NA)) {
+        temprows <- which((anchors == cell) & !is.na(anchors))
+        probs[temprows, cell] <- 1 #rep(1, sum((anchors == cell) & !is.na(anchors)))
+        probs[temprows, setdiff(colnames(probs), cell)] <- 0
       }
     }
+    if (logresults) {
+      clusterlog <- cbind(clusterlog, colnames(probs)[apply(probs, 1, which.max)])
+    }
+    
+    oldprofiles <- profiles
+
+    # E-step: update profiles:
+    if (method == "CEM") {
+      tempprobs = probs
+      # update the new cluster profiles:
+      if (n_clusts != 0){
+        profiles <- Estep(counts = counts,
+                          clust = tempprobs,
+                          neg = neg)
+      }
+    }
+    
     if (method == "EM") {
       # update the new cluster profiles:
       if (n_clusts != 0){
-        tempprobs <- 1 * t(apply(probs[, free_profile_names, drop = FALSE], 1, ismax))
-        if( nrow(tempprobs) == 1 ){
-          tempprobs <- t(tempprobs)
-          colnames(tempprobs) <- free_profile_names
-        }
-        free_profiles <- Estep(counts = counts,
-                              clust = tempprobs,
-                              neg = neg)  
-      }
-      # update the reference profiles / "fixed_profiles"
-      if( !is.null(updated_reference) ){
-        updated_reference <-
-          Estep_reference(counts = counts,
-                          clust = probs[, fixed_profile_names],
-                          neg = neg,
-                          fixed_profiles = fixed_profiles)
-      }
-
-      # for any profiles that have been lost, replace them with their previous version:
-      if ( n_clusts!=0 ){
-        lostprofiles = names(which(colSums(!is.na(free_profiles)) == 0))
-        free_profiles[, lostprofiles] = profiles[, lostprofiles]
+        tempprobs = 1 * t(apply(probs, 1, ismax))
+        profiles <- Estep(counts = counts,
+                          clust = tempprobs,
+                          neg = neg)        
       }
     }
-
-
-    if ( n_clusts!=0 ){
-      profiles <- cbind(updated_reference, free_profiles)
-    } else {
-      profiles <- updated_reference
-    }
+    
+    # for any profiles that have been lost, replace them with their previous version:
+    lostprofiles = names(which(colSums(!is.na(profiles)) == 0))
+    profiles[, lostprofiles] = oldprofiles[, lostprofiles]
+    
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, which.max)]
-
     if (iter == 1){
       pct_changed <- mean(clust != clust_old)
     } else {
@@ -387,6 +308,11 @@ nbclust <- function(counts, neg, bg = NULL,
       }
     }
     clust_old = colnames(probs)[apply(probs, 1, which.max)]
+    profiles_freq <- setNames(data.frame(prop.table(table(clust_old)))$Freq, 
+                              data.frame(prop.table(table(clust_old)))$clust_old)
+    profiles_freq <- profiles_freq[colnames(profiles)]
+    # prevent any freqs from going all the way to zero:
+    profiles_freq <- pmax(profiles_freq, 1e-3)
     probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
@@ -411,7 +337,7 @@ nbclust <- function(counts, neg, bg = NULL,
              profiles = sweep(profiles, 2, colSums(profiles), "/") * 1000,
              pct_changed = pct_changed,
              #logliks = logliks,
-             updated_reference = updated_reference)
+             clusterlog = clusterlog)
   return(out)
 }
 
@@ -419,7 +345,7 @@ nbclust <- function(counts, neg, bg = NULL,
 #' @param x a vector of values
 #' @return a vecetor of logical values
 #'
-
+#' @export
 ismax <- function(x) {
   return(x == max(x, na.rm = T))
 }
@@ -430,6 +356,7 @@ ismax <- function(x) {
 #' @param nClust number of clusters
 #' @return a vector of complete cluster names
 #'
+#' @export
 makeClusterNames <- function( cNames , nClust )
 {
   if ( is.null( cNames ) )
@@ -474,3 +401,14 @@ makeClusterNames <- function( cNames , nClust )
   return( clustnames )
 }
 
+
+# get a probabilities matrix from a logliks matrix
+#' @export
+logliks2probs <- function(logliks) {
+  templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
+  # get on likelihood scale:
+  liks <- exp(templogliks)
+  # convert to probs
+  probs <- sweep(liks, 1, rowSums(liks), "/")
+  return(probs)
+}

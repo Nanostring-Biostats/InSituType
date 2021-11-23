@@ -13,6 +13,7 @@
 #' @param method What kind of data to extract. 
 #' @return A matrix of data for geoSketch, with cells in rows and features in columns
 #' @importFrom irlba prcomp_irlba
+#' @export
 prepDataForSketching <- function(counts) {
   # get PCs:
   scaling_factors <- pmax(apply(counts, 2, quantile, 0.99), 5)
@@ -59,6 +60,7 @@ prepDataForSketching <- function(counts) {
 #' 
 #' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
+#' @export
 geoSketch <- function(X, N,
                       alpha=0.1,
                       max_iter=200,
@@ -85,7 +87,7 @@ geoSketch <- function(X, N,
   # Iterate the number of bins each feature is broken into until the total number of bins containing cells is larger than `(1-alpha)*N`
   iter <- 1 # Set starting iteration
   while (iter <= max_iter){ # Break loop when the number of iterations surpasses the defined maximum
-    message(paste0("Iteration Number ", as.character(iter))) # Report the current iteration the loop is on
+    #message(paste0("Iteration Number ", as.character(iter))) # Report the current iteration the loop is on
     
     bins <- seq(0, 1, length=2+iter) # Define the bin ranges based on the current iteration
     Xbins <- apply(X, 2, function(Y) .bincode(Y, bins, TRUE, TRUE)) # Bin cells across each feature using the given bin ranges
