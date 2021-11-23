@@ -23,8 +23,6 @@ chooseClusterNumber(
 )
 }
 \arguments{
-\item{counts}{Counts matrix, cells * genes.}
-
 \item{neg}{Vector of mean negprobe counts per cell}
 
 \item{bg}{Expected background}

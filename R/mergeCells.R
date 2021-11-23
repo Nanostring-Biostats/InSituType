@@ -47,17 +47,9 @@ mergeCells <- function(merges, probs) {
 
 
 # get a probabilities matrix from a logliks matrix
+#' @export
 probs2logliks <- function(probs) {
   return(log(probs))
 }
 
 
-# get a probabilities matrix from a logliks matrix
-logliks2probs <- function(logliks) {
-  templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
-  # get on likelihood scale:
-  liks <- exp(templogliks)
-  # convert to probs
-  probs <- sweep(liks, 1, rowSums(liks), "/")
-  return(probs)
-}

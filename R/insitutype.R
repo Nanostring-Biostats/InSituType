@@ -176,7 +176,7 @@ insitutype <- function(counts, neg, bg = NULL,
   if (is.null(n_clusts)) {
     n_clusts <- 1:12 + (is.null(fixed_profiles))
   }
-  # get optimal numebr of clusters
+  # get optimal number of clusters
   if (length(n_clusts) > 1) {
     
     message("Selecting optimal number of clusters from a range of ", min(n_clusts), " - ", max(n_clusts))
@@ -255,6 +255,9 @@ insitutype <- function(counts, neg, bg = NULL,
                                       n_clusts = n_clusts, 
                                       thresh = 0.9) 
         tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
+      } else {
+        tempinit <- rep(letters[seq_len(n_clusts)], each = ceiling(length(random_start_subsets[[i]]) / n_clusts))[
+          seq_along(random_start_subsets[[i]])]
       }
 
       
@@ -263,13 +266,11 @@ insitutype <- function(counts, neg, bg = NULL,
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
         anchors = anchors[random_start_subsets[[i]]], 
-        init_free_profiles = NULL,
+        init_profiles = NULL,
         init_clust = tempinit, 
         n_clusts = n_clusts,
-        fixed_profiles = NULL, 
         nb_size = nb_size,
         method = method, 
-        updated_reference = NULL,
         pct_drop = pct_drop,
         min_prob_increase = min_prob_increase
       )$profiles
@@ -320,13 +321,11 @@ insitutype <- function(counts, neg, bg = NULL,
                     neg = neg[phase2_sample], 
                     bg = bg[phase2_sample],
                     anchors = anchors[phase2_sample],
-                    init_free_profiles = tempprofiles, 
+                    init_profiles = tempprofiles, 
                     init_clust = temp_init_clust, 
                     n_clusts = n_clusts,
-                    fixed_profiles = NULL, 
                     nb_size = nb_size,
                     method = method, 
-                    updated_reference = NULL,   #<---- for now, decision is to not use updated_reference from phase1 due to instability arising from small n.
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   tempprofiles <- clust2$profiles
@@ -352,13 +351,11 @@ insitutype <- function(counts, neg, bg = NULL,
                     neg = neg[phase3_sample], 
                     bg = bg[phase3_sample],
                     anchors = anchors[phase3_sample],
-                    init_free_profiles = tempprofiles, #tempprofiles[, setdiff(colnames(tempprofiles), colnames(fixed_profiles))],
+                    init_profiles = tempprofiles, 
                     init_clust = NULL,  #temp_init_clust, 
                     n_clusts = n_clusts,
-                    fixed_profiles = NULL, #fixed_profiles, 
                     nb_size = nb_size,
                     method = method, 
-                    updated_reference = NULL, #clust2$updated_reference, 
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   

@@ -9,13 +9,11 @@ nbclust(
   neg,
   bg = NULL,
   anchors = NULL,
-  init_free_profiles = NULL,
+  init_profiles = NULL,
   init_clust = NULL,
   n_clusts = NULL,
-  fixed_profiles = NULL,
   nb_size = 10,
   method = "CEM",
-  updated_reference = NULL,
   pct_drop = 1/10000,
   min_prob_increase = 0.05,
   max_iters = 40,
@@ -33,8 +31,7 @@ nbclust(
 Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 for cells to be held constant throughout iterations.}
 
-\item{init_free_profiles}{Matrix of cluster profiles under which to begin iterations.
-Should NOT contain the fixed_profiles.
+\item{init_profiles}{Matrix of cluster profiles under which to begin iterations.
 If NULL, initial assignments will be automatically inferred, using init_clust 
 if available, and using random clusters if not.}
 
@@ -43,18 +40,11 @@ If NULL, initial assignments will be automatically inferred.}
 
 \item{n_clusts}{Number of clusters, in addition to any pre-specified cell types.}
 
-\item{fixed_profiles}{Matrix of expression profiles of pre-defined clusters,
-e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-Colnames must all be included in the init_clust variable.}
-
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
 \item{method}{Whether to run a SEM algorithm (points given a probability
 of being in each cluster) or a classic EM algorithm (all points wholly
 assigned to one cluster).}
-
-\item{updated_reference}{Rescaled, possibly shrunken version of fixed_profiles.
-This argument is intended to be used by cellEMclust, not by the user.}
 
 \item{pct_drop}{the decrease in percentage of cell types with a valid switchover to 
 another cell type compared to the last iteration. Default value: 1/10000. A valid 

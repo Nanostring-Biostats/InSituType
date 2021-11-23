@@ -13,6 +13,7 @@
 #' @param method What kind of data to extract. 
 #' @return A matrix of data for geoSketch, with cells in rows and features in columns
 #' @importFrom irlba prcomp_irlba
+#' @export
 prepDataForSketching <- function(counts) {
   # get PCs:
   scaling_factors <- pmax(apply(counts, 2, quantile, 0.99), 5)
@@ -59,6 +60,7 @@ prepDataForSketching <- function(counts) {
 #' 
 #' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
+#' @export
 geoSketch <- function(X, N,
                       alpha=0.1,
                       max_iter=200,

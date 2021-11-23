@@ -2,7 +2,6 @@
 #'
 #' For a subset of the data, perform clustering under a range of cluster numbers.
 #'  Report on loglikelihood vs. number of clusters, and suggest a best choice.
-#' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
@@ -37,7 +36,6 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
   s <- rowSums(counts)
-  
   if (is.null(bg)) {
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
@@ -86,6 +84,8 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
                                     n_clusts = x, 
                                     thresh = 0.9) 
       tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
+    } else {
+      tempinit <- rep(letters[1:x], each = ceiling(nrow(counts) / x))[seq_len(nrow(counts))]
     }
     
     # run nbclust:
@@ -96,10 +96,8 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
       bg = bg, 
       anchors = anchors,
       n_clusts = x, 
-      fixed_profiles = NULL, 
       init_clust = tempinit,
       method = "EM", 
-      updated_reference = NULL,
       nb_size = nb_size,
       pct_drop = pct_drop,
       min_prob_increase = min_prob_increase)  
