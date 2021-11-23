@@ -142,9 +142,9 @@ insitutype <- function(counts, neg, bg = NULL,
   anchorcellnames = NULL
   if (!is.null(anchors) & (length(anchors) != nrow(counts))) {
     stop("anchors must have length equal to the number of cells (row) in counts")
-    names(anchors) <- rownames(counts)
-    anchorcellnames <- names(anchors)[!is.na(anchors)]
   }
+  names(anchors) <- rownames(counts)
+  anchorcellnames <- names(anchors)[!is.na(anchors)]
   
   #### set up subsetting: ---------------------------------
   # get data for subsetting if not already provided

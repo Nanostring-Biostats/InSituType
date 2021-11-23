@@ -71,15 +71,18 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
     stop("n_clusts need to be a vector of positive integers.")
   }
 
+  if (!is.null(anchors)) {
+    anchorcellnames <- names(anchors)[!is.na(anchors)]
+  }
   # cluster under each iteration, and save loglik:
   totallogliks <- sapply(n_clusts, function(x) {
     
     # get init clust:
     tempinit <- NULL
     if (!is.null(fixed_profiles)) {
-      tempinit <- choose_init_clust(counts = counts[chooseclusternumber_subset, ], 
+      tempinit <- choose_init_clust(counts = counts, 
                                     fixed_profiles = fixed_profiles, 
-                                    bg = bg[chooseclusternumber_subset], 
+                                    bg = bg, 
                                     size = nb_size, 
                                     n_clusts = x, 
                                     thresh = 0.9) 
