@@ -69,7 +69,6 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param digits Round the output to this many digits (saves memory)
 #' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
-#' @export
 Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
@@ -102,7 +101,6 @@ Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_
 #'
 #' @return A matrix of cluster profiles, genes * clusters
 #'
-#' @export
 Estep <- function(counts, clust, neg) {
 
   # get cluster means:
@@ -133,7 +131,6 @@ Estep <- function(counts, clust, neg) {
 #'   of cells (rows) belonging to clusters (columns).
 #' @param bg Expected background
 #' @return A scalar giving the mle for the size parameter
-#' @export
 Estep_size <- function(counts, clust, bg) {
 
   # define the matrix of expected counts (mu in the NB model):
@@ -187,7 +184,6 @@ Estep_size <- function(counts, clust, bg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
-#' @export
 nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     nb_size = 10,
@@ -345,7 +341,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
 #' @param x a vector of values
 #' @return a vecetor of logical values
 #'
-#' @export
 ismax <- function(x) {
   return(x == max(x, na.rm = T))
 }
@@ -356,7 +351,6 @@ ismax <- function(x) {
 #' @param nClust number of clusters
 #' @return a vector of complete cluster names
 #'
-#' @export
 makeClusterNames <- function( cNames , nClust )
 {
   if ( is.null( cNames ) )

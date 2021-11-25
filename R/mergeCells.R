@@ -53,7 +53,7 @@ probs2logliks <- function(probs) {
 
 
 # get a probabilities matrix from a logliks matrix
-logliks2probs <- function(logliks) {
+  logliks2probs <- function(logliks) {
   templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
   # get on likelihood scale:
   liks <- exp(templogliks)
