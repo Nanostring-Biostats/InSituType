@@ -13,6 +13,8 @@
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
+#' @param update_profiles If set to FALSE and if n_clusts = 0, then supervised classification 
+#'  will be run, assigning cells to whichever cell type gives them the highest likelihood.
 #' @param sketchingdata Optional matrix of data for use in non-random sampling via "sketching".
 #'  If not provided, then the data's first 20 PCs will be used. 
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
@@ -44,10 +46,9 @@
 #'
 #' @return A list, with the following elements:
 #' \enumerate{
-#' \item cluster: a vector given cells' cluster assignments
+#' \item clust: a vector given cells' cluster assignments
 #' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
-#' \item pct_changed: how many cells changed class at each step
 #' \item logliks: a matrix of each cell's log-likelihood under each cluster
 #' }
 #' @export
@@ -55,6 +56,7 @@ insitutype <- function(counts, neg, bg = NULL,
                        anchors = NULL,
                        n_clusts,
                        fixed_profiles = NULL, 
+                       update_profiles = TRUE,
                        sketchingdata = NULL,
                        align_genes = TRUE, nb_size = 10, 
                        method = "CEM", 
@@ -85,42 +87,27 @@ insitutype <- function(counts, neg, bg = NULL,
   }
   
   #### run purely supervised cell typing if no new clusters are needed -----------------------------
-  if (all(n_clusts == 0)) {
+  
+  if (!update_profiles & (n_clusts > 0)) {
+    message("update_profiles = FALSE is only available for n_clusts = 0. Continuing with update_profiles = TRUE." )
+    update_profiles <- TRUE
+  } 
+  
+  if (!update_profiles) {
     if (is.null(fixed_profiles)) {
-      stop("Either set n_clusts > 0 to perform unsupervised clustering or supply a fixed_profiles matrix for supervised classification.")
+      stop("Either supply a fixed_profiles matrix for supervised classification, or 
+           set n_clusts > 0 to perform unsupervised clustering.")
     }
     
-    # align genes:
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
     
-    # subset:
-    counts <- counts[, sharedgenes]
-    fixed_profiles <- fixed_profiles[sharedgenes, ]
     
-    # warn about genes being lost:
-    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
-                     paste0(lostgenes, collapse = ",")))
-    }
-    if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
-    }
-    
-    # get logliks
-    logliks <- apply(fixed_profiles, 2, function(ref) {
-      lldist(x = ref,
-             mat = counts,
-             bg = bg,
-             size = nb_size)
-    })
-    # get remaining outputs
-    clust <- colnames(logliks)[apply(logliks, 1, which.max)]
-    probs <- logliks2probs(logliks)
-    out = list(clust = clust,
-               probs = round(probs, 3),
-               profiles = fixed_profiles,
-               logliks = round(logliks, 3))
+    out = maxLikCellType(counts = counts, 
+                         neg = NULL, 
+                         bg = bg, 
+                         fixed_profiles = fixed_profiles, 
+                         nb_size = nb_size, 
+                         align_genes = TRUE) 
+
     return(out)    
     break()
   }

@@ -5,7 +5,21 @@ data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
 
-# test supervised cell typing:
+# test supervised cell typing using direct loglik calcs:
+sup <- maxLikCellType(counts = mini_nsclc$counts,
+                      neg = Matrix::rowMeans(mini_nsclc$neg),
+                      bg = NULL,
+                      fixed_profiles = ioprofiles[,1:6],
+                      nb_size = 10, 
+                      align_genes = TRUE) 
+  
+testthat::test_that("supervised cell typing produces correct outputs", {
+  expect_true(all(is.element(c("clust", "probs"), names(sup))))
+  expect_true(is.vector(sup$clust))
+  expect_true(is.matrix(sup$probs))
+})
+
+# test "semi-supervised with 0 new clusts:
 sup <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   bg = NULL,
