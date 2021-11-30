@@ -94,10 +94,9 @@ type switchover}
 \value{
 A list, with the following elements:
 \enumerate{
-\item cluster: a vector given cells' cluster assignments
+\item clust: a vector given cells' cluster assignments
 \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 \item profiles: a matrix of cluster-specific expression profiles
-\item pct_changed: how many cells changed class at each step
 \item logliks: a matrix of each cell's log-likelihood under each cluster
 }
 }

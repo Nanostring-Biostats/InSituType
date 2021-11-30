@@ -5,12 +5,27 @@ data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
 
-# test supervised cell typing:
+# test supervised cell typing using direct loglik calcs:
+sup <- maxLikCellType(counts = mini_nsclc$counts,
+                      neg = Matrix::rowMeans(mini_nsclc$neg),
+                      bg = NULL,
+                      fixed_profiles = ioprofiles[,1:6],
+                      nb_size = 10, 
+                      align_genes = TRUE) 
+  
+testthat::test_that("supervised cell typing produces correct outputs", {
+  expect_true(all(is.element(c("clust", "probs"), names(sup))))
+  expect_true(is.vector(sup$clust))
+  expect_true(is.matrix(sup$probs))
+})
+
+# test semi-supervised with 0 new clusts:
 sup <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   bg = NULL,
                   init_clust = NULL, 
                   n_clusts = 0,
+                  anchors = NULL,
                   fixed_profiles = ioprofiles[,1:6],
                   nb_size = 10,
                   method = "EM",
@@ -25,7 +40,7 @@ sup <- insitutype(counts = mini_nsclc$counts,
                   max_iters = 10,
                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
 
-testthat::test_that("supervised cell typing produces correct outputs", {
+testthat::test_that("semi-supervised cell typing with n_clusts = 0 produces correct outputs", {
   expect_true(all(is.element(c("clust", "probs"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.matrix(sup$probs))
