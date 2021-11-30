@@ -13,8 +13,6 @@
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
-#' @param update_profiles If set to FALSE and if n_clusts = 0, then supervised classification 
-#'  will be run, assigning cells to whichever cell type gives them the highest likelihood.
 #' @param sketchingdata Optional matrix of data for use in non-random sampling via "sketching".
 #'  If not provided, then the data's first 20 PCs will be used. 
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
@@ -56,7 +54,6 @@ insitutype <- function(counts, neg, bg = NULL,
                        anchors = NULL,
                        n_clusts,
                        fixed_profiles = NULL, 
-                       update_profiles = TRUE,
                        sketchingdata = NULL,
                        align_genes = TRUE, nb_size = 10, 
                        method = "CEM", 
@@ -85,33 +82,6 @@ insitutype <- function(counts, neg, bg = NULL,
     bg <- rep(bg, nrow(counts))
     names(bg) <- rownames(counts)
   }
-  
-  #### run purely supervised cell typing if no new clusters are needed -----------------------------
-  
-  if (!update_profiles & (n_clusts > 0)) {
-    message("update_profiles = FALSE is only available for n_clusts = 0. Continuing with update_profiles = TRUE." )
-    update_profiles <- TRUE
-  } 
-  
-  if (!update_profiles) {
-    if (is.null(fixed_profiles)) {
-      stop("Either supply a fixed_profiles matrix for supervised classification, or 
-           set n_clusts > 0 to perform unsupervised clustering.")
-    }
-    
-    
-    
-    out = maxLikCellType(counts = counts, 
-                         neg = NULL, 
-                         bg = bg, 
-                         fixed_profiles = fixed_profiles, 
-                         nb_size = nb_size, 
-                         align_genes = TRUE) 
-
-    return(out)    
-    break()
-  }
-  
   
   #### select anchor cells if not provided: ------------------------------
   if (is.null(anchors) & !is.null(fixed_profiles)) {

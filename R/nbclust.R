@@ -224,8 +224,8 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     names(clust_old) <- rownames(counts)
     # derive first profiles from init_clust
     profiles <- Estep(counts = counts,
-                           clust = init_clust,
-                           neg = neg)
+                      clust = init_clust,
+                      neg = neg)
     clustnames <- unique(init_clust)
   }
   
