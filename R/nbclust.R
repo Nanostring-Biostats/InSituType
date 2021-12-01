@@ -104,50 +104,15 @@ Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_
 Estep <- function(counts, clust, neg) {
 
   # get cluster means:
-  if (is.vector(clust)) {
-    means <- sapply(unique(clust), function(cl) {
-      pmax(Matrix::colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
-    })
-  }
-  if (is.matrix(clust)) {
-    means <- apply(clust, 2, function(x) {
-      wts <- x / sum(x)
-      pmax(Matrix::colSums(sweep(counts, 1, wts, "*")) - sum(neg * wts), 0)
-    })
-  }
-
+  means <- sapply(unique(clust), function(cl) {
+    pmax(Matrix::colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
+  })
   return(means)
 }
 
 
 
 
-#' Estimate NB size parameter
-#'
-#' Given cell assignments (or posterior probabilities), update theta.
-#' Assumption is one theta for all data.
-#' @param counts Counts matrix, cells * genes.
-#' @param clust Vector of cluster assignments, or a matrix of probabilities
-#'   of cells (rows) belonging to clusters (columns).
-#' @param bg Expected background
-#' @return A scalar giving the mle for the size parameter
-Estep_size <- function(counts, clust, bg) {
-
-  # define the matrix of expected counts (mu in the NB model):
-  if (is.vector(clust)) {
-    expected = NOTIMPLEMENTEDYET
-
-  }
-  if (is.matrix(clust)) {
-    expected = clust %*% means + bg
-    # (nope, have to treat bg mroe carefully. might be vec or matrix)
-    # also needs to incorporate s somehow
-  }
-
-  # fit theta/size:
-  mod = glm.nb(as.vector(counts) ~ as.vector(expected))$theta
-  return(theta)
-}
 
 #' Cluster via EM algorithm based on cell logliks
 #'
@@ -166,9 +131,6 @@ Estep_size <- function(counts, clust, bg) {
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param  Numer of iterations
-#' @param method Whether to run a SEM algorithm (points given a probability
-#'   of being in each cluster) or a classic EM algorithm (all points wholly
-#'   assigned to one cluster).
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
 #'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
 #'  switchover is only applicable when a cell has changed the assigned cell type with its
@@ -187,7 +149,6 @@ Estep_size <- function(counts, clust, bg) {
 nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     nb_size = 10,
-                    method = "CEM", 
                     pct_drop = 1/10000,   
                     min_prob_increase = 0.05, max_iters = 40, logresults = FALSE) {
 
@@ -261,24 +222,11 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     oldprofiles <- profiles
 
     # E-step: update profiles:
-    if (method == "CEM") {
-      tempprobs = probs
-      # update the new cluster profiles:
-      if (n_clusts != 0){
-        profiles <- Estep(counts = counts,
-                          clust = tempprobs,
-                          neg = neg)
-      }
-    }
-    
-    if (method == "EM") {
-      # update the new cluster profiles:
-      if (n_clusts != 0){
-        tempprobs = 1 * t(apply(probs, 1, ismax))
-        profiles <- Estep(counts = counts,
-                          clust = tempprobs,
-                          neg = neg)        
-      }
+    if (n_clusts != 0){
+      tempclust <- colnames(probs)[apply(probs, 1, which.max)]
+      profiles <- Estep(counts = counts,
+                        clust = tempclust,
+                        neg = neg)        
     }
     
     # for any profiles that have been lost, replace them with their previous version:

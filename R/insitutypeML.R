@@ -18,7 +18,7 @@
 #' \item logliks: a matrix of each cell's log-likelihood under each cluster
 #' }
 #' @export
-maxLikCellType <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size = 10, align_genes = TRUE) {
+insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size = 10, align_genes = TRUE) {
   
   # get vector of expected background:
   if (is.null(bg) & is.null(neg)) {
