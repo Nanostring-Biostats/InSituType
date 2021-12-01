@@ -14,7 +14,6 @@ insitutype(
   sketchingdata = NULL,
   align_genes = TRUE,
   nb_size = 10,
-  method = "CEM",
   init_clust = NULL,
   n_starts = 10,
   n_benchmark_cells = 50000,
@@ -55,10 +54,6 @@ If not provided, then the data's first 20 PCs will be used.}
 \item{align_genes}{Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
-
-\item{method}{Whether to run a SEM algorithm (points given a probability
-of being in each cluster) or a classic EM algorithm (all points wholly
-assigned to one cluster).}
 
 \item{init_clust}{Vector of initial cluster assignments.
 If NULL, initial assignments will be automatically inferred.}

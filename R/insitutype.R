@@ -17,9 +17,6 @@
 #'  If not provided, then the data's first 20 PCs will be used. 
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param method Whether to run a SEM algorithm (points given a probability
-#'   of being in each cluster) or a classic EM algorithm (all points wholly
-#'   assigned to one cluster).
 #' @param init_clust Vector of initial cluster assignments.
 #' If NULL, initial assignments will be automatically inferred.
 #' @param n_starts the number of iterations
@@ -56,7 +53,6 @@ insitutype <- function(counts, neg, bg = NULL,
                        fixed_profiles = NULL, 
                        sketchingdata = NULL,
                        align_genes = TRUE, nb_size = 10, 
-                       method = "CEM", 
                        init_clust = NULL, n_starts = 10, n_benchmark_cells = 50000,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        n_chooseclusternumber = 2000,
@@ -229,7 +225,6 @@ insitutype <- function(counts, neg, bg = NULL,
         init_clust = tempinit, 
         n_clusts = n_clusts,
         nb_size = nb_size,
-        method = method, 
         pct_drop = pct_drop,
         min_prob_increase = min_prob_increase
       )$profiles
@@ -284,7 +279,6 @@ insitutype <- function(counts, neg, bg = NULL,
                     init_clust = temp_init_clust, 
                     n_clusts = n_clusts,
                     nb_size = nb_size,
-                    method = method, 
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   tempprofiles <- clust2$profiles
@@ -314,7 +308,6 @@ insitutype <- function(counts, neg, bg = NULL,
                     init_clust = NULL,  #temp_init_clust, 
                     n_clusts = n_clusts,
                     nb_size = nb_size,
-                    method = method, 
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
