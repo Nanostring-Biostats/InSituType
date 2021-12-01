@@ -5,7 +5,7 @@ data("iocolors")
 data("mini_nsclc")
 
 # test supervised cell typing using direct loglik calcs:
-sup <- maxLikCellType(counts = mini_nsclc$counts,
+sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
                       bg = NULL,
                       fixed_profiles = ioprofiles[,1:6],
