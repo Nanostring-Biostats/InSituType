@@ -100,7 +100,6 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
       anchors = anchors,
       n_clusts = x, 
       init_clust = tempinit,
-      method = "EM", 
       nb_size = nb_size,
       pct_drop = pct_drop,
       min_prob_increase = min_prob_increase)  

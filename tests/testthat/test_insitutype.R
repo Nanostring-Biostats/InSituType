@@ -1,19 +1,32 @@
-context("MLEcell")
 
 # load data ("raw" and "cellannot"):
 data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
 
-# test supervised cell typing:
+# test supervised cell typing using direct loglik calcs:
+sup <- insitutypeML(counts = mini_nsclc$counts,
+                      neg = Matrix::rowMeans(mini_nsclc$neg),
+                      bg = NULL,
+                      fixed_profiles = ioprofiles[,1:6],
+                      nb_size = 10, 
+                      align_genes = TRUE) 
+  
+testthat::test_that("supervised cell typing produces correct outputs", {
+  expect_true(all(is.element(c("clust", "probs"), names(sup))))
+  expect_true(is.vector(sup$clust))
+  expect_true(is.matrix(sup$probs))
+})
+
+# test semi-supervised with 0 new clusts:
 sup <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   bg = NULL,
                   init_clust = NULL, 
                   n_clusts = 0,
+                  anchors = NULL,
                   fixed_profiles = ioprofiles[,1:6],
                   nb_size = 10,
-                  method = "EM",
                   n_starts = 2,
                   align_genes = TRUE,
                   n_benchmark_cells = 200,
@@ -25,7 +38,7 @@ sup <- insitutype(counts = mini_nsclc$counts,
                   max_iters = 10,
                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
 
-testthat::test_that("supervised cell typing produces correct outputs", {
+testthat::test_that("semi-supervised cell typing with n_clusts = 0 produces correct outputs", {
   expect_true(all(is.element(c("clust", "probs"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.matrix(sup$probs))
@@ -40,7 +53,6 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     fixed_profiles = NULL,
                     anchors = NULL,
                     nb_size = 10,
-                    method = "EM",
                     n_starts = 2,
                     align_genes = TRUE,
                     sketchingdata = NULL,
@@ -72,7 +84,6 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     n_clusts = 6,
                     fixed_profiles = NULL,
                     nb_size = 10,
-                    method = "EM",
                     n_starts = NULL,
                     align_genes = TRUE,
                     sketchingdata = NULL,
@@ -110,7 +121,6 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    init_clust = NULL, n_clusts = 2,
                    fixed_profiles = ioprofiles[, 1:3],
                    nb_size = 10,
-                   method = "EM",
                    n_starts = 2,
                    align_genes = TRUE,
                    n_benchmark_cells = 200,
@@ -140,7 +150,6 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    init_clust = NULL, n_clusts = 2:3,
                    fixed_profiles = ioprofiles[, 1:3],
                    nb_size = 10,
-                   method = "EM",
                    n_starts = 2,
                    align_genes = TRUE,
                    n_benchmark_cells = 200,
@@ -172,7 +181,6 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
 #                   init_clust = init_clust, n_clusts = 3,
 #                   fixed_profiles = ioprofiles[, 1:3],
 #                   nb_size = 10,
-#                   method = "EM",
 #                   n_starts = 2,
 #                   align_genes = TRUE,
 #                   n_benchmark_cells = 200,

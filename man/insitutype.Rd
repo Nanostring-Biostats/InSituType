@@ -14,7 +14,6 @@ insitutype(
   sketchingdata = NULL,
   align_genes = TRUE,
   nb_size = 10,
-  method = "CEM",
   init_clust = NULL,
   n_starts = 10,
   n_benchmark_cells = 50000,
@@ -56,10 +55,6 @@ If not provided, then the data's first 20 PCs will be used.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
-\item{method}{Whether to run a SEM algorithm (points given a probability
-of being in each cluster) or a classic EM algorithm (all points wholly
-assigned to one cluster).}
-
 \item{init_clust}{Vector of initial cluster assignments.
 If NULL, initial assignments will be automatically inferred.}
 
@@ -94,10 +89,9 @@ type switchover}
 \value{
 A list, with the following elements:
 \enumerate{
-\item cluster: a vector given cells' cluster assignments
+\item clust: a vector given cells' cluster assignments
 \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 \item profiles: a matrix of cluster-specific expression profiles
-\item pct_changed: how many cells changed class at each step
 \item logliks: a matrix of each cell's log-likelihood under each cluster
 }
 }
