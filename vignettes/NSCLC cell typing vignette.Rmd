@@ -23,6 +23,11 @@ knitr::opts_chunk$set(
 ```
 
 
+## Vignette to-dos:
+- add umap
+- 
+
+
 ### Installation
 
 ```{r installation, eval=FALSE}
@@ -57,7 +62,7 @@ Let's begin with straightforward unsupervised clustering.
 We'll let the algorithm try to select the optimal number of clusters from 
 a range of plausible options. 
 
-```{r unsup}
+```{r unsup, echo=FALSE}
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     init_clust = NULL, 
@@ -69,8 +74,132 @@ unsup <- insitutype(counts = mini_nsclc$counts,
 
 ```
 
+The function returns 3 useful outputs: a vector of cells' cluster assignments, 
+a matrix of cells' probabilities of belonging to each cluster, and a matrix of 
+the mean expression profile of each cluster. 
+
+```{r unsup_results}
+str(unsup)
+round(head(unsup$probs),2)
+heatmap(sweep(unsup$profiles, 1, apply(unsup$profiles, 1, max), "/"), scale = "none",
+        main = "Cluster mean expression profiles")
+
+# define cluster colors:
+cols <- c('#8DD3C7','#FFFFB3','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
+cols <- cols[seq_along(unique(unsup$clust))]
+names(cols) <- unique(unsup$clust)
+
+par(mfrow = c(1,2))
+par(mar = c(0,0,0,0))
+
+plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+          main = "cells in physical space,\ncolored by unsupervised cluster",
+     col = cols[unsup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+plot(mini_nsclc$umap, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+     main = "cells in UMAP space,\ncolored by unsupervised cluster",     
+     col = cols[unsup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.5)
+
+
+```
+
+#### Supervised cell typing:
+
+Often, expression profiles will be available ahead of time for the cell types present in a tissue. 
+Cell type expression profiles could come from earlier scRNA-seq studies, from singel cell expression 
+databases like the human cell atlas, or from databases of cell type profiles like 
+https://github.com/Nanostring-Biostats/CellProfileLibrary or https://github.com/northstaratlas/atlas_landmarks.
+
+When we already know the expression profile of cells in a tissue, we can skip unsupervised clustering 
+and simply assign each cell to the cell type under which its expression data is most likely
+using the insitutypeML function. Below, we perform supervised cell typing using a matrix of immune cell profiles:
+
+
+```{r sup, echo=FALSE}
+
+sup <- insitutypeML(counts = mini_nsclc$counts,
+                    neg = Matrix::rowMeans(mini_nsclc$neg),
+                    fixed_profiles = ioprofiles)   
+```
+
+Now let's examine the results:
+```{r sup_results}
+str(sup)
+
+par(mfrow = c(1,2))
+par(mar = c(0,0,0,0))
+
+plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+     main = "cells in physical space,\ncolored by supervised cell type",
+     col = iocolors[sup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+plot(mini_nsclc$umap, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+     main = "cells in UMAP space,\ncolored by supervised cell type",
+     col = iocolors[sup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.5)
+
+```
+
+There's a problem with the above plot: this is a tumor sample, but the profile matrix 
+only contains profiles for immune and stroma cells. Any tumor cells will get assigned 
+to whichever immune or stroma cell fits them best. 
+
+#### Semi-supervised clustering
+
+For settings like this one, where we only know the profiles for some of the cell types, we can employ 
+semi-supervised clustering, in which the known cells types constrain a clustering solution 
+that includes both pre-defined cell types and newly discovered clusters. 
+To perform semi-supervised clustering, the insitutype algorithm identifies "anchor" cells
+that are very good fits to the predefined profiles. Over the iterations, these 
+cells are fixed within their originally assigned cell types, ", then holds these cells within
+their assigned cell types as iterations proceed, anchoring their clusters. 
+
+Below we'll perform semi-supervised clustering of the NSCLC sample, looking for 
+known immune and stroma cell types while also fitting new clusters, presumably tumor cells: 
+
+```{r semi}
+semi <- insitutype(counts = mini_nsclc$counts,
+                   neg = Matrix::rowMeans(mini_nsclc$neg),
+                   init_clust = NULL, 
+                   n_clusts = 2, 
+                   fixed_profiles = ioprofiles,
+                   anchors = NULL,
+                   n_anchor_cells = 10,
+                   nb_size = 10,
+                   n_starts = 2)   
+```
+
+
+Now let's examine the results:
+
+```{r semi_results}
+str(semi)
+unique(semi$clust)
+
+# colors for known cell types:
+cols = iocolors
+# colors for new clusters
+cols["a"] <- "grey20"
+cols["b"] <- "firebrick"
+
+par(mfrow = c(1,2))
+par(mar = c(0,0,0,0))
+
+plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+     main = "cells in physical space,\ncolored by semi-supervised cell type",
+     col = cols[semi$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+plot(mini_nsclc$umap, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+     main = "cells in UMAP space,\ncolored by semi-supervised cell type",
+     col = cols[semi$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.5)
+
+
+```
 
 #### organization:
+
 - simple clustering
 - supervised cell typing: 
 - semi-sup
@@ -84,452 +213,6 @@ unsup <- insitutype(counts = mini_nsclc$counts,
 
 
 
-
-
-
-
-
-
-#### OLD BELOW
-The insitutype function takes 3 arguments of expression data:
-
-1. The normalized data.
-2. A matrix of expected background for all data points in the normalized 
-data matrix.
-3. Optionally, either a matrix of per-data-point weights, or the raw data, 
-which is used to derive weights (low counts are less statistically stable, 
-and this allows spatialdecon to down-weight them.) 
-
-
-We estimate each data point's expected background from the negative control 
-probes from its corresponding observation:
-
-```{r estimateBG}
-# use the NegProbe to estimate per-observation background
-per.observation.mean.neg = norm["NegProbe", ]
-# and define a background matrix in which each column (observation) is the
-# appropriate value of per-observation background:
-bg = sweep(norm * 0, 2, per.observation.mean.neg, "+")
-dim(bg)
-
-```
-
-A note for background estimation: in studies with two probesets, the genes from 
-each probeset will have distinct background values, and the above code should be
-run separately for each probeset using its corresponding NegProbe value. 
-Alternatively, the "derive_GeoMx_background" can do this automatically:
-
-```{r derivebg}
-bg2 = derive_GeoMx_background(norm = norm,
-                             probepool = rep(1, nrow(norm)),
-                             negnames = "NegProbe")
-```
-
-
-### Cell profile matrices
-
-A "cell profile matrix" is a pre-defined matrix that specifies the expected 
-expression profiles of each cell type in the experiment. 
-The SpatialDecon library comes with one such matrix pre-loaded, the "SafeTME" 
-matrix, designed for estimation of immune and stroma cells in the tumor 
-microenvironment. 
-(This matrix was designed to avoid genes commonly expressed by cancer cells; 
-see the SpatialDecon manuscript for details.)
-
-Let's take a glance at the safeTME matrix:
-
-```{r showsafetme, fig.height=5, fig.width=10, fig.cap = "The safeTME cell profile matrix"}
-data("safeTME")
-data("safeTME.matches")
-
-signif(safeTME[seq_len(3), seq_len(3)], 2)
-
-heatmap(sweep(safeTME, 1, apply(safeTME, 1, max), "/"),
-        labRow = NA, margins = c(10, 5))
-
-```
-
-
-For studies of other tissue types, we have provided a library of cell profile
-matrices, available on Github and downloadable with the "download_profile_matrix" function. 
-
-For a complete list of matrices, see [CellProfileLibrary GitHub Page](https://github.com/Nanostring-Biostats/CellProfileLibrary/tree/NewProfileMatrices)
-
-Below we download a matrix of cell profiles derived from scRNA-seq of a mouse 
-spleen. 
-
-```{r downloadmatrix, fig.height=7, fig.width=10, fig.cap = "The Mouse Spleen profile matrix", eval=T}
-mousespleen <- download_profile_matrix(species = "Mouse",
-                                       age_group = "Adult", 
-                                       matrixname = "Spleen_MCA")
-dim(mousespleen)
-
-mousespleen[1:4,1:4]
-
-head(cellGroups)
-
-metadata
-
-heatmap(sweep(mousespleen, 1, apply(mousespleen, 1, max), "/"),
-        labRow = NA, margins = c(10, 5), cexCol = 0.7)
-
-```
-
-
-For studies where the provided cell profile matrices aren't sufficient or if a 
-specific single cell dataset is wanted, we can make a custom profile matrix using 
-the function create_profile_matrix(). 
-
-This mini single cell dataset is a fraction of the data from Kinchen, J. et al. 
-Structural Remodeling of the Human Colonic Mesenchyme in Inflammatory Bowel 
-Disease. Cell 175, 372-386.e17 (2018).
-
-```{r single cell data}
-data("mini_singleCell_dataset")
-
-mini_singleCell_dataset$mtx@Dim # genes x cells
-
-as.matrix(mini_singleCell_dataset$mtx)[1:4,1:4]
-
-head(mini_singleCell_dataset$annots)
-
-table(mini_singleCell_dataset$annots$LabeledCellType)
-
-```
-
-**Pericyte cell** and **smooth muscle cell of colon** will be dropped from this 
-matrix due to low cell count. The average expression across all cells of one type 
-is returned so the more cells of one type, the better reflection of the true gene 
-expression. The confidence in these averages can be changed using the minCellNum filter.
-
-```{r creatematrix, fig.height=7, fig.width=10, fig.cap = "Custom profile matrix"}
-custom_mtx <- create_profile_matrix(mtx = mini_singleCell_dataset$mtx,            # cell x gene count matrix
-                                    cellAnnots = mini_singleCell_dataset$annots,  # cell annotations with cell type and cell name as columns 
-                                    cellTypeCol = "LabeledCellType",  # column containing cell type
-                                    cellNameCol = "CellID",           # column containing cell ID/name
-                                    matrixName = "custom_mini_colon", # name of final profile matrix
-                                    outDir = NULL,                    # path to desired output directory, set to NULL if matrix should not be written
-                                    normalize = FALSE,                # Should data be normalized? 
-                                    minCellNum = 5,                   # minimum number of cells of one type needed to create profile, exclusive
-                                    minGenes = 10,                    # minimum number of genes expressed in a cell, exclusive
-                                    scalingFactor = 5,                # what should all values be multiplied by for final matrix
-                                    discardCellTypes = TRUE)          # should cell types be filtered for types like mitotic, doublet, low quality, unknown, etc.
-
-head(custom_mtx)
-
-heatmap(sweep(custom_mtx, 1, apply(custom_mtx, 1, max), "/"),
-        labRow = NA, margins = c(10, 5), cexCol = 0.7)
-
-```
-
-Custom matrices can be created from all single cell data classes as long as a 
-counts matrix and cell annotations can be passed to the function. Here is an 
-example of creating a matrix using a Seurat object. 
-
-```{r createSeuratmatrix}
-library(SeuratObject)
-
-data("mini_singleCell_dataset")
-
-rownames(mini_singleCell_dataset$annots) <- mini_singleCell_dataset$annots$CellID
-
-seuratObject <- CreateSeuratObject(counts = mini_singleCell_dataset$mtx, 
-                                   meta.data = mini_singleCell_dataset$annots)
-Idents(seuratObject) <- seuratObject$LabeledCellType
-
-rm(mini_singleCell_dataset)
-
-annots <- data.frame(cbind(cellType=as.character(Idents(seuratObject)), 
-                           cellID=names(Idents(seuratObject))))
-
-custom_mtx_seurat <- create_profile_matrix(mtx = seuratObject@assays$RNA@counts, 
-                                           cellAnnots = annots, 
-                                           cellTypeCol = "cellType", 
-                                           cellNameCol = "cellID", 
-                                           matrixName = "custom_mini_colon",
-                                           outDir = NULL, 
-                                           normalize = FALSE, 
-                                           minCellNum = 5, 
-                                           minGenes = 10)
-
-head(custom_mtx_seurat)
-
-paste("custom_mtx and custom_mtx_seurat are identical", all(custom_mtx == custom_mtx_seurat))
-```
-
-### Performing basic deconvolution with the spatialdecon function
-
-Now our data is ready for deconvolution. 
-First we'll show how to use spatialdecon under the basic settings, omitting 
-optional bells and whistles. 
-
-
-```{r runiss}
-res = spatialdecon(norm = norm,
-                   bg = bg,
-                   X = safeTME,
-                   align_genes = TRUE)
-str(res)
-```
-
-We're most interested in "beta", the matrix of estimated cell abundances. 
-
-```{r plotissres, fig.height = 5, fig.width = 8, fig.cap = "Cell abundance estimates"}
-heatmap(res$beta, cexCol = 0.5, cexRow = 0.7, margins = c(10,7))
-```
-
-
-### Using the advanced settings of spatialdecon
-
-spatialdecon has several abilities beyond basic deconvolution:
-
-1. If given the nuclei counts for each region/observation, it returns results on
-the scale of total cell counts.
-2. If given the identities of pure tumor regions/observations, it infers a
-handful of tumor-specific expression profiles and appends them to the cell
-profile matrix. Doing this accounts for cancer cell-derived expression from any 
-genes in the cell profile matrix, removing contaminating signal from cancer 
-cells. 
-3. If given raw count data, it derives per-data-point weights, using an error 
-model derived for GeoMx data. 
-4. If given a "cellmatches" argument, it sums multiple closely-related cell 
-types into a single score. E.g. if the safeTME matrix is used with the 
-cell-matching data object "safeTME.matches", it e.g. sums the "T.CD8.naive" and
-"T.CD8.memory" scores into a single "CD8.T.cells" score. 
-
-Let's take a look at an example cell matching object:
-```{r showmatches}
-str(safeTME.matches)
-```
-
-
-Now let's run spatialdecon:
-
-```{r runisstils}
-# vector identifying pure tumor segments:
-annot$istumor = (annot$AOI.name == "Tumor")
-
-# run spatialdecon with all the bells and whistles:
-restils = spatialdecon(norm = norm,                     # normalized data
-                       raw = raw,                       # raw data, used to down-weight low-count observations 
-                       bg = bg,                         # expected background counts for every data point in norm
-                       X = safeTME,                     # safeTME matrix, used by default
-                       cellmerges = safeTME.matches,   # safeTME.matches object, used by default
-                       cell_counts = annot$nuclei,      # nuclei counts, used to estimate total cells
-                       is_pure_tumor = annot$istumor,   # identities of the Tumor segments/observations
-                       n_tumor_clusters = 5)            # how many distinct tumor profiles to append to safeTME
-
-str(restils)
-```
-
-There are quite a few readouts here. Let's review the important ones:
-
-* beta: the cell abundance scores of the rolled-up/major cell types
-* beta.granular: the cell abundance scores of the granular cell types, 
-corresponding to the columns of the cell profile matrix
-* yhat, resids: the fitted values and log2-scale residuals from the 
-deconvolution fit. Can be used to measure each observation's goodness-of-fit, a 
-possible QC metric. 
-* cell.counts, cell.counts.granular: estimated numbers of each cell type, 
-derived using the nuclei count input
-* prop_of_nontumor: the beta matrix rescaled to give the proportions of 
-non-tumor cells in each observation. 
-* X: the cell profile matrix used, including newly-derived tumor-specific 
-columns.
-
-To illustrate the derivation of tumor profiles, let's look at the cell profile 
-matrix output by spatialdecon:
-
-```{r shownewX, fig.height=5, fig.width=8, fig.cap = "safeTME merged with newly-derived tumor profiles"}
-heatmap(sweep(restils$X, 1, apply(restils$X, 1, max), "/"),
-         labRow = NA, margins = c(10, 5))
-
-```
-
-Note the new tumor-specific columns. 
-
-Finally, let's compare deconvolution results from basic vs. the advanced setting
-with tumor profiles appended (just for a few cell types):
-
-```{r compareresults, fig.height=6, fig.width=8, fig.cap = "Cell abundance estimates with and without modelling tumor profiles"}
-par(mfrow = c(2, 3))
-par(mar = c(5,7,2,1))
-for (i in seq_len(6)) {
-  cell = rownames(res$beta)[i]
-  plot(res$beta[cell, ], restils$beta.granular[cell, ],
-       xlab = paste0(cell, " score under basic setting"), 
-       ylab = paste0(cell, " score when tumor\ncells are modelled"), 
-       pch = 16,
-       col = c(rgb(0,0,1,0.5), rgb(1,0,0,0.5))[1 + annot$istumor],
-       xlim = range(c(res$beta[cell, ], restils$beta.granular[cell, ])),
-       ylim = range(c(res$beta[cell, ], restils$beta.granular[cell, ])))
-  abline(0,1)
-  if (i == 1) {
-    legend("topleft", pch = 16, col = c(rgb(0,0,1,0.5), rgb(1,0,0,0.5)),
-           legend = c("microenv.", "tumor"))
-  }
-}
-
-```
-
-So the impact of modelling tumor is two-fold:
-
-* Estimated immune cell content in tumor segments is driven down all the way, or
-almost all the way, to 0.
-* Estimated immune cell abundance in microenvironment segments in suppressed, as
-part of the gene expression is attributed to cancer cells instead of immune 
-cells. 
-
-
-### Plotting deconvolution results
-
-The SpatialDecon package contains two specialized plotting functions, and a 
-default color palette for the safeTME matrix. 
-
-The first function is "TIL_barplot", which is just a convenient way of drawing 
-barplots of cell type abundance. 
-
-```{r barplot, fig.width=9, fig.height=6, fig.cap="Barplots of TIL abundance"}
-# For reference, show the TILs color data object used by the plotting functions 
-# when safeTME has been used:
-data("cellcols")
-cellcols
-
-# show just the TME segments, since that's where the immune cells are:
-layout(mat = (matrix(c(1, 2), 1)), widths = c(7, 3))
-TIL_barplot(restils$cell.counts$cell.counts, draw_legend = TRUE, 
-            cex.names = 0.5)
-# or the proportions of cells:
-TIL_barplot(restils$prop_of_nontumor[, annot$AOI.name == "TME"], 
-            draw_legend = TRUE, cex.names = 0.75)
-
-```
-
-
-The second function is "florets", used for plotting cell abundances atop some 
-2-D projection. 
-Here, we'll plot cell abundances atop the first 2 principal components of the 
-data:
-
-```{r florets, fig.width=8, fig.height=6, fig.cap = "TIL abundance plotted on PC space"}
-# PCA of the normalized data:
-pc = prcomp(t(log2(pmax(norm, 1))))$x[, c(1, 2)]
-
-# run florets function:
-par(mar = c(5,5,1,1))
-layout(mat = (matrix(c(1, 2), 1)), widths = c(6, 2))
-florets(x = pc[, 1], y = pc[, 2],
-        b = restils$beta, cex = 2,
-        xlab = "PC1", ylab = "PC2")
-par(mar = c(0,0,0,0))
-frame()
-legend("center", fill = cellcols[rownames(restils$beta)], 
-       legend = rownames(restils$beta), cex = 0.7)
-```
-
-So we can see that PC1 roughly tracks many vs. few immune cells, and PC2 tracks 
-the relative abundance of lymphoid/myeloid populations.
-
-
-### Other functions
-
-The SpatialDecon library includes several helpful functions for further 
-analysis/fine-tuning of deconvolution results. 
-
-#### Combining cell types:
-
-When two cell types are too similar, the estimation of their abundances becomes
-unstable. However, their sum can still be estimated easily. 
-The function "collapseCellTypes" takes a deconvolution results object and 
-collapses any colsely-related cell types you tell it to:
-
-```{r collapse, fig.width=5, fig.height=5, fig.cap="Cell abundance estimates with related cell types collapsed"}
-matching = list()
-matching$myeloid = c( "macrophages", "monocytes", "mDCs")
-matching$T.NK = c("CD4.T.cells","CD8.T.cells", "Treg", "NK")
-matching$B = c("B")
-matching$mast = c("mast")
-matching$neutrophils = c("neutrophils")
-matching$stroma = c("endothelial.cells", "fibroblasts")
-
-
-collapsed = collapseCellTypes(fit = restils, 
-                              matching = matching)
-
-heatmap(collapsed$beta, cexRow = 0.85, cexCol = 0.75)
-```
-
-#### Inferring an expression profile for a cell type omitted from the profile matrix
-
-Sometimes a cell profile matrix will omit a cell type you know to be present in 
-a tissue. 
-If your data includes any regions that are purely this unmodelled cell type - 
-e.g. because you've used the GeoMx platform's segmentation capability to 
-specifically select them - then you can infer a profile for that cell type and 
-merge it with your cell profile matrix. 
-The algorithm clusters all the observations you designate as purely the 
-unmodelled cell type, and collapses those clusters into as many profiles of that
-cell type as you wish. For cancer cell, it may be appropriate to specify 10 or
-more clusters; for highly regular healthy cells, one cluster may suffice.
-
-(Note: this functionality can also be run within the spatialdecon function, as 
-is demonstrated further above.)
-
-```{r appendtumor, fig.width = 10, fig.height= 5, fig.cap = "safeTME merged with newly-derived tumor profiles"}
-pure.tumor.ids = annot$AOI.name == "Tumor"
-safeTME.with.tumor = mergeTumorIntoX(norm = norm, 
-                                     bg = bg, 
-                                     pure_tumor_ids = pure.tumor.ids, 
-                                     X = safeTME, 
-                                     K = 3) 
-
-heatmap(sweep(safeTME.with.tumor, 1, apply(safeTME.with.tumor, 1, max), "/"),
-        labRow = NA, margins = c(10, 5))
-
-```
-
-
-#### Reverse deconvolution
-
-Once cell type abundance has been estimated, we can flip the deconvolution 
-around, modelling the expression data as a function of cell abundances, and 
-thereby deriving:
-
-1. Estimated expression of each gene in each cell type. (Including for genes 
-not present in your cell profile matrix)
-2. Fitted expression values for each gene based on cell mixing.
-3. Residuals of each gene: how does their expression compare to what cell mixing
-would predict?
-4. Two metrics of how well genes are predicted by/ redundant with cell mixing: 
-correlation between observed and fitted expression, and residual SD. 
-
-The function "reversedecon" runs this model.
-
-```{r reverse, fig.height=6, fig.width=6, fig.cap="Residuals from reverseDecon"}
-rdecon = reverseDecon(norm = norm,
-                      beta = res$beta)
-str(rdecon)
-
-# look at the residuals:
-heatmap(pmax(pmin(rdecon$resids, 2), -2))
-```
-
-```{r reverse2, fig.height=6, fig.width=6, fig.cap="Genes' dependency on cell mixing"}
-# look at the two metrics of goodness-of-fit:
-plot(rdecon$cors, rdecon$resid.sd, col = 0)
-showgenes = c("CXCL14", "LYZ", "NKG7")
-text(rdecon$cors[setdiff(names(rdecon$cors), showgenes)], 
-     rdecon$resid.sd[setdiff(names(rdecon$cors), showgenes)], 
-     setdiff(names(rdecon$cors), showgenes), cex = 0.5)
-text(rdecon$cors[showgenes], rdecon$resid.sd[showgenes], 
-     showgenes, cex = 0.75, col = 2)
-
-```
-
-From the above plot, we can see that genes like CXCL14 vary independently of 
-cell mixing, genes like LYZ are correlated with cell mixing but still have 
-variable expression, and genes like NKG7 serve as nothing but obtuse readouts 
-of cell mixing. 
 
 
 ### Session Info
