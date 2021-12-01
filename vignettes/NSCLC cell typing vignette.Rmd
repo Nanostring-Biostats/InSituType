@@ -24,8 +24,8 @@ knitr::opts_chunk$set(
 
 
 ## Vignette to-dos:
-- add umap
-- 
+- add section at end on mergecells function
+- save clustering results in package data to save time when running?
 
 
 ### Installation
@@ -66,7 +66,7 @@ a range of plausible options.
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     init_clust = NULL, 
-                    n_clusts = c(5,10,15,20),  # condensed to save time. n_clusts = 5:20 would be more optimal
+                    n_clusts = c(5,7,10),  # condensed to save time. n_clusts = 5:20 would be more optimal
                     fixed_profiles = NULL,
                     anchors = NULL,
                     nb_size = 10,
@@ -137,7 +137,7 @@ plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
 plot(mini_nsclc$umap, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
      main = "cells in UMAP space,\ncolored by supervised cell type",
      col = iocolors[sup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
-legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.5)
+legend("bottomleft", pch = 16, col = iocolors, legend = names(iocolors), cex = 0.5)
 
 ```
 
@@ -197,6 +197,61 @@ legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.5)
 
 
 ```
+
+
+#### Choosing anchor cells for semi-supervised clustering
+
+In the above example of semi-supervised clustering, we let insitutype automatically 
+choose anchor cells. Here we'll show how to select anchor cells ahead of insitutype. 
+Anchor cells can be selected automatically with the function find_anchor_cells, 
+or they can be selected by hand.
+
+Now let's see how the find_anchor_cells function works:
+```{r anchor}
+anchors <- find_anchor_cells(counts = mini_nsclc$counts, 
+                             neg = Matrix::rowMeans(mini_nsclc$neg), 
+                             profiles = ioprofiles,
+                             n_cells = 10, 
+                             min_cosine = 0.3,
+                             min_scaled_llr = 0.01)
+str(anchors)
+```
+
+The output is a vector of cells' "anchor" assignments. Cells not chosen as anchors are given NA entries.
+
+Below are the anchor cells selected. For each cell type, the top 10 cells have been chosen,
+based on both cosine similarity to a fixed profile and likelihood ratio vs. other cell types.
+
+```{r anchor_results}
+cols = iocolors
+cols["NA"] = "grey80"
+
+plot(mini_nsclc$umap, pch = 16, cex = .5, asp = 1, cex.main = 0.75,
+     main = "Autmated anchor cell choices", col = "grey80",
+     xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+points(mini_nsclc$umap, pch = 16, cex = .75,
+     col = cols[anchors])
+legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.5)
+
+```
+
+
+#### Visualizing clustering results
+
+Insitutype calculates the probability of each cell belonging to each cluster. 
+This information lets us understand how clusters relate to each other. 
+The flightpath_plot function arrays cells according to their cluster probabilities:
+
+```{r flightpath}
+cols <- c('#8DD3C7','#FFFFB3','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
+cols <- cols[seq_along(unique(unsup$clust))]
+names(cols) <- unique(unsup$clust)
+fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = unsup, col = cols[unsup$clust])
+str(fp)
+print(fp)
+
+```
+
 
 #### organization:
 
