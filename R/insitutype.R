@@ -44,7 +44,7 @@
 #' \item clust: a vector given cells' cluster assignments
 #' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
-#' \item logliks: a matrix of each cell's log-likelihood under each cluster
+#' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 #' }
 #' @export
 insitutype <- function(counts, neg, bg = NULL, 
@@ -326,6 +326,7 @@ insitutype <- function(counts, neg, bg = NULL,
   probs <- logliks2probs(logliks)
   out = list(clust = clust,
              probs = round(probs, 3),
-             profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles)) #,logliks = round(logliks, 3))
+             profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles),
+             anchors = anchors) 
   return(out)
 }

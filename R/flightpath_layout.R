@@ -71,7 +71,7 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
     stop("Must provide either flightpath_result or insitutype_result.")
   }
   if (is.null(flightpath_result)) {
-    flightpath_result <- flightpath_layout(probs = res$probs, profiles = res$profiles)
+    flightpath_result <- flightpath_layout(probs = insitutype_result$probs, profiles = insitutype_result$profiles)
   }
   
   # create color scheme if needed:
