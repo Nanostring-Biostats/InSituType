@@ -17,9 +17,6 @@
 #'  If not provided, then the data's first 20 PCs will be used. 
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param method Whether to run a SEM algorithm (points given a probability
-#'   of being in each cluster) or a classic EM algorithm (all points wholly
-#'   assigned to one cluster).
 #' @param init_clust Vector of initial cluster assignments.
 #' If NULL, initial assignments will be automatically inferred.
 #' @param n_starts the number of iterations
@@ -44,10 +41,9 @@
 #'
 #' @return A list, with the following elements:
 #' \enumerate{
-#' \item cluster: a vector given cells' cluster assignments
+#' \item clust: a vector given cells' cluster assignments
 #' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
-#' \item pct_changed: how many cells changed class at each step
 #' \item logliks: a matrix of each cell's log-likelihood under each cluster
 #' }
 #' @export
@@ -57,7 +53,6 @@ insitutype <- function(counts, neg, bg = NULL,
                        fixed_profiles = NULL, 
                        sketchingdata = NULL,
                        align_genes = TRUE, nb_size = 10, 
-                       method = "CEM", 
                        init_clust = NULL, n_starts = 10, n_benchmark_cells = 50000,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        n_chooseclusternumber = 2000,
@@ -83,48 +78,6 @@ insitutype <- function(counts, neg, bg = NULL,
     bg <- rep(bg, nrow(counts))
     names(bg) <- rownames(counts)
   }
-  
-  #### run purely supervised cell typing if no new clusters are needed -----------------------------
-  if (all(n_clusts == 0)) {
-    if (is.null(fixed_profiles)) {
-      stop("Either set n_clusts > 0 to perform unsupervised clustering or supply a fixed_profiles matrix for supervised classification.")
-    }
-    
-    # align genes:
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
-    
-    # subset:
-    counts <- counts[, sharedgenes]
-    fixed_profiles <- fixed_profiles[sharedgenes, ]
-    
-    # warn about genes being lost:
-    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
-                     paste0(lostgenes, collapse = ",")))
-    }
-    if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
-    }
-    
-    # get logliks
-    logliks <- apply(fixed_profiles, 2, function(ref) {
-      lldist(x = ref,
-             mat = counts,
-             bg = bg,
-             size = nb_size)
-    })
-    # get remaining outputs
-    clust <- colnames(logliks)[apply(logliks, 1, which.max)]
-    probs <- logliks2probs(logliks)
-    out = list(clust = clust,
-               probs = round(probs, 3),
-               profiles = fixed_profiles,
-               logliks = round(logliks, 3))
-    return(out)    
-    break()
-  }
-  
   
   #### select anchor cells if not provided: ------------------------------
   if (is.null(anchors) & !is.null(fixed_profiles)) {
@@ -272,7 +225,6 @@ insitutype <- function(counts, neg, bg = NULL,
         init_clust = tempinit, 
         n_clusts = n_clusts,
         nb_size = nb_size,
-        method = method, 
         pct_drop = pct_drop,
         min_prob_increase = min_prob_increase
       )$profiles
@@ -327,7 +279,6 @@ insitutype <- function(counts, neg, bg = NULL,
                     init_clust = temp_init_clust, 
                     n_clusts = n_clusts,
                     nb_size = nb_size,
-                    method = method, 
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   tempprofiles <- clust2$profiles
@@ -357,7 +308,6 @@ insitutype <- function(counts, neg, bg = NULL,
                     init_clust = NULL,  #temp_init_clust, 
                     n_clusts = n_clusts,
                     nb_size = nb_size,
-                    method = method, 
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
   
