@@ -10,7 +10,8 @@ A list with the following elements:
  \item counts A matrix of raw counts, with cells in rows and genes in columns
  \item counts A matrix of negprobe counts, with cells in rows and negprobes in columns
  \item x x positions
- \item y y positions
+ \item y y position
+ \item umap umap projection
  }
 }
 \usage{
