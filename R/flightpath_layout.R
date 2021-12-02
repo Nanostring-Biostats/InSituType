@@ -19,7 +19,7 @@ flightpath_layout <- function(probs, profiles = NULL, cluster_xpos = NULL, clust
   # get cluster centroid positions if not pre-specified:
   if (is.null(cluster_xpos) | is.null(cluster_ypos)) {
     # controls for a umap-based layout:
-    conf = umap.defaults
+    conf = umap::umap.defaults
     conf$min_dist = 3
     conf$spread = conf$min_dist * 1.1
     conf$n_neighbors = ncol(probs)
@@ -55,7 +55,7 @@ flightpath_layout <- function(probs, profiles = NULL, cluster_xpos = NULL, clust
 #'@importFrom utils data
 #'@importFrom scales alpha
 #'@importFrom RColorBrewer brewer.pal
-#'
+#'@import ggplot2
 #'@return a ggplot object
 #'
 #'@export
@@ -89,18 +89,18 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
   df_text <- data.frame(x = flightpath_result$clustpos[, 1],
                         y = flightpath_result$clustpos[, 2],
                         group = rownames(flightpath_result$clustpos))
-  p <- ggplot() +
-    geom_point(df, mapping  = aes(x = flightpath_result$cellpos[, 1], y = flightpath_result$cellpos[, 2], color = I(col))) +
-    scale_color_identity() +
-    geom_text(df_text,
-              mapping = aes(x = x, y = y, label = group),
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_point(df, mapping  = ggplot2::aes(x = flightpath_result$cellpos[, 1], y = flightpath_result$cellpos[, 2], color = I(col))) +
+    ggplot2::scale_color_identity() +
+    ggplot2::geom_text(df_text,
+              mapping = ggplot2::aes(x = x, y = y, label = group),
               size = 5) +
     xlab("") +
     ylab("") +
-    theme_bw() +
-    theme(legend.position = "none",
-          panel.grid = element_blank(),
-          axis.text = element_blank())
+    ggplot2::theme_bw() +
+    ggplot2::theme(legend.position = "none",
+          panel.grid = ggplot2::element_blank(),
+          axis.text = ggplot2::element_blank())
   
   return(p)
 }

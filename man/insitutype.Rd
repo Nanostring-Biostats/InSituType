@@ -92,7 +92,7 @@ A list, with the following elements:
 \item clust: a vector given cells' cluster assignments
 \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
 \item profiles: a matrix of cluster-specific expression profiles
-\item logliks: a matrix of each cell's log-likelihood under each cluster
+\item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 }
 }
 \description{

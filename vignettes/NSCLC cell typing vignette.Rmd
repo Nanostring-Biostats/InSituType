@@ -3,8 +3,10 @@ title: "Use of insitutype in a small CosMx dataset"
 output: 
   rmarkdown::html_vignette: 
     toc: true
+fig_width: 10 
+fig_height: 6 
 vignette: >
-  %\VignetteIndexEntry{Use of SpatialDecon in a small GeoMx dataet}
+  %\VignetteIndexEntry{Use of insitutype in a small CosMx dataset}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -39,8 +41,8 @@ knitr::opts_chunk$set(
 ### Overview
 
 
-This vignette demonstrates the use of the SpatialDecon package to estimate cell 
-abundance in spatial gene expression studies. 
+This vignette demonstrates the use of the insitutype algorithm to perform cell typing 
+of CosMx data. 
 
 We'll analyze a subset of the CosMx NSCLC showcase dataset. 
 
@@ -54,6 +56,7 @@ data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
 str(mini_nsclc)
+set.seed(0)
 ```
 
 #### Unsupervised clustering:
@@ -70,7 +73,8 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     fixed_profiles = NULL,
                     anchors = NULL,
                     nb_size = 10,
-                    n_starts = 5)   
+                    n_phase1 = 200, n_phase2 = 500, n_phase3 = 2000, # choosing inadvisably low numbers to speed the vignette
+                    n_starts = 2)   # 2 chosen to save time. 10 would be more thorough.
 
 ```
 
@@ -78,19 +82,19 @@ The function returns 3 useful outputs: a vector of cells' cluster assignments,
 a matrix of cells' probabilities of belonging to each cluster, and a matrix of 
 the mean expression profile of each cluster. 
 
-```{r unsup_results}
+```{r unsup_results, fig.width = 10, fig.height = 6}
 str(unsup)
 round(head(unsup$probs),2)
 heatmap(sweep(unsup$profiles, 1, apply(unsup$profiles, 1, max), "/"), scale = "none",
         main = "Cluster mean expression profiles")
 
 # define cluster colors:
-cols <- c('#8DD3C7','#FFFFB3','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
+cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
 cols <- cols[seq_along(unique(unsup$clust))]
 names(cols) <- unique(unsup$clust)
 
 par(mfrow = c(1,2))
-par(mar = c(0,0,0,0))
+par(mar = c(0,0,3,0))
 
 plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
           main = "cells in physical space,\ncolored by unsupervised cluster",
@@ -103,6 +107,10 @@ legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.5)
 
 
 ```
+
+
+
+
 
 #### Supervised cell typing:
 
@@ -124,7 +132,7 @@ sup <- insitutypeML(counts = mini_nsclc$counts,
 ```
 
 Now let's examine the results:
-```{r sup_results}
+```{r sup_results, fig.width = 10, fig.height = 6}
 str(sup)
 
 par(mfrow = c(1,2))
@@ -165,6 +173,7 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    n_clusts = 2, 
                    fixed_profiles = ioprofiles,
                    anchors = NULL,
+                   n_phase1 = 200, n_phase2 = 500, n_phase3 = 2000, # choosing inadvisably low numbers to speed the vignette
                    n_anchor_cells = 10,
                    nb_size = 10,
                    n_starts = 2)   
@@ -173,7 +182,7 @@ semi <- insitutype(counts = mini_nsclc$counts,
 
 Now let's examine the results:
 
-```{r semi_results}
+```{r semi_results, fig.width = 10, fig.height = 6}
 str(semi)
 unique(semi$clust)
 
@@ -222,7 +231,7 @@ The output is a vector of cells' "anchor" assignments. Cells not chosen as ancho
 Below are the anchor cells selected. For each cell type, the top 10 cells have been chosen,
 based on both cosine similarity to a fixed profile and likelihood ratio vs. other cell types.
 
-```{r anchor_results}
+```{r anchor_results, fig.width = 6, fig.height = 6}
 cols = iocolors
 cols["NA"] = "grey80"
 
@@ -242,31 +251,30 @@ Insitutype calculates the probability of each cell belonging to each cluster.
 This information lets us understand how clusters relate to each other. 
 The flightpath_plot function arrays cells according to their cluster probabilities:
 
-```{r flightpath}
-cols <- c('#8DD3C7','#FFFFB3','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
+```{r flightpath, fig.width = 5, fig.height = 5}
+cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
 cols <- cols[seq_along(unique(unsup$clust))]
 names(cols) <- unique(unsup$clust)
 fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = unsup, col = cols[unsup$clust])
-str(fp)
+class(fp)
 print(fp)
 
 ```
 
+Here we can see that clusters b and f are often confused. 
 
-#### organization:
+#### Merging closely related cell types
 
-- simple clustering
-- supervised cell typing: 
-- semi-sup
-- anchor cells - automated, or a custom example
-- flightpath
-- mergecells
+Sometimes it becomes clear that two clusters come from the same cell type. 
+When this happens, it can be convenient to merge them. 
 
+To get new cell type probabilities from merged cell types, use the mergeCells function:
 
-
-
-
-
+```{r mergecells}
+newprobs <- mergeCells(merges = c("a" = "newcluster", "b" = "newcluster"), 
+                       probs = unsup$probs) 
+str(newprobs)
+```
 
 
 
