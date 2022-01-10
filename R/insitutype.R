@@ -302,11 +302,41 @@ insitutype <- function(counts, neg, bg = NULL,
                     nb_size = nb_size,
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase)
+  profiles <- clust3$profiles
+  
+  #### if anchor cells were used, check their assignments and rename clusters that have moved away from their anchor cells:
+  
+  # flag clusters that have moved from anchor cells
+  
+  flaggedclusters <- ____  # names of the flagged clusters
+  
+  if (length(flaggedclusters) > 0) {
+    
+    # warn:
+    warning(paste0("The following clusters moved away from their anchor cells and were renamed: ",
+                   paste0(flaggedclusters, collapse = ", ")))
+    
+    # get new cluster names:
+    newnames <- makeClusterNames(cNames = colnames(clust3$profiles), 
+                                 nClust = ncol(clust3$profiles) + length(anyclustersareflagged))
+    newnames <- setdiff(newnames, colnames(clust3$profiles))
+    names(newnames) = flaggedclusters
+    
+    # rename flagged clusters, then reassign flagged anchor cells back to their original cell type
+    newclust = clust3$clust
+    for (clustname in names(newnames)) {
+      newclust[newclust == clustname] <- newnames[clustname]
+      newclust[anchors[names(clust3$clust)] == clustname] <- clustname
+    }
+    
+    # re-compute profiles:
+    profiles <- Estep(counts[phase3_sample, ], 
+                             clust = newclust,
+                             neg = neg[phase3_sample])
+  }
   
   #### phase 4: -----------------------------------------------------------------
   message(paste0("phase 4: classifying all ", nrow(counts), " cells"))
-  
-  profiles <- clust3$profiles
   
   logliks <- apply(profiles, 2, function(ref) {
     lldist(x = ref,
