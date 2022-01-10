@@ -200,21 +200,13 @@ insitutype <- function(counts, neg, bg = NULL,
     # run nbclust from each of the random subsets, and save the profiles:
     profiles_from_random_starts <- list()
     for (i in 1:n_starts) {
-      
-      tempinit <- NULL
-      if (!is.null(fixed_profiles)) {
-        tempinit <- choose_init_clust(counts = counts[random_start_subsets[[i]], ], 
-                                      fixed_profiles = fixed_profiles, 
-                                      bg = bg[random_start_subsets[[i]]], 
-                                      size = nb_size, 
-                                      n_clusts = n_clusts, 
-                                      thresh = 0.9) 
-        tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
-      } else {
-        tempinit <- rep(letters[seq_len(n_clusts)], each = ceiling(length(random_start_subsets[[i]]) / n_clusts))[
-          seq_along(random_start_subsets[[i]])]
-      }
 
+      tempinit <- rep(letters[seq_len(n_clusts)], each = ceiling(length(random_start_subsets[[i]]) / n_clusts))[
+        seq_along(random_start_subsets[[i]])]
+      if (!is.null(anchors)) {
+        anchors_in_subset <- anchors[random_start_subsets[[i]]]
+        tempinit[!is.na(anchors_in_subset)] <- anchors_in_subset[!is.na(anchors_in_subset)]
+      }
       
       profiles_from_random_starts[[i]] <- nbclust(
         counts = counts[random_start_subsets[[i]], ], 

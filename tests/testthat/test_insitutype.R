@@ -38,7 +38,7 @@ sup <- insitutype(counts = mini_nsclc$counts,
                   max_iters = 10,
                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
 
-testthat::test_that("semi-supervised cell typing with n_clusts = 0 produces correct outputs", {
+testthat::test_that("supervised cell typing with n_clusts = 0 produces correct outputs", {
   expect_true(all(is.element(c("clust", "probs"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.matrix(sup$probs))
@@ -113,7 +113,7 @@ if (FALSE) {
   plot(mini_nsclc$x, mini_nsclc$y, pch = 16, col = scols[unsup$clust])
 }
 
-# view immune oncology cell profiles (in ptolemy package data):
+# semi-supervised using the immune oncology cell profiles (in ptolemy package data):
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
@@ -171,6 +171,20 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
 })
 
 
+# test chooseclusternumber:
+res <- chooseClusterNumber(counts = mini_nsclc$counts,
+                           neg = Matrix::rowMeans(mini_nsclc$neg),
+                           bg = NULL,
+                           anchors = NULL,
+                           init_clust = NULL, n_clusts = 2:3,
+                           fixed_profiles = ioprofiles[, 1:3],
+                           max_iters = 10, 
+                           subset_size = 1000, 
+                           align_genes = TRUE, 
+                           plotresults = FALSE, 
+                           nb_size = 10, 
+                           pct_drop = 0.005, 
+                           min_prob_increase = 0.05) 
 
 
 ## run semisupervised clustering with init_clust specified:

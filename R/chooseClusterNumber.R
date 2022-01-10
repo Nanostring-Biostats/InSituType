@@ -78,17 +78,10 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
   totallogliks <- sapply(n_clusts, function(x) {
     
     # get init clust:
-    tempinit <- NULL
-    if (!is.null(fixed_profiles)) {
-      tempinit <- choose_init_clust(counts = counts, 
-                                    fixed_profiles = fixed_profiles, 
-                                    bg = bg, 
-                                    size = nb_size, 
-                                    n_clusts = x, 
-                                    thresh = 0.9) 
+    tempinit <- rep(letters[seq_len(x)], each = ceiling(nrow(counts) / x))[
+      seq_len(nrow(counts))]
+    if (!is.null(anchors)) {
       tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
-    } else {
-      tempinit <- rep(letters[1:x], each = ceiling(nrow(counts) / x))[seq_len(nrow(counts))]
     }
     
     # run nbclust:

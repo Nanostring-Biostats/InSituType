@@ -162,6 +162,9 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
   if (length(bg) == 1) {
     bg = rep(bg, nrow(counts))
   }
+  if (!is.null(anchors) & !identical(names(anchors), rownames(counts))) {
+    stop("names of anchors and rownames of counts are misaligned")
+  }
 
   clusterlog = NULL
 
