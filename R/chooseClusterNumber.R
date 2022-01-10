@@ -57,12 +57,16 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
   # subset the data:
   set.seed(0)
   use <- sample(seq_len(nrow(counts)), subset_size)
+  use <- unique(c(use, which(!is.na(anchors))))
   counts <- counts[use, ]
   s <- s[use]
   neg <- neg[use]
   bg <- bg[use]
   if (!is.null(init_clust)) {
     init_clust <- init_clust[use]
+  }
+  if (!is.null(anchors)) {
+    anchors <- anchors[use]
   }
 
   if (length(n_clusts) <=0 ){
@@ -81,7 +85,8 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
     tempinit <- rep(letters[seq_len(x)], each = ceiling(nrow(counts) / x))[
       seq_len(nrow(counts))]
     if (!is.null(anchors)) {
-      tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
+      anchors_in_subset <- anchors[rownames(counts)]
+      tempinit[!is.na(anchors_in_subset)] <- anchors_in_subset[!is.na(anchors_in_subset)]
     }
     
     # run nbclust:

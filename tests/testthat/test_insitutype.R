@@ -186,6 +186,14 @@ res <- chooseClusterNumber(counts = mini_nsclc$counts,
                            pct_drop = 0.005, 
                            min_prob_increase = 0.05) 
 
+testthat::test_that("chooseClusterNumber produces correct outputs", {
+  expect_true(all(is.element(c("best_clust_number", "n_clusts", "loglik", "aic", "bic"), names(res))))
+  expect_true(length(res$best_clust_number) == 1)
+  expect_true(length(res$n_clusts) == 2)
+  expect_true(length(res$loglik) == 2)
+  expect_true(length(res$aic) == 2)
+  expect_true(length(res$bic) == 2)
+  })
 
 ## run semisupervised clustering with init_clust specified:
 #init_clust <- rep(letters[1:3], each = nrow(mini_nsclc$counts) / 3)[1:nrow(mini_nsclc$counts)]
