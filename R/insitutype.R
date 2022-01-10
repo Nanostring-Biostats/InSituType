@@ -35,6 +35,8 @@
 #' @param n_anchor_cells For semi-supervised learning. Maximum number of anchor cells to use for each cell type. 
 #' @param min_anchor_cosine For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.
 #' @param min_anchor_llr For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
+#' @param anchor_replacement_thresh Threshold for calling whether a cluster has wandered away from its anchor cells. 
+#'   Clusters whose anchors are reassigned at this rate or higher will be renamed, and only their anchor cells will be used to define a profile for the cluster.
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
 #' @importFrom Matrix colSums
@@ -57,7 +59,7 @@ insitutype <- function(counts, neg, bg = NULL,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        n_chooseclusternumber = 2000,
                        pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
-                       n_anchor_cells = 500, min_anchor_cosine = 0.3, min_anchor_llr = 0.01) {
+                       n_anchor_cells = 500, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, anchor_replacement_thresh = 0.75) {
   
   #### preliminaries ---------------------------
   
@@ -307,8 +309,8 @@ insitutype <- function(counts, neg, bg = NULL,
   #### if anchor cells were used, check their assignments and rename clusters that have moved away from their anchor cells:
   
   # flag clusters that have moved from anchor cells
-  
-  flaggedclusters <- ____  # names of the flagged clusters
+  wandering_score <- diag(table(anchors[phase3_sample], clust3$clust)[, names(table(anchors[phase3_sample]))]) / table(anchors[phase3_sample])
+  flaggedclusters <- names(which(wandering_score > anchor_replacement_thresh))
   
   if (length(flaggedclusters) > 0) {
     
