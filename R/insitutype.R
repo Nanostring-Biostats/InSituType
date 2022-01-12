@@ -332,7 +332,7 @@ insitutype <- function(counts, neg, bg = NULL,
     newclust = clust3$clust
     for (clustname in names(newnames)) {
       newclust[newclust == clustname] <- newnames[clustname]
-      newclust[anchors[names(clust3$clust)] == clustname] <- clustname
+      newclust[anchors[phase3_sample] == clustname] <- clustname
     }
     
     # re-compute profiles:
