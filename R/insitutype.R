@@ -146,6 +146,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                      minCellsPerBin = 1,
                                      seed=NULL)
     chooseclusternumber_subset <- unique(c(chooseclusternumber_subset, anchorcellnames))
+    chooseclusternumber_subset <- match(chooseclusternumber_subset, rownames(counts))
     
     n_clusts <- chooseClusterNumber(
       counts = counts[chooseclusternumber_subset, ], 
