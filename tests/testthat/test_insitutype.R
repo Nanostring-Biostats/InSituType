@@ -131,7 +131,10 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    pct_drop = 1/5000, 
                    min_prob_increase = 0.05,
                    max_iters = 10,
-                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
+                   n_anchor_cells = 20, 
+                   min_anchor_cosine = 0.3, 
+                   min_anchor_llr = 0.01,
+                   sketchingdata = NULL)   
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
@@ -161,6 +164,15 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    min_prob_increase = 0.05,
                    max_iters = 10,
                    n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
+
+# for line-by-line debugging:
+if (FALSE) {
+  counts = mini_nsclc$counts;neg = Matrix::rowMeans(mini_nsclc$neg);bg = NULL;anchors = NULL
+  init_clust = NULL; n_clusts = 2:3;fixed_profiles = ioprofiles[, 1:3];
+  nb_size = 10;n_starts = 2;align_genes = TRUE;n_benchmark_cells = 200;n_phase1 = 300;n_phase2 = 500;n_phase3 = 1000;
+  n_chooseclusternumber = 300;pct_drop = 1/5000;min_prob_increase = 0.05;max_iters = 10;n_anchor_cells = 20
+  min_anchor_cosine = 0.3; min_anchor_llr = 0.01;sketchingdata=NULL;anchor_replacement_thresh=0.75
+}
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {

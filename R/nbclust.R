@@ -331,7 +331,7 @@ makeClusterNames <- function( cNames , nClust )
   {
     if ( length( cNames ) < nClust )
     {
-      stop( "nClust is smaller than nClust.  Do not know how to subset." )
+      stop( "length( cNames ) is smaller than nClust.  Do not know how to subset." )
     }
     extraClustNames <- NULL
   }

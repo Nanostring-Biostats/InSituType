@@ -204,7 +204,8 @@ insitutype <- function(counts, neg, bg = NULL,
     profiles_from_random_starts <- list()
     for (i in 1:n_starts) {
 
-      tempinit <- rep(letters[seq_len(n_clusts)], each = ceiling(length(random_start_subsets[[i]]) / n_clusts))[
+      cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
+      tempinit <- rep(cluster_name_pool[seq_len(n_clusts)], each = ceiling(length(random_start_subsets[[i]]) / n_clusts))[
         seq_along(random_start_subsets[[i]])]
       if (!is.null(anchors)) {
         anchors_in_subset <- anchors[random_start_subsets[[i]]]
@@ -311,7 +312,7 @@ insitutype <- function(counts, neg, bg = NULL,
   
   # flag clusters that have moved from anchor cells
   wandering_score <- diag(table(anchors[phase3_sample], clust3$clust)[, names(table(anchors[phase3_sample]))]) / table(anchors[phase3_sample])
-  flaggedclusters <- names(which(wandering_score > anchor_replacement_thresh))
+  flaggedclusters <- names(which(wandering_score < anchor_replacement_thresh))
   
   if (length(flaggedclusters) > 0) {
     
@@ -320,9 +321,11 @@ insitutype <- function(counts, neg, bg = NULL,
                    paste0(flaggedclusters, collapse = ", ")))
     
     # get new cluster names:
-    newnames <- makeClusterNames(cNames = colnames(clust3$profiles), 
-                                 nClust = ncol(clust3$profiles) + length(anyclustersareflagged))
-    newnames <- setdiff(newnames, colnames(clust3$profiles))
+    #newnames <- makeClusterNames(cNames = colnames(clust3$profiles), 
+    #                             nClust = ncol(clust3$profiles) + length(flaggedclusters))
+    #newnames <- setdiff(newnames, colnames(clust3$profiles))
+    cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
+    newnames <- setdiff(cluster_name_pool, colnames(clust3$profiles))[seq_along(flaggedclusters)]
     names(newnames) = flaggedclusters
     
     # rename flagged clusters, then reassign flagged anchor cells back to their original cell type
