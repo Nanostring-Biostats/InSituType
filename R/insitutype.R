@@ -102,6 +102,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                  min_cosine = min_anchor_cosine, 
                                  min_scaled_llr = min_anchor_llr) 
   }
+  
   # test anchors are valid:
   anchorcellnames = NULL
   if (!is.null(anchors) & (length(anchors) != nrow(counts))) {
@@ -136,10 +137,10 @@ insitutype <- function(counts, neg, bg = NULL,
     if (!is.null(n_clusts)) {
       message("init_clust was specified; this will overrule the n_clusts argument.")
     }
-    n_clusts <- length(setdiff(unique(init_clust), colnames(fixed_profiles)))
+    n_clusts <- length(setdiff(unique(init_clust), unique(anchors)))
   }
   if (is.null(n_clusts)) {
-    n_clusts <- 1:12 + (is.null(fixed_profiles))
+    n_clusts <- 1:12 + (is.null(anchors))
   }
   # get optimal number of clusters
   if (length(n_clusts) > 1) {

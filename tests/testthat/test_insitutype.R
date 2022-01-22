@@ -5,6 +5,8 @@ data("iocolors")
 data("mini_nsclc")
 
 if (FALSE) {
+  library(testthat)
+  library(MLEcell)
   nbclust = MLEcell:::nbclust
   Mstep=MLEcell:::Mstep
   Estep=MLEcell:::Estep
