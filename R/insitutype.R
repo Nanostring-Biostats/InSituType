@@ -161,7 +161,6 @@ insitutype <- function(counts, neg, bg = NULL,
       neg = neg[chooseclusternumber_subset], 
       bg = bg[chooseclusternumber_subset], 
       anchors = anchors[chooseclusternumber_subset], 
-      fixed_profiles = fixed_profiles,
       init_clust = NULL, 
       n_clusts = n_clusts,
       max_iters = 10,
@@ -230,7 +229,8 @@ insitutype <- function(counts, neg, bg = NULL,
         n_clusts = n_clusts,
         nb_size = nb_size,
         pct_drop = pct_drop,
-        min_prob_increase = min_prob_increase
+        min_prob_increase = min_prob_increase,
+        max_iters = max_iters
       )$profiles
     }
     
@@ -284,7 +284,8 @@ insitutype <- function(counts, neg, bg = NULL,
                     n_clusts = n_clusts,
                     nb_size = nb_size,
                     pct_drop = pct_drop,
-                    min_prob_increase = min_prob_increase)
+                    min_prob_increase = min_prob_increase,
+                    max_iters = max_iters)
   tempprofiles <- clust2$profiles
  
   #### phase 3: -----------------------------------------------------------------
@@ -313,7 +314,8 @@ insitutype <- function(counts, neg, bg = NULL,
                     n_clusts = n_clusts,
                     nb_size = nb_size,
                     pct_drop = pct_drop,
-                    min_prob_increase = min_prob_increase)
+                    min_prob_increase = min_prob_increase,
+                    max_iters = max_iters)
   profiles <- clust3$profiles
   
   #### if anchor cells were used, check their assignments and rename clusters that have moved away from their anchor cells:

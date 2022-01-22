@@ -7,9 +7,6 @@
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 #'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 #'  for cells to be held constant throughout iterations. 
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
-#'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-#'  Colnames must all be included in the init_clust variable.
 #' @param init_clust Vector of initial cluster assignments.
 #' @param n_clusts Vector giving a range of cluster numbers to consider.
 #' @param max_iters Number of iterations in each clustering attempt. Recommended to choose
@@ -30,7 +27,7 @@
 #' \itemize{
 #'  \item
 #' }
-chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_profiles = NULL,init_clust = NULL, n_clusts = 2:12,
+chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, init_clust = NULL, n_clusts = 2:12,
                                 max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, 
                                 pct_drop = 0.005, min_prob_increase = 0.05,  ...) {
 
@@ -41,18 +38,6 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
     bg <- bgmod$fitted
   } 
 
-  # align genes in counts and fixed_profiles
-  if (align_genes & !is.null(fixed_profiles)) {
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
-
-    # subset:
-    counts <- counts[, sharedgenes]
-    fixed_profiles <- fixed_profiles[sharedgenes, ]
-    if (is.matrix(bg)) {
-      bg <- bg[, sharedgenes]
-    }
-  }
 
   # subset the data:
   set.seed(0)
