@@ -69,7 +69,7 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     n_chooseclusternumber = 100,
                     pct_drop = 1/10000, 
                     min_prob_increase = 0.05,
-                    max_iters = 4)   
+                    max_iters = 2)   
 
 testthat::test_that("unsupervised cell typing produces correct outputs", {
   expect_true(all(is.element(c("clust", "probs", "profiles"), names(unsup))))

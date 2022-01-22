@@ -85,7 +85,8 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, init_clu
       init_clust = tempinit,
       nb_size = nb_size,
       pct_drop = pct_drop,
-      min_prob_increase = min_prob_increase)  
+      min_prob_increase = min_prob_increase,
+      max_iters = max_iters)  
 
     # get the loglik of the clustering result:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {

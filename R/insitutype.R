@@ -163,7 +163,7 @@ insitutype <- function(counts, neg, bg = NULL,
       anchors = anchors[chooseclusternumber_subset], 
       init_clust = NULL, 
       n_clusts = n_clusts,
-      max_iters = 10,
+      max_iters = max_iters,
       subset_size = length(chooseclusternumber_subset), 
       align_genes = TRUE, plotresults = FALSE, nb_size = nb_size)$best_clust_number 
   }
