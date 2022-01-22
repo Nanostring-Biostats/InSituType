@@ -69,6 +69,15 @@ insitutype <- function(counts, neg, bg = NULL,
   
   # (note: no longer aligning counts matrix to fixed profiles except within the find_anchor_cells function.)
   
+  ## get neg in condition 
+  if (is.null(names(neg))) {
+    names(neg) <- rownames(counts)
+  }
+  if (length(neg) != nrow(counts)) {
+    stop("length of neg should equal nrows of counts.")
+  }
+  
+  
   ### infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
     s <- Matrix::rowMeans(counts)
@@ -119,7 +128,6 @@ insitutype <- function(counts, neg, bg = NULL,
   n_phase1 = min(n_phase1, nrow(counts))
   n_phase2 = min(n_phase2, nrow(counts))
   n_phase3 = min(n_phase3, nrow(counts))
-  n_chooseclusternumber <- min(n_chooseclusternumber, nrow(counts))
   n_benchmark_cells = min(n_benchmark_cells, nrow(counts))
   
   
@@ -137,9 +145,9 @@ insitutype <- function(counts, neg, bg = NULL,
   if (length(n_clusts) > 1) {
     
     message("Selecting optimal number of clusters from a range of ", min(n_clusts), " - ", max(n_clusts))
-    
+
     chooseclusternumber_subset <- geoSketch(X = sketchingdata,
-                                     N = n_benchmark_cells,
+                                     N = min(n_chooseclusternumber, nrow(counts)),
                                      alpha=0.1,
                                      max_iter=200,
                                      returnBins=FALSE,
@@ -310,8 +318,16 @@ insitutype <- function(counts, neg, bg = NULL,
   
   #### if anchor cells were used, check their assignments and rename clusters that have moved away from their anchor cells:
   
+  # get best-fitting clusters for anchor cells:
+  anchorprobs <- Mstep(counts = counts[!is.na(anchors), ],
+                       means = profiles,
+                       freq = rep(1/ncol(profiles), ncol(profiles)), 
+                       bg = bg[!is.na(anchors)],
+                       size = nb_size)
+  anchor_bestclusters <- colnames(anchorprobs)[apply(anchorprobs, 1, which.max)]
   # flag clusters that have moved from anchor cells
-  wandering_score <- diag(table(anchors[phase3_sample], clust3$clust)[, names(table(anchors[phase3_sample]))]) / table(anchors[phase3_sample])
+  temptable <- table(anchors[rownames(anchorprobs)], anchor_bestclusters)
+  wandering_score <- diag(temptable[rownames(temptable), rownames(temptable)]) / table(anchors[rownames(anchorprobs)])[rownames(temptable)]
   flaggedclusters <- names(which(wandering_score < anchor_replacement_thresh))
   
   if (length(flaggedclusters) > 0) {
@@ -320,10 +336,6 @@ insitutype <- function(counts, neg, bg = NULL,
     warning(paste0("The following clusters moved away from their anchor cells and were renamed: ",
                    paste0(flaggedclusters, collapse = ", ")))
     
-    # get new cluster names:
-    #newnames <- makeClusterNames(cNames = colnames(clust3$profiles), 
-    #                             nClust = ncol(clust3$profiles) + length(flaggedclusters))
-    #newnames <- setdiff(newnames, colnames(clust3$profiles))
     cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
     newnames <- setdiff(cluster_name_pool, colnames(clust3$profiles))[seq_along(flaggedclusters)]
     names(newnames) = flaggedclusters
@@ -331,14 +343,16 @@ insitutype <- function(counts, neg, bg = NULL,
     # rename flagged clusters, then reassign flagged anchor cells back to their original cell type
     newclust = clust3$clust
     for (clustname in names(newnames)) {
+      # rename all cells in the cluster to the new name: 
       newclust[newclust == clustname] <- newnames[clustname]
-      newclust[anchors[phase3_sample] == clustname] <- clustname
+      # save the anchor cells:
+      newclust[!is.na(anchors[phase3_sample]) & (anchors[phase3_sample] == clustname)] <- clustname
     }
     
     # re-compute profiles:
     profiles <- Estep(counts[phase3_sample, ], 
-                             clust = newclust,
-                             neg = neg[phase3_sample])
+                      clust = newclust,
+                      neg = neg[phase3_sample])
   }
   
   #### phase 4: -----------------------------------------------------------------
