@@ -60,16 +60,21 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
     cos[, cell] <- apply(counts, 1, cosine, profiles[, cell])
   })
   
-  # get logliks (only when the cosine similarity is high enough to be worth considering):
+  # stats for which cells to get loglik on: 
+  # get 3rd hightest cosines of each cell:
+  cos3 <- apply(cos, 1, function(x){
+    return(x[order(x, decreasing = TRUE)[3]])
+  })
+  # get cells with sufficient cosine:
   cells_with_high_cos <- apply(cos, 1, max) > min_cosine
-  
+  # get logliks (only when the cosine similarity is high enough to be worth considering):
   logliks <- sapply(colnames(profiles), function(cell) {
     templl <- cos[, cell] * NA
-    cells_to_consider <- which((cos[, cell] > 0.75 * min_cosine) & cells_with_high_cos)
-    templl[cells_to_consider] <- Mstep(counts = counts[cells_to_consider, ], 
+    usecells <- which((cos[, cell] >= pmin(0.75 * min_cosine, cos3)) & cells_with_high_cos)
+    templl[usecells] <- Mstep(counts = counts[usecells, ], 
                                          means = profiles[, cell, drop = FALSE],
                                          freq = 1,
-                                         bg = bg[cells_to_consider], 
+                                         bg = bg[usecells], 
                                          size = size, 
                                          digits = 3, return_loglik = T) 
     return(templl)
@@ -79,17 +84,21 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   
   # choose anchors for each cell type:
   anchorslist <- lapply(colnames(profiles), function(cell) {
+    
+    usecells <- which(!is.na(logliks[, cell]))
+    
     # get scaled log likelihood ratio:
-    totcounts <- rowSums(counts)
-    llr <- logliks[, cell] - apply(logliks[, setdiff(colnames(logliks), cell)], 1, max, na.rm = TRUE)
-    llr <- llr / totcounts
+    totcounts <- rowSums(counts[usecells, ])
+    templlr <- logliks[usecells, cell] - apply(logliks[usecells, setdiff(colnames(logliks), cell)], 1, max, na.rm = TRUE)
+    templlr <- templlr / totcounts
+    tempcos <- cos[usecells, cell]
     # score based on llr and cosing
-    score <- llr * cos[, cell]
+    score <- templlr * tempcos
     # require minimum values for each
-    allowable <- which((llr > min_scaled_llr) & (cos[, cell] > min_cosine))
+    allowable <- which((templlr > min_scaled_llr) & (tempcos > min_cosine))
     useasanchors <- allowable[order(score[allowable], decreasing = TRUE)]
     useasanchors <- useasanchors[seq_len(min(n_cells, length(useasanchors)))]
-    return(useasanchors)
+    return(usecells[useasanchors])
   })
   names(anchorslist) <- colnames(profiles)
   anchors <- rep(NA, nrow(counts))
