@@ -13,7 +13,8 @@ find_anchor_cells(
   size = 10,
   n_cells = 500,
   min_cosine = 0.3,
-  min_scaled_llr = 0.01
+  min_scaled_llr = 0.01,
+  insufficient_anchors_thresh = 20
 )
 }
 \arguments{
@@ -33,6 +34,8 @@ Input linear-scale expression, with genes in rows and cell types in columns.}
 \item{min_cosine}{Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor}
 
 \item{min_scaled_llr}{Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor}
+
+\item{insufficient_anchors_thresh}{Cell types that end up with fewer than this many anchors will be discarded.}
 }
 \value{
 A vector holding anchor cell assignments (or NA) for each cell in the counts matrix

@@ -11,10 +11,11 @@
 #' @param n_cells Up to this many cells will be taken as anchor points
 #' @param min_cosine Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor
 #' @param min_scaled_llr Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
+#' @param insufficient_anchors_thresh Cell types that end up with fewer than this many anchors will be discarded. 
 #' @return A vector holding anchor cell assignments (or NA) for each cell in the counts matrix
 #' @importFrom lsa cosine
 #' @export
-find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE, profiles, size = 10, n_cells = 500, min_cosine = 0.3, min_scaled_llr = 0.01) {
+find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE, profiles, size = 10, n_cells = 500, min_cosine = 0.3, min_scaled_llr = 0.01, insufficient_anchors_thresh = 20) {
   
   # infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg) & is.null(neg)) {
@@ -100,16 +101,25 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
     use <- (anchors == cell) & !is.na(anchors)
     # get centroid:
     if (!is.null(neg)) {
-      mean_anchor_profile <- Estep(counts = counts[use, ], clust = cell, neg = neg[use])
+      mean_anchor_profile <- Estep(counts = counts[use, , drop = FALSE], clust = cell, neg = neg[use])
     } else {
-      mean_anchor_profile <- Estep(counts = counts[use, ], clust = cell, neg = bg[use])
+      mean_anchor_profile <- Estep(counts = counts[use, , drop = FALSE], clust = cell, neg = bg[use])
     }
     
     # get anchors' cosine distances from centroid:
-    newcos <- apply(counts[use, ], 1, cosine, mean_anchor_profile)
+    newcos <- apply(counts[use, , drop = FALSE], 1, cosine, mean_anchor_profile)
     updated_anchors <- replace(anchors[use], (newcos < min_cosine), NA)
     anchors[names(updated_anchors)] <- updated_anchors
   }
   
+  # remove all anchors from cells with too few total anchors:
+  anchornums <- table(anchors)
+  too_few_anchors <- names(anchornums)[anchornums <= insufficient_anchors_thresh]
+  anchors[is.element(anchors, too_few_anchors)] <- NA
+  if (length(too_few_anchors) > 0) {
+    message(paste0("The following cell types had too few anchors and so are being removed from consideration: ",
+                   paste0(too_few_anchors, collapse = ", ")))
+  }
+
   return(anchors)
 }
