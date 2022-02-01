@@ -56,14 +56,21 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
     cos[, cell] <- apply(counts, 1, cosine, profiles[, cell])
   })
   
-  # get logliks  
-  logliks <- Mstep(counts = counts, 
-                   means = profiles,
-                   freq = rep(1, ncol(profiles))/ncol(profiles),
-                   bg = bg, 
-                   size = size, 
-                   digits = 2, return_loglik = T) 
-  # note: the above could be greatly sped up by only computing logliks when the cosine distance is high
+  # get logliks (only when the cosine similarity is high enough to be worth considering):
+  cells_with_high_cos <- apply(cos, 1, max) > min_cosine
+  
+  logliks <- sapply(colnames(profiles), function(cell) {
+    templl <- cos[, cell] * NA
+    cells_to_consider <- which((cos[, cell] > 0.75 * min_cosine) & cells_with_high_cos)
+    templl[cells_to_consider] <- Mstep(counts = counts[cells_to_consider, ], 
+                                         means = profiles[, cell, drop = FALSE],
+                                         freq = 1,
+                                         bg = bg[cells_to_consider], 
+                                         size = size, 
+                                         digits = 3, return_loglik = T) 
+    return(templl)
+  })
+  
   
   
   # choose anchors for each cell type:

@@ -27,7 +27,7 @@ testthat::test_that("supervised cell typing produces correct outputs", {
 })
 
 # test semi-supervised with 0 new clusts:
-sup <- insitutype(counts = mini_nsclc$counts,
+semi <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   bg = NULL,
                   init_clust = NULL, 
@@ -46,10 +46,10 @@ sup <- insitutype(counts = mini_nsclc$counts,
                   max_iters = 4,
                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
 
-testthat::test_that("supervised cell typing with n_clusts = 0 produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs"), names(sup))))
-  expect_true(is.vector(sup$clust))
-  expect_true(is.matrix(sup$probs))
+testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
+  expect_true(all(is.element(c("clust", "probs"), names(semi))))
+  expect_true(is.vector(semi$clust))
+  expect_true(is.matrix(semi$probs))
 })
 
 
@@ -214,21 +214,3 @@ testthat::test_that("chooseClusterNumber produces correct outputs", {
   expect_true(length(res$aic) == 2)
   expect_true(length(res$bic) == 2)
   })
-
-## run semisupervised clustering with init_clust specified:
-#init_clust <- rep(letters[1:3], each = nrow(mini_nsclc$counts) / 3)[1:nrow(mini_nsclc$counts)]
-#semi <- insitutype(counts = mini_nsclc$counts,
-#                   neg = Matrix::rowMeans(mini_nsclc$neg),
-#                   bg = NULL,
-#                   init_clust = init_clust, n_clusts = 3,
-#                   fixed_profiles = ioprofiles[, 1:3],
-#                   nb_size = 10,
-#                   n_starts = 2,
-#                   align_genes = TRUE,
-#                   n_benchmark_cells = 200,
-#                   n_phase1 = 500,
-#                   n_phase2 = 1000,
-#                   n_phase3 = 2000,
-#                   pct_drop = 1/10000, 
-#                   min_prob_increase = 0.05,
-#                   max_iters = 4)   
