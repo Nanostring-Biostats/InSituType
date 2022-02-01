@@ -69,6 +69,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param digits Round the output to this many digits (saves memory)
 #' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
+#' @export
 Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
@@ -100,7 +101,7 @@ Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_
 #' @importFrom Matrix rowSums
 #'
 #' @return A matrix of cluster profiles, genes * clusters
-#'
+#' @export
 Estep <- function(counts, clust, neg) {
 
   # get cluster means:
@@ -146,6 +147,7 @@ Estep <- function(counts, clust, neg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
+#' @export
 nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     nb_size = 10,
@@ -263,21 +265,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
-  ## get loglik of each cell:
-  #logliks = unlist(sapply(seq_len(nrow(counts)), function(i) {   #<-------------------- should just assume vector background
-  #  #if (length(bg) == 1) {
-  #  #  bgtemp = bg
-  #  #}
-  #  #if (length(bg) == nrow(counts)) {
-  #  #  bgtemp = bg[i]
-  #  #}
-  #  #if (is.matrix(bg)) {
-  #  #  bgtemp = bg[i, ]
-  #  #}
-  #  bgtemp = bg[i]  # <--- now assuming vector-form background
-  #  lldist(mat = counts[i, ], x = profiles[, clust[i]], bg = bgtemp, size = nb_size)
-  #}))
-
 
   out = list(clust = clust,
              probs = probs,
