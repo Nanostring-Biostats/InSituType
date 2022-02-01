@@ -77,7 +77,7 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   anchorslist <- lapply(colnames(profiles), function(cell) {
     # get scaled log likelihood ratio:
     totcounts <- rowSums(counts)
-    llr <- logliks[, cell] - apply(logliks[, setdiff(colnames(logliks), cell)], 1, max)
+    llr <- logliks[, cell] - apply(logliks[, setdiff(colnames(logliks), cell)], 1, max, na.rm = TRUE)
     llr <- llr / totcounts
     # score based on llr and cosing
     score <- llr * cos[, cell]
@@ -92,6 +92,23 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   names(anchors) <- rownames(counts)
   for (cell in names(anchorslist)) {
     anchors[anchorslist[[cell]]] <- cell
+  }
+  
+  # anchor consolidation: identify and remove anchor cells that are poor fits to the mean anchor profile for the cell type:
+  for (cell in setdiff(unique(anchors), NA)) {
+    
+    use <- (anchors == cell) & !is.na(anchors)
+    # get centroid:
+    if (!is.null(neg)) {
+      mean_anchor_profile <- Estep(counts = counts[use, ], clust = cell, neg = neg[use])
+    } else {
+      mean_anchor_profile <- Estep(counts = counts[use, ], clust = cell, neg = bg[use])
+    }
+    
+    # get anchors' cosine distances from centroid:
+    newcos <- apply(counts[use, ], 1, cosine, mean_anchor_profile)
+    updated_anchors <- replace(anchors[use], (newcos < min_cosine), NA)
+    anchors[names(updated_anchors)] <- updated_anchors
   }
   
   return(anchors)
