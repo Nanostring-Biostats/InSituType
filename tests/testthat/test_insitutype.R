@@ -44,7 +44,7 @@ semi <- insitutype(counts = mini_nsclc$counts,
                   pct_drop = 1/10000, 
                   min_prob_increase = 0.05,
                   max_iters = 4,
-                  n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
+                  n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 2)   
 
 testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
   expect_true(all(is.element(c("clust", "probs"), names(semi))))

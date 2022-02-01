@@ -133,5 +133,9 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
                    paste0(too_few_anchors, collapse = ", ")))
   }
 
+  if (all(is.na(anchors))) {
+    warning("No anchor cells were selected - not enough cells met the selection criteria.")
+    anchors <- NULL
+  }
   return(anchors)
 }
