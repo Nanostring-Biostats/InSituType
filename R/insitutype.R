@@ -105,7 +105,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                  min_scaled_llr = min_anchor_llr,
                                  insufficient_anchors_thresh = insufficient_anchors_thresh) 
   }
-  if (is.null(anchors) & (all(n_clusts) == 0)) {
+  if (is.null(anchors) & all(n_clusts == 0)) {
     stop("No anchors were selected, and n_clusts = 0. The algorithm can't run under these conditions. 
          Solutions include: 1. make anchor selection more generous. 2. select anchors by hand. 3. increase n_clusts")
   }
