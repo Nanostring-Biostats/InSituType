@@ -51,7 +51,7 @@ flightpath_layout <- function(probs, profiles = NULL, cluster_xpos = NULL, clust
 #' Plot flightpath results
 #'
 #'@param fp The list output by the flightpath_layout function. Two elements: clustpos, cellpos and clust
-#'@param col Optional, a vector of cell colors 
+#'@param col Optional, a vector of cell colors, with length equal to the number of individual cells. 
 #'@importFrom utils data
 #'@importFrom scales alpha
 #'@importFrom RColorBrewer brewer.pal

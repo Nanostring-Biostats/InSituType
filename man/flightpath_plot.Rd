@@ -7,7 +7,7 @@
 flightpath_plot(flightpath_result = NULL, insitutype_result = NULL, col = NULL)
 }
 \arguments{
-\item{col}{Optional, a vector of cell colors}
+\item{col}{Optional, a vector of cell colors, with length equal to the number of individual cells.}
 
 \item{fp}{The list output by the flightpath_layout function. Two elements: clustpos, cellpos and clust}
 }

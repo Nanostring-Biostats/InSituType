@@ -69,6 +69,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param digits Round the output to this many digits (saves memory)
 #' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
+#' @export
 Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
@@ -100,7 +101,7 @@ Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_
 #' @importFrom Matrix rowSums
 #'
 #' @return A matrix of cluster profiles, genes * clusters
-#'
+#' @export
 Estep <- function(counts, clust, neg) {
 
   # get cluster means:
@@ -146,6 +147,7 @@ Estep <- function(counts, clust, neg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
+#' @export
 nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     nb_size = 10,
@@ -161,6 +163,9 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
   }
   if (length(bg) == 1) {
     bg = rep(bg, nrow(counts))
+  }
+  if (!is.null(anchors) & !identical(names(anchors), rownames(counts))) {
+    stop("names of anchors and rownames of counts are misaligned")
   }
 
   clusterlog = NULL
@@ -184,9 +189,9 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     clust_old = init_clust
     names(clust_old) <- rownames(counts)
     # derive first profiles from init_clust
-    profiles <- Estep(counts = counts,
-                      clust = init_clust,
-                      neg = neg)
+    profiles <- Estep(counts = counts[!is.na(clust_old), ],
+                      clust = init_clust[!is.na(clust_old)],
+                      neg = neg[!is.na(clust_old)])
     clustnames <- unique(init_clust)
   }
   
@@ -260,21 +265,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
-  ## get loglik of each cell:
-  #logliks = unlist(sapply(seq_len(nrow(counts)), function(i) {   #<-------------------- should just assume vector background
-  #  #if (length(bg) == 1) {
-  #  #  bgtemp = bg
-  #  #}
-  #  #if (length(bg) == nrow(counts)) {
-  #  #  bgtemp = bg[i]
-  #  #}
-  #  #if (is.matrix(bg)) {
-  #  #  bgtemp = bg[i, ]
-  #  #}
-  #  bgtemp = bg[i]  # <--- now assuming vector-form background
-  #  lldist(mat = counts[i, ], x = profiles[, clust[i]], bg = bgtemp, size = nb_size)
-  #}))
-
 
   out = list(clust = clust,
              probs = probs,
@@ -291,55 +281,5 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
 #'
 ismax <- function(x) {
   return(x == max(x, na.rm = T))
-}
-
-
-#' makeClusterNames
-#' @param cNames existing cluster names
-#' @param nClust number of clusters
-#' @return a vector of complete cluster names
-#'
-makeClusterNames <- function( cNames , nClust )
-{
-  if ( is.null( cNames ) )
-  {
-    cNames <- letters[seq_len( nClust )]
-    extraClustNames <- NULL
-  }
-  else if ( nClust > length( cNames ) )
-  {
-    nDiff <- nClust - length( cNames )
-    if ( nDiff > 26 )
-    {
-      repLetters <- floor( nDiff / 26 )
-      extraLetters <- nDiff %% 26
-      extraClustNames <- paste0( rep( letters[seq_len( repLetters )] , each = 26 ) , letters )
-      if ( extraLetters > 0 )
-      {
-        extraClustNames <- c( extraClustNames , paste0( letters[repLetters + 1] , letters[seq_len( extraLetters )] ) )
-      }
-    }
-    else
-    {
-      extraClustNames <- letters[seq_len(nDiff)]
-    }
-  }
-  else
-  {
-    if ( length( cNames ) < nClust )
-    {
-      stop( "nClust is smaller than nClust.  Do not know how to subset." )
-    }
-    extraClustNames <- NULL
-  }
-  clustnames <- c( cNames , extraClustNames )
-  # make sure unique name when ignore case
-  dup_flag <- duplicated( tolower( clustnames ) )
-  if ( any( dup_flag ) )
-  {
-    # update on the duplicated name
-    clustnames[dup_flag] <- make.unique( tolower( clustnames[dup_flag] ) , sep = '.' )
-  }
-  return( clustnames )
 }
 

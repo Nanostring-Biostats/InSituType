@@ -4,6 +4,14 @@ data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
 
+if (FALSE) {
+  library(testthat)
+  library(MLEcell)
+  nbclust = MLEcell:::nbclust
+  Mstep=MLEcell:::Mstep
+  Estep=MLEcell:::Estep
+  sketchingdata = FALSE
+}
 # test supervised cell typing using direct loglik calcs:
 sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
@@ -19,7 +27,7 @@ testthat::test_that("supervised cell typing produces correct outputs", {
 })
 
 # test semi-supervised with 0 new clusts:
-sup <- insitutype(counts = mini_nsclc$counts,
+semi <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   bg = NULL,
                   init_clust = NULL, 
@@ -35,13 +43,13 @@ sup <- insitutype(counts = mini_nsclc$counts,
                   n_phase3 = 2000,
                   pct_drop = 1/10000, 
                   min_prob_increase = 0.05,
-                  max_iters = 10,
-                  n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
+                  max_iters = 4,
+                  n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 2)   
 
-testthat::test_that("semi-supervised cell typing with n_clusts = 0 produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs"), names(sup))))
-  expect_true(is.vector(sup$clust))
-  expect_true(is.matrix(sup$probs))
+testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
+  expect_true(all(is.element(c("clust", "probs"), names(semi))))
+  expect_true(is.vector(semi$clust))
+  expect_true(is.matrix(semi$probs))
 })
 
 
@@ -63,7 +71,7 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     n_chooseclusternumber = 100,
                     pct_drop = 1/10000, 
                     min_prob_increase = 0.05,
-                    max_iters = 10)   
+                    max_iters = 2)   
 
 testthat::test_that("unsupervised cell typing produces correct outputs", {
   expect_true(all(is.element(c("clust", "probs", "profiles"), names(unsup))))
@@ -93,7 +101,7 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     n_phase3 = 200,
                     pct_drop = 1/10000, 
                     min_prob_increase = 0.05,
-                    max_iters = 10)   
+                    max_iters = 4)   
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
@@ -113,7 +121,7 @@ if (FALSE) {
   plot(mini_nsclc$x, mini_nsclc$y, pch = 16, col = scols[unsup$clust])
 }
 
-# view immune oncology cell profiles (in ptolemy package data):
+# semi-supervised using the immune oncology cell profiles (in ptolemy package data):
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
@@ -130,8 +138,11 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    n_chooseclusternumber = 100,
                    pct_drop = 1/5000, 
                    min_prob_increase = 0.05,
-                   max_iters = 10,
-                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
+                   max_iters = 4,
+                   n_anchor_cells = 20, 
+                   min_anchor_cosine = 0.3, 
+                   min_anchor_llr = 0.01,
+                   sketchingdata = NULL)   
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
@@ -159,8 +170,17 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    n_chooseclusternumber = 300,
                    pct_drop = 1/5000, 
                    min_prob_increase = 0.05,
-                   max_iters = 10,
+                   max_iters = 4,
                    n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
+
+# for line-by-line debugging:
+if (FALSE) {
+  counts = mini_nsclc$counts;neg = Matrix::rowMeans(mini_nsclc$neg);bg = NULL;anchors = NULL
+  init_clust = NULL; n_clusts = 2:3;fixed_profiles = ioprofiles[, 1:3];
+  nb_size = 10;n_starts = 2;align_genes = TRUE;n_benchmark_cells = 200;n_phase1 = 300;n_phase2 = 500;n_phase3 = 1000;
+  n_chooseclusternumber = 300;pct_drop = 1/5000;min_prob_increase = 0.05;max_iters = 4;n_anchor_cells = 20
+  min_anchor_cosine = 0.3; min_anchor_llr = 0.01;sketchingdata=NULL;anchor_replacement_thresh=0.75
+}
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
@@ -171,22 +191,26 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
 })
 
 
+# test chooseclusternumber:
+res <- chooseClusterNumber(counts = mini_nsclc$counts,
+                           neg = Matrix::rowMeans(mini_nsclc$neg),
+                           bg = NULL,
+                           anchors = NULL,
+                           init_clust = NULL, n_clusts = 2:3,
+                           fixed_profiles = ioprofiles[, 1:3],
+                           max_iters = 4, 
+                           subset_size = 1000, 
+                           align_genes = TRUE, 
+                           plotresults = FALSE, 
+                           nb_size = 10, 
+                           pct_drop = 0.005, 
+                           min_prob_increase = 0.05) 
 
-
-## run semisupervised clustering with init_clust specified:
-#init_clust <- rep(letters[1:3], each = nrow(mini_nsclc$counts) / 3)[1:nrow(mini_nsclc$counts)]
-#semi <- insitutype(counts = mini_nsclc$counts,
-#                   neg = Matrix::rowMeans(mini_nsclc$neg),
-#                   bg = NULL,
-#                   init_clust = init_clust, n_clusts = 3,
-#                   fixed_profiles = ioprofiles[, 1:3],
-#                   nb_size = 10,
-#                   n_starts = 2,
-#                   align_genes = TRUE,
-#                   n_benchmark_cells = 200,
-#                   n_phase1 = 500,
-#                   n_phase2 = 1000,
-#                   n_phase3 = 2000,
-#                   pct_drop = 1/10000, 
-#                   min_prob_increase = 0.05,
-#                   max_iters = 10)   
+testthat::test_that("chooseClusterNumber produces correct outputs", {
+  expect_true(all(is.element(c("best_clust_number", "n_clusts", "loglik", "aic", "bic"), names(res))))
+  expect_true(length(res$best_clust_number) == 1)
+  expect_true(length(res$n_clusts) == 2)
+  expect_true(length(res$loglik) == 2)
+  expect_true(length(res$aic) == 2)
+  expect_true(length(res$bic) == 2)
+  })

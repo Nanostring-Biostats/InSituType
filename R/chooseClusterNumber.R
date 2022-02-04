@@ -7,9 +7,6 @@
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 #'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 #'  for cells to be held constant throughout iterations. 
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
-#'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-#'  Colnames must all be included in the init_clust variable.
 #' @param init_clust Vector of initial cluster assignments.
 #' @param n_clusts Vector giving a range of cluster numbers to consider.
 #' @param max_iters Number of iterations in each clustering attempt. Recommended to choose
@@ -30,7 +27,7 @@
 #' \itemize{
 #'  \item
 #' }
-chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_profiles = NULL,init_clust = NULL, n_clusts = 2:12,
+chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, init_clust = NULL, n_clusts = 2:12,
                                 max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, 
                                 pct_drop = 0.005, min_prob_increase = 0.05,  ...) {
 
@@ -41,28 +38,20 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
     bg <- bgmod$fitted
   } 
 
-  # align genes in counts and fixed_profiles
-  if (align_genes & !is.null(fixed_profiles)) {
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
-
-    # subset:
-    counts <- counts[, sharedgenes]
-    fixed_profiles <- fixed_profiles[sharedgenes, ]
-    if (is.matrix(bg)) {
-      bg <- bg[, sharedgenes]
-    }
-  }
 
   # subset the data:
   set.seed(0)
   use <- sample(seq_len(nrow(counts)), subset_size)
+  use <- unique(c(use, which(!is.na(anchors))))
   counts <- counts[use, ]
   s <- s[use]
   neg <- neg[use]
   bg <- bg[use]
   if (!is.null(init_clust)) {
     init_clust <- init_clust[use]
+  }
+  if (!is.null(anchors)) {
+    anchors <- anchors[use]
   }
 
   if (length(n_clusts) <=0 ){
@@ -78,17 +67,11 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
   totallogliks <- sapply(n_clusts, function(x) {
     
     # get init clust:
-    tempinit <- NULL
-    if (!is.null(fixed_profiles)) {
-      tempinit <- choose_init_clust(counts = counts, 
-                                    fixed_profiles = fixed_profiles, 
-                                    bg = bg, 
-                                    size = nb_size, 
-                                    n_clusts = x, 
-                                    thresh = 0.9) 
-      tempinit[intersect(names(tempinit), anchorcellnames)] <- anchors[intersect(names(tempinit), anchorcellnames)]
-    } else {
-      tempinit <- rep(letters[1:x], each = ceiling(nrow(counts) / x))[seq_len(nrow(counts))]
+    tempinit <- rep(letters[seq_len(x)], each = ceiling(nrow(counts) / x))[
+      seq_len(nrow(counts))]
+    if (!is.null(anchors)) {
+      anchors_in_subset <- anchors[rownames(counts)]
+      tempinit[!is.na(anchors_in_subset)] <- anchors_in_subset[!is.na(anchors_in_subset)]
     }
     
     # run nbclust:
@@ -102,7 +85,8 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, fixed_pr
       init_clust = tempinit,
       nb_size = nb_size,
       pct_drop = pct_drop,
-      min_prob_increase = min_prob_increase)  
+      min_prob_increase = min_prob_increase,
+      max_iters = max_iters)  
 
     # get the loglik of the clustering result:
     loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {

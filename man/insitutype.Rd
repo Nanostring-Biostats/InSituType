@@ -26,7 +26,9 @@ insitutype(
   max_iters = 40,
   n_anchor_cells = 500,
   min_anchor_cosine = 0.3,
-  min_anchor_llr = 0.01
+  min_anchor_llr = 0.01,
+  insufficient_anchors_thresh = 20,
+  anchor_replacement_thresh = 0.75
 )
 }
 \arguments{
@@ -85,6 +87,11 @@ type switchover}
 \item{min_anchor_cosine}{For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.}
 
 \item{min_anchor_llr}{For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor}
+
+\item{insufficient_anchors_thresh}{Cell types that end up with fewer than this many anchors after anchor selection will be discarded.}
+
+\item{anchor_replacement_thresh}{Threshold for calling whether a cluster has wandered away from its anchor cells. 
+Clusters whose anchors are reassigned at this rate or higher will be renamed, and only their anchor cells will be used to define a profile for the cluster.}
 }
 \value{
 A list, with the following elements:
