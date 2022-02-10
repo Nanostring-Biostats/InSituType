@@ -213,4 +213,51 @@ testthat::test_that("chooseClusterNumber produces correct outputs", {
   expect_true(length(res$loglik) == 2)
   expect_true(length(res$aic) == 2)
   expect_true(length(res$bic) == 2)
-  })
+})
+
+# test anchor stats function:
+astats <- get_anchor_stats(counts = mini_nsclc$counts,
+                           neg = Matrix::rowMeans(mini_nsclc$neg),
+                           bg = NULL, 
+                           align_genes = TRUE,
+                           profiles = ioprofiles[, 1:3], 
+                           size = 10, 
+                           min_cosine = 0.3) 
+
+testthat::test_that("get_anchor_stats produces correct outputs", {
+  expect_true(all(dim(astats$cos) == c(nrow(mini_nsclc$counts), 3)))
+  expect_true(all(dim(astats$llr) == c(nrow(mini_nsclc$counts), 3)))
+})
+
+# test anchor selection from stats:
+anchors <- choose_anchors_from_stats(anchorstats = astats, 
+                                     cos = NULL, 
+                                     llr = NULL, 
+                                     n_cells = 500, 
+                                     min_cosine = 0.3, 
+                                     min_scaled_llr = 0.01, 
+                                     insufficient_anchors_thresh = 20) 
+
+testthat::test_that("choose_anchors_from_stats produces correct outputs", {
+  expect_true(all(is.element(anchors, c(NA, colnames(astats[[2]])))))
+  expect_true(max(table(anchors)) <= 500)
+  expect_equal(names(anchors), rownames(mini_nsclc$counts))
+})
+
+# test global anchor selection:
+anchors <- find_anchor_cells(counts = mini_nsclc$counts,
+                             neg = Matrix::rowMeans(mini_nsclc$neg),
+                             bg = NULL, 
+                             align_genes = TRUE,
+                             profiles = ioprofiles[, 1:3], 
+                             size = 10, 
+                             n_cells = 500, 
+                             min_cosine = 0.3, 
+                             min_scaled_llr = 0.01, 
+                             insufficient_anchors_thresh = 20) 
+
+testthat::test_that("find_anchor_cells produces correct outputs", {
+  expect_true(all(is.element(anchors, c(NA, colnames(astats[[2]])))))
+  expect_true(max(table(anchors)) <= 500)
+  expect_equal(names(anchors), rownames(mini_nsclc$counts))
+})
