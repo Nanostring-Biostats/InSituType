@@ -335,10 +335,14 @@ insitutype <- function(counts, neg, bg = NULL,
                          freq = rep(1/ncol(profiles), ncol(profiles)), 
                          bg = bg[!is.na(anchors)],
                          size = nb_size)
+    
     anchor_bestclusters <- colnames(anchorprobs)[apply(anchorprobs, 1, which.max)]
     # flag clusters that have moved from anchor cells
-    temptable <- table(anchors[rownames(anchorprobs)], anchor_bestclusters)
-    wandering_score <- diag(temptable[rownames(temptable), rownames(temptable)]) / table(anchors[rownames(anchorprobs)])[rownames(temptable)]
+    temptable <- table(anchors[!is.na(anchors)], anchor_bestclusters)
+    anchor_transition_table = matrix(0, ncol(anchorprobs), ncol(anchorprobs),
+                                     dimnames = list(colnames(anchorprobs), colnames(anchorprobs)))
+    anchor_transition_table[rownames(temptable), colnames(temptable)] = temptable
+    wandering_score <- diag(anchor_transition_table) / table(anchors[!is.na(anchors)])[rownames(anchor_transition_table)]
     flaggedclusters <- names(which(wandering_score < anchor_replacement_thresh))
     
     if (length(flaggedclusters) > 0) {
