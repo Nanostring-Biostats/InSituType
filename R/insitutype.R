@@ -348,7 +348,7 @@ insitutype <- function(counts, neg, bg = NULL,
     if (length(flaggedclusters) > 0) {
       
       # warn:
-      warning(paste0("The following clusters moved away from their anchor cells and were renamed: ",
+      message(paste0("The following clusters moved away from their anchor cells and were renamed: ",
                      paste0(flaggedclusters, collapse = ", ")))
       
       cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
