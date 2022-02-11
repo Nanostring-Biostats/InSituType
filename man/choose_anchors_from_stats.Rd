@@ -5,6 +5,9 @@
 \title{Choose anchor cells given anchor stats}
 \usage{
 choose_anchors_from_stats(
+  counts,
+  neg = NULL,
+  bg,
   anchorstats = NULL,
   cos = NULL,
   llr = NULL,
@@ -15,6 +18,12 @@ choose_anchors_from_stats(
 )
 }
 \arguments{
+\item{counts}{Counts matrix, cells * genes.}
+
+\item{neg}{Vector of mean negprobe counts per cell}
+
+\item{bg}{Expected background}
+
 \item{anchorstats}{Output from get_anchor_stats. Must provide either this or both cos and llr matrices.}
 
 \item{cos}{Matrix of cosine distances from reference profiles. Cells in rows, cell types in columns.}

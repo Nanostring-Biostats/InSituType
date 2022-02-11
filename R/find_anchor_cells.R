@@ -94,6 +94,9 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
 #' Choose anchor cells given anchor stats
 #' 
 #' Starting with cosine distances and log likelihood ratios, choose anchor cells. 
+#' @param counts Counts matrix, cells * genes.
+#' @param neg Vector of mean negprobe counts per cell
+#' @param bg Expected background
 #' @param anchorstats Output from get_anchor_stats. Must provide either this or both cos and llr matrices.
 #' @param cos Matrix of cosine distances from reference profiles. Cells in rows, cell types in columns.
 #' @param llr Matrix of log likelihood ratios from reference profiles. Cells in rows, cell types in columns.
@@ -103,7 +106,7 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
 #' @param insufficient_anchors_thresh Cell types that end up with fewer than this many anchors will be discarded. 
 #' @return A vector holding anchor cell assignments (or NA) for each cell in the counts matrix
 #' @export
-choose_anchors_from_stats <- function(anchorstats = NULL, cos = NULL, llr = NULL, n_cells = 500, 
+choose_anchors_from_stats <- function(counts, neg = NULL, bg, anchorstats = NULL, cos = NULL, llr = NULL, n_cells = 500, 
                                       min_cosine = 0.3, min_scaled_llr = 0.01, 
                                       insufficient_anchors_thresh = 20) {
   
@@ -122,8 +125,8 @@ choose_anchors_from_stats <- function(anchorstats = NULL, cos = NULL, llr = NULL
   llr <- llr * (llr > min_scaled_llr)
   
   # choose anchors for each cell type:
-  anchors <- rep(NA, nrow(counts))
-  names(anchors) <- rownames(counts)
+  anchors <- rep(NA, nrow(cos))
+  names(anchors) <- rownames(cos)
   for (cell in colnames(cos)) {
     score <- llr[, cell] * cos[, cell] * (llr[, cell] > min_scaled_llr) * (cos[, cell] > min_cosine)
     topn <- order(score, decreasing = TRUE)[seq_len(min(n_cells, sum(score > 0, na.rm = TRUE)))]
@@ -167,9 +170,6 @@ choose_anchors_from_stats <- function(anchorstats = NULL, cos = NULL, llr = NULL
   
 
 
-
-
-
   
 #' Choose anchor cells
 #' 
@@ -203,7 +203,10 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
                                    min_cosine = min_cosine)  
   
   # select anchors based on stats:
-  anchors <- choose_anchors_from_stats(anchorstats = anchorstats, 
+  anchors <- choose_anchors_from_stats(counts = counts, 
+                                       neg = neg,
+                                       bg = bg,
+                                       anchorstats = anchorstats, 
                                        cos = NULL, 
                                        llr = NULL, 
                                        n_cells = n_cells, 
