@@ -142,7 +142,7 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    n_anchor_cells = 20, 
                    min_anchor_cosine = 0.3, 
                    min_anchor_llr = 0.01,
-                   sketchingdata = NULL)   
+                   sketchingdata = NULL, insufficient_anchors_thresh = 2)   
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
@@ -171,7 +171,7 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    pct_drop = 1/5000, 
                    min_prob_increase = 0.05,
                    max_iters = 4,
-                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01)   
+                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 2)   
 
 # for line-by-line debugging:
 if (FALSE) {
@@ -230,13 +230,16 @@ testthat::test_that("get_anchor_stats produces correct outputs", {
 })
 
 # test anchor selection from stats:
-anchors <- choose_anchors_from_stats(anchorstats = astats, 
+anchors <- choose_anchors_from_stats(counts = mini_nsclc$counts,
+                                     neg = Matrix::rowMeans(mini_nsclc$neg),
+                                     bg = NULL,
+                                     anchorstats = astats, 
                                      cos = NULL, 
                                      llr = NULL, 
                                      n_cells = 500, 
                                      min_cosine = 0.3, 
                                      min_scaled_llr = 0.01, 
-                                     insufficient_anchors_thresh = 20) 
+                                     insufficient_anchors_thresh = 2) 
 
 testthat::test_that("choose_anchors_from_stats produces correct outputs", {
   expect_true(all(is.element(anchors, c(NA, colnames(astats[[2]])))))
@@ -254,7 +257,7 @@ anchors <- find_anchor_cells(counts = mini_nsclc$counts,
                              n_cells = 500, 
                              min_cosine = 0.3, 
                              min_scaled_llr = 0.01, 
-                             insufficient_anchors_thresh = 20) 
+                             insufficient_anchors_thresh = 2) 
 
 testthat::test_that("find_anchor_cells produces correct outputs", {
   expect_true(all(is.element(anchors, c(NA, colnames(astats[[2]])))))
