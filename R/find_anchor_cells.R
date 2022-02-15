@@ -70,14 +70,16 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   logliks <- sapply(colnames(profiles), function(cell) {
     templl <- cos[, cell] * NA
     usecells <- which((cos[, cell] >= pmin(0.75 * min_cosine, cos3)) & cells_with_high_cos)
-    templl[usecells] <- Mstep(counts = counts[usecells, ], 
-                              means = profiles[, cell, drop = FALSE],
-                              freq = 1,
-                              bg = bg[usecells], 
-                              size = size, 
-                              digits = 3, return_loglik = T) 
-    # scale the logliks by total counts:
-    templl[usecells] <- templl[usecells] / rowSums(counts[usecells, ])
+    if (length(usecells) > 0) {
+      templl[usecells] <- Mstep(counts = counts[usecells, ], 
+                                means = profiles[, cell, drop = FALSE],
+                                freq = 1,
+                                bg = bg[usecells], 
+                                size = size, 
+                                digits = 3, return_loglik = T) 
+      # scale the logliks by total counts:
+      templl[usecells] <- templl[usecells] / rowSums(counts[usecells, ])
+    }
     return(templl)
   })
   # convert loglik to LLR:
@@ -157,7 +159,7 @@ choose_anchors_from_stats <- function(counts, neg = NULL, bg, anchorstats = NULL
   anchors[is.element(anchors, too_few_anchors)] <- NA
   if (length(too_few_anchors) > 0) {
     message(paste0("The following cell types had too few anchors and so are being removed from consideration: ",
-                   paste0(too_few_anchors, collapse = ", ")))
+                   paste0(setdiff(colnames(cos), unique(anchors)), collapse = ", ")))
   }
   
   if (all(is.na(anchors))) {
