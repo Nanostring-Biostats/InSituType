@@ -157,7 +157,7 @@ choose_anchors_from_stats <- function(counts, neg = NULL, bg, anchorstats = NULL
   anchors[is.element(anchors, too_few_anchors)] <- NA
   if (length(too_few_anchors) > 0) {
     message(paste0("The following cell types had too few anchors and so are being removed from consideration: ",
-                   paste0(too_few_anchors, collapse = ", ")))
+                   paste0(setdiff(colnames(cos), unique(anchors)), collapse = ", ")))
   }
   
   if (all(is.na(anchors))) {
