@@ -106,7 +106,7 @@ Estep <- function(counts, clust, neg) {
 
   # get cluster means:
   means <- sapply(unique(clust), function(cl) {
-    pmax(Matrix::colSums(counts[clust == cl, , drop = FALSE]) - sum(neg[clust == cl]), 0)
+    pmax(Matrix::colMeans(counts[clust == cl, , drop = FALSE]) - mean(neg[clust == cl]), 0)
   })
   return(means)
 }
