@@ -264,3 +264,18 @@ testthat::test_that("find_anchor_cells produces correct outputs", {
   expect_true(max(table(anchors)) <= 500)
   expect_equal(names(anchors), rownames(mini_nsclc$counts))
 })
+
+# test anchor selection runs without error and returns NULL if no cells meet criteria:
+anchors <- suppressWarnings(find_anchor_cells(counts = mini_nsclc$counts,
+                             neg = Matrix::rowMeans(mini_nsclc$neg),
+                             bg = NULL, 
+                             align_genes = TRUE,
+                             profiles = ioprofiles[, 1:3], 
+                             size = 10, 
+                             n_cells = 500, 
+                             min_cosine = 0.8, 
+                             min_scaled_llr = 0.01, 
+                             insufficient_anchors_thresh = 2))
+testthat::test_that("find_anchor_cells produces correct outputs when none selected", {
+  expect_null(anchors)
+})

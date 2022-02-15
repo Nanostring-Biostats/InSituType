@@ -70,14 +70,16 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   logliks <- sapply(colnames(profiles), function(cell) {
     templl <- cos[, cell] * NA
     usecells <- which((cos[, cell] >= pmin(0.75 * min_cosine, cos3)) & cells_with_high_cos)
-    templl[usecells] <- Mstep(counts = counts[usecells, ], 
-                              means = profiles[, cell, drop = FALSE],
-                              freq = 1,
-                              bg = bg[usecells], 
-                              size = size, 
-                              digits = 3, return_loglik = T) 
-    # scale the logliks by total counts:
-    templl[usecells] <- templl[usecells] / rowSums(counts[usecells, ])
+    if (length(usecells) > 0) {
+      templl[usecells] <- Mstep(counts = counts[usecells, ], 
+                                means = profiles[, cell, drop = FALSE],
+                                freq = 1,
+                                bg = bg[usecells], 
+                                size = size, 
+                                digits = 3, return_loglik = T) 
+      # scale the logliks by total counts:
+      templl[usecells] <- templl[usecells] / rowSums(counts[usecells, ])
+    }
     return(templl)
   })
   # convert loglik to LLR:
