@@ -385,7 +385,7 @@ insitutype <- function(counts, neg, bg = NULL,
   probs <- logliks2probs(logliks)
   out = list(clust = clust,
              probs = round(probs, 3),
-             profiles = sweep(profiles, 2, colSums(profiles), "/") * nrow(profiles),
+             profiles = profiles,
              anchors = anchors) 
   return(out)
 }
