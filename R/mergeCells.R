@@ -15,8 +15,10 @@
 #' @export
 #' @examples
 #' # define a "merges" input:
-#' merges <- c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
+#' merges = c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
 #'              "B-cells" = "lymphoid")
+#' # define clusters to delete:
+#' to_delete =  c("a", "f") 
 mergeCells <- function(merges = NULL, to_delete = NULL, probs) {
   
   # input checks:
