@@ -4,6 +4,8 @@
 #'  cluster assignments and probabilities under the merged cell types.
 #' @param merges A named vector in which the elements give new cluster names and
 #'  the names give old cluster names. OK to omit cell types that aren't being merged.
+#' @param to_delete Cluster names to delete. All cells assigned to these clusters 
+#'  will be reassigned to the next best cluster. 
 #' @param probs Matrix of probabilities
 #' @return A list with two elements:
 #' \enumerate{
@@ -15,18 +17,34 @@
 #' # define a "merges" input:
 #' merges <- c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
 #'              "B-cells" = "lymphoid")
-mergeCells <- function(merges, probs) {
-
+mergeCells <- function(merges = NULL, to_delete = NULL, probs) {
+  
+  # input checks:
+  #if (is.null(merges) & is.null(to_delete)) {
+  #  stop("Must provide a value foe either merges or to_delete")
+  #}
+  
+  # check that merges and to_delete names are all in logliks:
+  if (any(!is.element(names(merges), colnames(probs)))) {
+    mismatch <- setdiff(names(merges), colnames(probs))
+    stop(paste0("The following user-provided cluster name(s) in the merges argument are missing from colnames(probs): ",
+                paste0(mismatch, collapse = ", ")))
+  }
+  if (any(!is.element(to_delete, colnames(probs)))) {
+    mismatch <- setdiff(to_delete, colnames(probs))
+    stop(paste0("The following user-provided cluster name(s) in the to_delete argument are missing from colnames(probs): ",
+                paste0(mismatch, collapse = ", ")))
+  }
+  if (length(setdiff(colnames(probs), to_delete)) == 0) {
+    stop("The to_delete argument is asking for all clusters to be deleted.")
+  }
+  
   # convert probs to logliks:
   logliks <- probs2logliks(probs) 
     
-  # check that merges names are all in logliks:
-  if (any(!is.element(names(merges), colnames(logliks)))) {
-    mismatch <- setdiff(names(merges), colnames(logliks))
-    stop(paste0("The following user-provided cluster name(s) are missing from colnames(logliks): ",
-                paste0(mismatch, collapse = ", ")))
-  }
-
+  # delete those called for:
+  logliks <- logliks[, !is.element(colnames(logliks), to_delete)]
+  
   # get logliks under merged categories: each cell's "new" loglik in a merged cell type is
   #  its best loglik under the "old" celltype.
   newlogliks <- matrix(NA, nrow(logliks), length(unique(merges)),
@@ -35,13 +53,22 @@ mergeCells <- function(merges, probs) {
     oldnames <- names(merges)[merges == newname]
     newlogliks[, newname] = apply(logliks[, oldnames, drop = FALSE], 1, max)
   })
-  newlogliks <- cbind(newlogliks, logliks[, setdiff(colnames(logliks), names(merges)), drop = FALSE])
+  if (length(newlogliks) > 0) {
+    newlogliks <- cbind(newlogliks, logliks[, setdiff(colnames(logliks), names(merges)), drop = FALSE])
+  } else {
+    newlogliks <- logliks
+  }
 
   ## convert to probs:
   probs <- logliks2probs(newlogliks)
-  clust <- colnames(probs)[apply(probs, 1, which.max)]
+  # flag cells with 0 probability in any of the remaining cell types:
+  lostcells <- is.na(probs[, 1])
+  
+  # get new cluster assignments:
+  clust <- rep(NA, nrow(probs))
   names(clust) <- rownames(probs)
-  out <- list(clust = clust, probs = round(probs, 2))  # (rounding probs to save memory)
+  clust[!lostcells] <- colnames(probs)[apply(probs[!lostcells, , drop = FALSE], 1, which.max)]
+  out <- list(clust = clust, probs = round(probs, 3))  # (rounding probs to save memory)
   return(out)
 }
 

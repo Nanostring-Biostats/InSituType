@@ -4,11 +4,14 @@
 \alias{mergeCells}
 \title{Merge cell types in a clustering result}
 \usage{
-mergeCells(merges, probs)
+mergeCells(merges = NULL, to_delete = NULL, probs)
 }
 \arguments{
 \item{merges}{A named vector in which the elements give new cluster names and
 the names give old cluster names. OK to omit cell types that aren't being merged.}
+
+\item{to_delete}{Cluster names to delete. All cells assigned to these clusters 
+will be reassigned to the next best cluster.}
 
 \item{probs}{Matrix of probabilities}
 }
