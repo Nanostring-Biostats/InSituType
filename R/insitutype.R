@@ -382,6 +382,7 @@ insitutype <- function(counts, neg, bg = NULL,
            size = nb_size)
   })
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
+  names(clust) <- rownames(logliks) 
   probs <- logliks2probs(logliks)
   out = list(clust = clust,
              probs = round(probs, 3),

@@ -279,3 +279,22 @@ anchors <- suppressWarnings(find_anchor_cells(counts = mini_nsclc$counts,
 testthat::test_that("find_anchor_cells produces correct outputs when none selected", {
   expect_null(anchors)
 })
+
+
+# test merge cells:
+merge1 <- mergeCells(
+  merges = NULL, to_delete = NULL, probs = sup$probs)
+merge2 <- mergeCells(
+  merges =  c("macrophage" = "myeloid", "mDC" = "myeloid","B-cell" = "lymphoid"), 
+  to_delete = "endothelial", 
+  probs = sup$probs)
+testthat::test_that("mergecells works when no directions are passed to it", {
+  expect_equal(sup$probs, merge1$probs, tolerance = 1e-2)
+  expect_equal(sup$clust, merge1$clust)
+})
+testthat::test_that("mergecells works when merges and deletions are asked for", {
+  expect_true(all(is.element(colnames(merge2$probs), c("lymphoid", "myeloid", "fibroblast", "mast"))))
+  expect_true(all(is.na(merge2$probs[sup$probs[, "endothelial"] == 1, 1])))
+  expect_equal(names(merge2$clust), names(sup$clust))
+  
+})
