@@ -66,6 +66,7 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size 
   
   # get remaining outputs
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
+  names(clust) <- rownames(logliks)
   probs <- logliks2probs(logliks)
   out = list(clust = clust,
              probs = round(probs, 3),
