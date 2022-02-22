@@ -28,6 +28,8 @@ Take a user-defined list of cells types to rename/combine, then re-compute
 }
 \examples{
 # define a "merges" input:
-merges <- c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
+merges = c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
              "B-cells" = "lymphoid")
+# define clusters to delete:
+to_delete =  c("a", "f") 
 }
