@@ -68,7 +68,7 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   
   # checks:
   if (is.null(tissue)) {
-    tissue = rep("", nrow(counts))
+    tissue = rep("allcells", nrow(counts))
   }
   if (length(tissue) != nrow(counts)) {
     stop("tissue vector should have length equal to nrow(counts).")
@@ -130,10 +130,13 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   
   resultslist <- list()
   for (tiss in unique(tissue)) {
-    
+    message(paste0("clustering ", gsub("allcells", "all cells", tissue)))
     # cluster this tissue's cells along with all the anchors:
-    use <- (tissue == tiss) | !is.na(anchors)
-    
+    use <- (tissue == tiss) 
+    if (!is.null(anchors)) {
+      use <- use | !is.na(anchors)
+    }
+
     tempres <- runinsitutype(
       counts = counts[use, ],
       neg = neg[use], 
@@ -154,17 +157,18 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
     )
     
     # rename new clusters by their tissue:
-    
-    unknownclusternames <- setdiff(tempres$clust, anchors)
-    replacementnames <- paste0(tiss, "cl", seq_along(unknownclusternames))
-    names(replacementnames) <- unknownclusternames
-    
-    for (oldname in unknownclusternames) {
-      tempres$clust[tempres$clust == oldname] <- replacementnames[oldname]
-      colnames(tempres$probs)[colnames(tempres$probs) == oldname] <- replacementnames[oldname]
-      colnames(tempres$profiles)[colnames(tempres$profiles) == oldname] <- replacementnames[oldname]  
+    if (tiss != "allcells") {
+      unknownclusternames <- setdiff(tempres$clust, anchors)
+      replacementnames <- paste0(tiss, "_cl", seq_along(unknownclusternames))
+      #replacementnames <- gsub("allcells", "", replacementnames)
+      names(replacementnames) <- unknownclusternames
+      
+      for (oldname in unknownclusternames) {
+        tempres$clust[tempres$clust == oldname] <- replacementnames[oldname]
+        colnames(tempres$probs)[colnames(tempres$probs) == oldname] <- replacementnames[oldname]
+        colnames(tempres$profiles)[colnames(tempres$profiles) == oldname] <- replacementnames[oldname]  
+      }
     }
-    
     
     # keep only the results from this tissue's cells:
     keepcells <- rownames(counts)[tissue == tiss]
@@ -183,13 +187,13 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   for (tiss in names(resultslist)) {
     uniqueclusts <- unique(c(uniqueclusts, resultslist[[tiss]]$clust))
   }
-  uniqueclusts <- c(intersect(colnames(fixed_profiles), uniqueclust), 
-                    setdiff(colnames(fixed_profiles), uniqueclust))
+  uniqueclusts <- c(intersect(colnames(fixed_profiles), uniqueclusts), 
+                    setdiff(uniqueclusts, colnames(fixed_profiles)))
   
   out <- list()
   out$clust <- rep(NA, nrow(counts))
   names(out$clust) <- rownames(counts)
-  out$probs <- matrix(NA, nrow(counts), length(uniqueclusts),
+  out$probs <- matrix(0, nrow(counts), length(uniqueclusts),
                       dimnames = list(rownames(counts), uniqueclusts))
   out$profiles <- matrix(NA, ncol(counts), length(uniqueclusts),
                          dimnames = list(colnames(counts), uniqueclusts))
@@ -200,13 +204,14 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
     tempcells <- names(resultslist[[tiss]]$clust)
     tempcelltypes <- colnames(resultslist[[tiss]]$probs)
     out$clust[tempcells] <- resultslist[[tiss]]$clust
-    out$probs[tempcells, tempcelltypes, drop = FALSE] <- resultslist[[tiss]]$probs
+    out$probs[tempcells, tempcelltypes] <- resultslist[[tiss]]$probs
   }
   
   # estimate profiles using all tissues:
   out$profiles <- Estep(counts, 
                         clust = out$clust,
                         neg = neg)
+  out$profiles <- out$profiles[, colnames(out$probs)]
   
   return(out)
 }
