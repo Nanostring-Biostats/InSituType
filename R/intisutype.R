@@ -130,7 +130,7 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   
   resultslist <- list()
   for (tiss in unique(tissue)) {
-    message(paste0("clustering ", gsub("allcells", "all cells", tissue)))
+    message(paste0("clustering ", gsub("allcells", "all cells", tiss)))
     # cluster this tissue's cells along with all the anchors:
     use <- (tissue == tiss) 
     if (!is.null(anchors)) {

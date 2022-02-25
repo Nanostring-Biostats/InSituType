@@ -49,7 +49,6 @@
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 #' }
-#' @export
 runinsitutype <- function(counts, neg, bg = NULL, 
                        anchors = NULL,
                        n_clusts,
