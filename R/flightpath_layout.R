@@ -106,3 +106,18 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
 }
 
 
+#' Summarize clusters' mean confidence
+#' 
+#' Calculate the mean confidence of the cell calls from each cluster
+#' @param probs Matrix of probabilities
+#' @return a vector of mean confidences, with values of 1 corresponding to clusters with only prob == 1
+getMeanClusterConfidence <- function(probs) {
+  
+  maxprobs <- apply(probs, 1, max)
+  meanconfidence <- sapply(colnames(probs), function(name){
+    thisclust <- probs[, name] == maxprobs
+    mean(probs[thisclust, name, drop = FALSE])
+  })
+  
+  return(meanconfidence)
+}
