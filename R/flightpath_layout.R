@@ -42,6 +42,9 @@ flightpath_layout <- function(probs, profiles = NULL, cluster_xpos = NULL, clust
              clust = colnames(probs)[apply(probs, 1, which.max)])
   colnames(out$clustpos) = c("x", "y")
   colnames(out$cellpos) = c("x", "y")
+  
+  # get clusters' mean confidence:
+  out$meanconfidence <- getMeanClusterConfidence(probs)
   return(out)
 }
 
@@ -60,7 +63,7 @@ flightpath_layout <- function(probs, profiles = NULL, cluster_xpos = NULL, clust
 #'
 #'@export
 #'
-flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, col = NULL){
+flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, col = NULL, showclusterconfidence = TRUE){
   
   # get the flightpath results to use 
   if (!is.null(flightpath_result) & !is.null(insitutype_result)) {
@@ -88,21 +91,50 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
   df <- data.frame(x = flightpath_result$cellpos[, 1], y = flightpath_result$cellpos[, 2], col = scales::alpha(col, 0.7))
   df_text <- data.frame(x = flightpath_result$clustpos[, 1],
                         y = flightpath_result$clustpos[, 2],
-                        group = rownames(flightpath_result$clustpos))
+                        group = rownames(flightpath_result$clustpos),
+                        col = "black")
+  
+  if (showclusterconfidence) {
+    confthresh <- 0.8
+    confidencecolors <- c('#FEB24C','#FD9D43','#FC863A','#FC6330','#F64226',
+                          '#E8251F','#D2111F','#B60224','#620015','#000000')
+    df_text$col <- confidencecolors[
+      1 + round(9 * (pmax(flightpath_result$meanconfidence, confthresh) - confthresh) / (1 - confthresh))]
+    
+    df_text$group <- paste0(df_text$group, "(", round(flightpath_result$meanconfidence, 2), ")")
+  }
   p <- ggplot2::ggplot() +
-    ggplot2::geom_point(df, mapping  = ggplot2::aes(x = flightpath_result$cellpos[, 1], y = flightpath_result$cellpos[, 2], color = I(col))) +
+    ggplot2::geom_point(df, mapping  = ggplot2::aes(x = flightpath_result$cellpos[, 1], 
+                                                    y = flightpath_result$cellpos[, 2], 
+                                                    color = I(col),
+                                                    size = I(0.1))) +
     ggplot2::scale_color_identity() +
     ggplot2::geom_text(df_text,
-              mapping = ggplot2::aes(x = x, y = y, label = group),
-              size = 5) +
-    xlab("") +
-    ylab("") +
+              mapping = ggplot2::aes(x = x, y = y, label = group, col = I(col)),
+              size = 3) +
+    ggplot2::xlab("") +
+    ggplot2::ylab("") +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "none",
           panel.grid = ggplot2::element_blank(),
           axis.text = ggplot2::element_blank())
-  
+
   return(p)
 }
 
 
+#' Summarize clusters' mean confidence
+#' 
+#' Calculate the mean confidence of the cell calls from each cluster
+#' @param probs Matrix of probabilities
+#' @return a vector of mean confidences, with values of 1 corresponding to clusters with only prob == 1
+getMeanClusterConfidence <- function(probs) {
+  
+  maxprobs <- apply(probs, 1, max)
+  meanconfidence <- sapply(colnames(probs), function(name){
+    thisclust <- probs[, name] == maxprobs
+    mean(probs[thisclust, name, drop = FALSE])
+  })
+  
+  return(meanconfidence)
+}
