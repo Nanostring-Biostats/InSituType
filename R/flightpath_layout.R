@@ -111,7 +111,7 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
     ggplot2::scale_color_identity() +
     ggplot2::geom_text(df_text,
               mapping = ggplot2::aes(x = x, y = y, label = group, col = I(col)),
-              size = 5) +
+              size = 3) +
     ggplot2::xlab("") +
     ggplot2::ylab("") +
     ggplot2::theme_bw() +
