@@ -31,4 +31,10 @@ test_that("flightpath_plot returns a ggplot object", {
   expect_true(any(grepl("gg", class(p))))
 })
 
+# test flightpath_plot showing meanconfidence
+p <- flightpath_plot(insitutype_result = res, showclusterconfidence = TRUE)
+test_that("flightpath_plot returns a ggplot object when showclusterconfidence = TRUE", {
+  expect_true(any(grepl("gg", class(p))))
+})
+
 
