@@ -100,9 +100,14 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
                           '#E8251F','#D2111F','#B60224','#620015','#000000')
     df_text$col <- confidencecolors[
       1 + round(9 * (pmax(flightpath_result$meanconfidence, confthresh) - confthresh) / (1 - confthresh))]
+    
+    df_text$group <- paste0(df_text$group, "(", round(flightpath_result$meanconfidence, 2), ")")
   }
   p <- ggplot2::ggplot() +
-    ggplot2::geom_point(df, mapping  = ggplot2::aes(x = flightpath_result$cellpos[, 1], y = flightpath_result$cellpos[, 2], color = I(col))) +
+    ggplot2::geom_point(df, mapping  = ggplot2::aes(x = flightpath_result$cellpos[, 1], 
+                                                    y = flightpath_result$cellpos[, 2], 
+                                                    color = I(col),
+                                                    size = I(0.1))) +
     ggplot2::scale_color_identity() +
     ggplot2::geom_text(df_text,
               mapping = ggplot2::aes(x = x, y = y, label = group, col = I(col)),
@@ -113,7 +118,7 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
     ggplot2::theme(legend.position = "none",
           panel.grid = ggplot2::element_blank(),
           axis.text = ggplot2::element_blank())
-  
+
   return(p)
 }
 
