@@ -1,4 +1,4 @@
-#' Unsupervised and semi-supervised cell typing of single cell expression data.
+#' Run insitutype. 
 #'
 #' A wrapper for nbclust, to manage subsampling and multiple random starts.
 #' @param counts Counts matrix, cells * genes.
@@ -49,8 +49,7 @@
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 #' }
-#' @export
-insitutype <- function(counts, neg, bg = NULL, 
+runinsitutype <- function(counts, neg, bg = NULL, 
                        anchors = NULL,
                        n_clusts,
                        fixed_profiles = NULL, 
@@ -105,7 +104,7 @@ insitutype <- function(counts, neg, bg = NULL,
                                  min_scaled_llr = min_anchor_llr,
                                  insufficient_anchors_thresh = insufficient_anchors_thresh) 
   }
-  if (is.null(anchors) & all(n_clusts == 0)) {
+  if (is.null(anchors) & any(n_clusts == 0)) {
     stop("No anchors were selected, and n_clusts = 0. The algorithm can't run under these conditions. 
          Solutions include: 1. make anchor selection more generous. 2. select anchors by hand. 3. increase n_clusts")
   }

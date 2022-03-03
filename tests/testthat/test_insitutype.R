@@ -1,3 +1,4 @@
+set.seed(0)
 
 # load data ("raw" and "cellannot"):
 data("ioprofiles")
@@ -29,6 +30,7 @@ testthat::test_that("supervised cell typing produces correct outputs", {
 # test semi-supervised with 0 new clusts:
 semi <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
+                  tissue = sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                   bg = NULL,
                   init_clust = NULL, 
                   n_clusts = 0,
@@ -57,6 +59,7 @@ testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = NULL,
+                    tissue =  sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                     init_clust = NULL, n_clusts = 2:5,
                     fixed_profiles = NULL,
                     anchors = NULL,
@@ -88,6 +91,7 @@ init_clust <- rep(c("name1", "xxx", "ooo"), each = nrow(mini_nsclc$counts) / 3)[
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = 0.03,
+                    tissue = NULL,
                     init_clust = init_clust, 
                     n_clusts = 6,
                     fixed_profiles = NULL,
@@ -125,6 +129,7 @@ if (FALSE) {
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
+                   tissue =  sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                    anchors = NULL,
                    init_clust = NULL, n_clusts = 2,
                    fixed_profiles = ioprofiles[, 1:3],
@@ -157,6 +162,7 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
+                   tissue = NULL,
                    anchors = NULL,
                    init_clust = NULL, n_clusts = 2:3,
                    fixed_profiles = ioprofiles[, 1:3],
@@ -179,7 +185,7 @@ if (FALSE) {
   init_clust = NULL; n_clusts = 2:3;fixed_profiles = ioprofiles[, 1:3];
   nb_size = 10;n_starts = 2;align_genes = TRUE;n_benchmark_cells = 200;n_phase1 = 300;n_phase2 = 500;n_phase3 = 1000;
   n_chooseclusternumber = 300;pct_drop = 1/5000;min_prob_increase = 0.05;max_iters = 4;n_anchor_cells = 20
-  min_anchor_cosine = 0.3; min_anchor_llr = 0.01;sketchingdata=NULL;anchor_replacement_thresh=0.75
+  min_anchor_cosine = 0.3; min_anchor_llr = 0.1;sketchingdata=NULL;anchor_replacement_thresh=0.75;insufficient_anchors_thresh = 1
 }
 
 
