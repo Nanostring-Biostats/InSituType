@@ -5,11 +5,12 @@ probs <- matrix(runif(600), 100)
 probs <- sweep(probs, 1, rowSums(probs), "/")
 profiles <- matrix(rgamma(300, 1), 50)
 colnames(probs) <- colnames(profiles) <- celltypes
-res <- list(probs = probs, profiles = profiles, clust = colnames(probs)[apply(probs,1,which.max)])
+logliks <- MLEcell:::probs2logliks(probs)
+res <- list(logliks = logliks, profiles = profiles, clust = colnames(logliks)[apply(logliks,1,which.max)])
 
 
 # test flightpath_layout
-fp <- flightpath_layout(res$probs, res$profiles)
+fp <- flightpath_layout(res$logliks, res$profiles)
 test_that("flightpath_layout returns correct format", {
   expect_true(all(dim(fp$clustpos) == c(6,2)))
   expect_true(all(dim(fp$cellpos) == c(100,2)))
