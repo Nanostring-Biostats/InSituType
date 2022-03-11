@@ -100,7 +100,8 @@ Clusters whose anchors are reassigned at this rate or higher will be renamed, an
 A list, with the following elements:
 \enumerate{
 \item clust: a vector given cells' cluster assignments
-\item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
+\item prob: a vector giving the confidence in each cell's cluster
+\item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 \item profiles: a matrix of cluster-specific expression profiles
 \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 }

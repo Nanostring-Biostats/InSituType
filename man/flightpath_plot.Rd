@@ -4,7 +4,12 @@
 \alias{flightpath_plot}
 \title{Plot flightpath results}
 \usage{
-flightpath_plot(flightpath_result = NULL, insitutype_result = NULL, col = NULL)
+flightpath_plot(
+  flightpath_result = NULL,
+  insitutype_result = NULL,
+  col = NULL,
+  showclusterconfidence = TRUE
+)
 }
 \arguments{
 \item{col}{Optional, a vector of cell colors, with length equal to the number of individual cells.}

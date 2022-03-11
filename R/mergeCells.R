@@ -54,9 +54,9 @@ mergeCells <- function(merges = NULL, to_delete = NULL, logliks) {
   }
 
   # get new cluster assignments:
-  clust <- colnames(logliks)[apply(logliks, 1, which.max)]
-  names(clust) <- rownames(logliks)
-  out <- list(clust = clust, logliks = round(logliks, 4))  # (rounding logliks to save memory)
+  clust <- colnames(newlogliks)[apply(newlogliks, 1, which.max)]
+  names(clust) <- rownames(newlogliks)
+  out <- list(clust = clust, logliks = round(newlogliks, 4))  # (rounding logliks to save memory)
   return(out)
 }
 

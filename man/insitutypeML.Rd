@@ -32,8 +32,8 @@ Colnames must all be included in the init_clust variable.}
 A list, with the following elements:
 \enumerate{
 \item clust: a vector given cells' cluster assignments
-\item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
-\item logliks: a matrix of each cell's log-likelihood under each cluster
+\item prob: a vector giving the confidence in each cell's cluster
+\item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 }
 }
 \description{
