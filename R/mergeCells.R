@@ -6,12 +6,11 @@
 #'  the names give old cluster names. OK to omit cell types that aren't being merged.
 #' @param to_delete Cluster names to delete. All cells assigned to these clusters 
 #'  will be reassigned to the next best cluster. 
-#' @param probs Matrix of probabilities output by insitutype
-#' @param profiles Profiles matrix output by insitutype
+#' @param logliks Matrix of log-likelihoods output by insitutype, cells in rows, clusters in columns
 #' @return A list with two elements:
 #' \enumerate{
 #' \item clust: a vector of cluster assignments
-#' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
+#' \item logliks: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' }
 #' @export
 #' @examples
@@ -20,31 +19,23 @@
 #'              "B-cells" = "lymphoid")
 #' # define clusters to delete:
 #' to_delete =  c("a", "f") 
-mergeCells <- function(merges = NULL, to_delete = NULL, probs, profiles) {
-  
-  # input checks:
-  #if (is.null(merges) & is.null(to_delete)) {
-  #  stop("Must provide a value foe either merges or to_delete")
-  #}
+mergeCells <- function(merges = NULL, to_delete = NULL, logliks) {
   
   # check that merges and to_delete names are all in logliks:
-  if (any(!is.element(names(merges), colnames(probs)))) {
-    mismatch <- setdiff(names(merges), colnames(probs))
-    stop(paste0("The following user-provided cluster name(s) in the merges argument are missing from colnames(probs): ",
+  if (any(!is.element(names(merges), colnames(logliks)))) {
+    mismatch <- setdiff(names(merges), colnames(logliks))
+    stop(paste0("The following user-provided cluster name(s) in the merges argument are missing from colnames(logliks): ",
                 paste0(mismatch, collapse = ", ")))
   }
-  if (any(!is.element(to_delete, colnames(probs)))) {
-    mismatch <- setdiff(to_delete, colnames(probs))
-    stop(paste0("The following user-provided cluster name(s) in the to_delete argument are missing from colnames(probs): ",
+  if (any(!is.element(to_delete, colnames(logliks)))) {
+    mismatch <- setdiff(to_delete, colnames(logliks))
+    stop(paste0("The following user-provided cluster name(s) in the to_delete argument are missing from colnames(logliks): ",
                 paste0(mismatch, collapse = ", ")))
   }
-  if (length(setdiff(colnames(probs), to_delete)) == 0) {
+  if (length(setdiff(colnames(logliks), to_delete)) == 0) {
     stop("The to_delete argument is asking for all clusters to be deleted.")
   }
-  
-  # convert probs to logliks:
-  logliks <- probs2logliks(probs) 
-    
+
   # delete those called for:
   logliks <- logliks[, !is.element(colnames(logliks), to_delete)]
   
@@ -62,16 +53,10 @@ mergeCells <- function(merges = NULL, to_delete = NULL, probs, profiles) {
     newlogliks <- logliks
   }
 
-  ## convert to probs:
-  probs <- logliks2probs(newlogliks)
-  # flag cells with 0 probability in any of the remaining cell types:
-  lostcells <- is.na(probs[, 1])
-  
   # get new cluster assignments:
-  clust <- rep(NA, nrow(probs))
-  names(clust) <- rownames(probs)
-  clust[!lostcells] <- colnames(probs)[apply(probs[!lostcells, , drop = FALSE], 1, which.max)]
-  out <- list(clust = clust, probs = round(probs, 3))  # (rounding probs to save memory)
+  clust <- colnames(logliks)[apply(logliks, 1, which.max)]
+  names(clust) <- rownames(logliks)
+  out <- list(clust = clust, logliks = round(logliks, 4))  # (rounding logliks to save memory)
   return(out)
 }
 
