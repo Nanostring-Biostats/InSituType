@@ -353,7 +353,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
       
       cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
       newnames <- setdiff(cluster_name_pool, colnames(clust3$profiles))[seq_along(flaggedclusters)]
-      names(newnames) = flaggedclusters
+      names(newnames) <- flaggedclusters
       
       # rename flagged clusters, then reassign flagged anchor cells back to their original cell type
       newclust = clust3$clust

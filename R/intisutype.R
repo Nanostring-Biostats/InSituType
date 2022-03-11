@@ -166,7 +166,7 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
       
       for (oldname in unknownclusternames) {
         tempres$clust[tempres$clust == oldname] <- replacementnames[oldname]
-        colnames(tempres$probs)[colnames(tempres$probs) == oldname] <- replacementnames[oldname]
+        colnames(tempres$logliks)[colnames(tempres$logliks) == oldname] <- replacementnames[oldname]
         colnames(tempres$profiles)[colnames(tempres$profiles) == oldname] <- replacementnames[oldname]  
       }
     }
@@ -208,7 +208,7 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
     tempcelltypes <- colnames(resultslist[[tiss]]$logliks)
     out$clust[tempcells] <- resultslist[[tiss]]$clust
     
-    templogliks <- resultslist[[tiss]]$logliks
+    templogliks <- resultslist[[tiss]]$logliks[tempcells, tempcelltypes]
     out$logliks[tempcells, tempcelltypes] <- round(templogliks, 4)
 
     tempprobs <- logliks2probs(templogliks)

@@ -11,8 +11,19 @@ if (FALSE) {
   nbclust = MLEcell:::nbclust
   Mstep=MLEcell:::Mstep
   Estep=MLEcell:::Estep
-  sketchingdata = FALSE
+  runinsitutype=MLEcell:::runinsitutype
 }
+
+# for line-by-line debugging:
+if (FALSE) {
+  counts = mini_nsclc$counts;neg = Matrix::rowMeans(mini_nsclc$neg);bg = NULL;anchors = NULL
+  init_clust = NULL; n_clusts = 2:3;fixed_profiles = ioprofiles[, 1:3];
+  nb_size = 10;n_starts = 2;align_genes = TRUE;n_benchmark_cells = 200;n_phase1 = 300;n_phase2 = 500;n_phase3 = 1000;
+  n_chooseclusternumber = 300;pct_drop = 1/5000;min_prob_increase = 0.05;max_iters = 4;n_anchor_cells = 20
+  min_anchor_cosine = 0.3; min_anchor_llr = 0.1;sketchingdata=NULL;anchor_replacement_thresh=0.75;insufficient_anchors_thresh = 1
+  sketchingdata = NULL; anchor_replacement_thresh = 5
+}
+
 # test supervised cell typing using direct loglik calcs:
 sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
@@ -22,9 +33,11 @@ sup <- insitutypeML(counts = mini_nsclc$counts,
                       align_genes = TRUE) 
   
 testthat::test_that("supervised cell typing produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs"), names(sup))))
+  expect_true(all(is.element(c("clust", "prob", "logliks"), names(sup))))
   expect_true(is.vector(sup$clust))
-  expect_true(is.matrix(sup$probs))
+  expect_true(is.vector(sup$prob))
+  expect_true(is.matrix(sup$logliks))
+  
 })
 
 # test semi-supervised with 0 new clusts:
@@ -49,9 +62,10 @@ semi <- insitutype(counts = mini_nsclc$counts,
                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 2)   
 
 testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs"), names(semi))))
+  expect_true(all(is.element(c("clust", "prob", "logliks"), names(semi))))
   expect_true(is.vector(semi$clust))
-  expect_true(is.matrix(semi$probs))
+  expect_true(is.vector(semi$prob))
+  expect_true(is.matrix(semi$logliks))
 })
 
 
@@ -77,9 +91,10 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     max_iters = 2)   
 
 testthat::test_that("unsupervised cell typing produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs", "profiles"), names(unsup))))
+  expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(unsup))))
   expect_true(is.vector(unsup$clust))
-  expect_true(is.matrix(unsup$probs))
+  expect_true(is.vector(unsup$prob))
+  expect_true(is.matrix(unsup$logliks))
   expect_true(is.matrix(unsup$profiles))
 })
 
@@ -109,9 +124,10 @@ unsup <- insitutype(counts = mini_nsclc$counts,
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs", "profiles"), names(unsup))))
+  expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(unsup))))
   expect_true(is.vector(unsup$clust))
-  expect_true(is.matrix(unsup$probs))
+  expect_true(is.vector(unsup$prob))
+  expect_true(is.matrix(unsup$logliks))
   expect_true(is.matrix(unsup$profiles))
   expect_true(all(sort(unique(unsup$clust)) == sort(unique(init_clust))))
 })
@@ -151,9 +167,10 @@ semi <- insitutype(counts = mini_nsclc$counts,
 
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs", "profiles"), names(semi))))
+  expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
   expect_true(is.vector(semi$clust))
-  expect_true(is.matrix(semi$probs))
+  expect_true(is.vector(semi$prob))
+  expect_true(is.matrix(semi$logliks))
   expect_true(is.matrix(semi$profiles))
 })
 
@@ -179,20 +196,12 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    max_iters = 4,
                    n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 2)   
 
-# for line-by-line debugging:
-if (FALSE) {
-  counts = mini_nsclc$counts;neg = Matrix::rowMeans(mini_nsclc$neg);bg = NULL;anchors = NULL
-  init_clust = NULL; n_clusts = 2:3;fixed_profiles = ioprofiles[, 1:3];
-  nb_size = 10;n_starts = 2;align_genes = TRUE;n_benchmark_cells = 200;n_phase1 = 300;n_phase2 = 500;n_phase3 = 1000;
-  n_chooseclusternumber = 300;pct_drop = 1/5000;min_prob_increase = 0.05;max_iters = 4;n_anchor_cells = 20
-  min_anchor_cosine = 0.3; min_anchor_llr = 0.1;sketchingdata=NULL;anchor_replacement_thresh=0.75;insufficient_anchors_thresh = 1
-}
-
 
 testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
-  expect_true(all(is.element(c("clust", "probs", "profiles"), names(semi))))
+  expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
   expect_true(is.vector(semi$clust))
-  expect_true(is.matrix(semi$probs))
+  expect_true(is.vector(semi$prob))
+  expect_true(is.matrix(semi$logliks))
   expect_true(is.matrix(semi$profiles))
 })
 
@@ -289,18 +298,17 @@ testthat::test_that("find_anchor_cells produces correct outputs when none select
 
 # test merge cells:
 merge1 <- mergeCells(
-  merges = NULL, to_delete = NULL, probs = sup$probs)
+  merges = NULL, to_delete = NULL, logliks = sup$logliks)
 merge2 <- mergeCells(
   merges =  c("macrophage" = "myeloid", "mDC" = "myeloid","B-cell" = "lymphoid"), 
   to_delete = "endothelial", 
-  probs = sup$probs)
+  logliks = sup$logliks)
 testthat::test_that("mergecells works when no directions are passed to it", {
-  expect_equal(sup$probs, merge1$probs, tolerance = 1e-2)
+  expect_equal(sup$logliks, merge1$logliks, tolerance = 1e-2)
   expect_equal(sup$clust, merge1$clust)
 })
 testthat::test_that("mergecells works when merges and deletions are asked for", {
-  expect_true(all(is.element(colnames(merge2$probs), c("lymphoid", "myeloid", "fibroblast", "mast"))))
-  expect_true(all(is.na(merge2$probs[sup$probs[, "endothelial"] == 1, 1])))
+  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "myeloid", "fibroblast", "mast"))))
+  expect_true(all(is.na(merge2$logliks[sup$logliks[, "endothelial"] == 1, 1])))
   expect_equal(names(merge2$clust), names(sup$clust))
-  
 })
