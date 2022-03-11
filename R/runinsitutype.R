@@ -383,8 +383,11 @@ runinsitutype <- function(counts, neg, bg = NULL,
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   names(clust) <- rownames(logliks) 
   probs <- logliks2probs(logliks)
-  out = list(clust = clust,
-             probs = round(probs, 3),
+  prob <- apply(probs, 1, max)
+  names(prob) <- names(clust)
+  out <- list(clust = clust,
+             prob = prob,
+             logliks = logliks,
              profiles = profiles,
              anchors = anchors) 
   return(out)

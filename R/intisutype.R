@@ -193,7 +193,9 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   out <- list()
   out$clust <- rep(NA, nrow(counts))
   names(out$clust) <- rownames(counts)
-  out$probs <- matrix(0, nrow(counts), length(uniqueclusts),
+  out$prob <- rep(NA, nrow(counts))
+  names(out$prob) <- rownames(counts)
+  out$logliks <- matrix(0, nrow(counts), length(uniqueclusts),
                       dimnames = list(rownames(counts), uniqueclusts))
   out$profiles <- matrix(NA, ncol(counts), length(uniqueclusts),
                          dimnames = list(colnames(counts), uniqueclusts))
@@ -202,16 +204,23 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   # fill in output:
   for (tiss in names(resultslist)) {
     tempcells <- names(resultslist[[tiss]]$clust)
-    tempcelltypes <- colnames(resultslist[[tiss]]$probs)
+    tempcelltypes <- colnames(resultslist[[tiss]]$logliks)
     out$clust[tempcells] <- resultslist[[tiss]]$clust
-    out$probs[tempcells, tempcelltypes] <- resultslist[[tiss]]$probs
+    
+    templogliks <- resultslist[[tiss]]$logliks
+    out$logliks[tempcells, tempcelltypes] <- templogliks
+
+    tempprobs <- logliks2probs(templogliks)
+    tempprob <- apply(tempprobs, 1, max)
+    names(tempprob) <- tempcells
+    out$prob[tempcells] <- tempprob
   }
   
   # estimate profiles using all tissues:
   out$profiles <- Estep(counts, 
                         clust = out$clust,
                         neg = neg)
-  out$profiles <- out$profiles[, colnames(out$probs)]
+  out$profiles <- out$profiles[, colnames(out$logliks)]
   
   return(out)
 }

@@ -6,7 +6,8 @@
 #'  the names give old cluster names. OK to omit cell types that aren't being merged.
 #' @param to_delete Cluster names to delete. All cells assigned to these clusters 
 #'  will be reassigned to the next best cluster. 
-#' @param probs Matrix of probabilities
+#' @param probs Matrix of probabilities output by insitutype
+#' @param profiles Profiles matrix output by insitutype
 #' @return A list with two elements:
 #' \enumerate{
 #' \item clust: a vector of cluster assignments
@@ -19,7 +20,7 @@
 #'              "B-cells" = "lymphoid")
 #' # define clusters to delete:
 #' to_delete =  c("a", "f") 
-mergeCells <- function(merges = NULL, to_delete = NULL, probs) {
+mergeCells <- function(merges = NULL, to_delete = NULL, probs, profiles) {
   
   # input checks:
   #if (is.null(merges) & is.null(to_delete)) {
@@ -81,8 +82,13 @@ probs2logliks <- function(probs) {
 }
 
 
-# get a probabilities matrix from a logliks matrix
-  logliks2probs <- function(logliks) {
+#' convert logliks to probabilities
+#' 
+#' From cell x cluster log-likelihoods, calculate cell x cluster probabilities
+#' @param logliks Matrix of loglikelihoods, as output by insitytupe. Cells in rows, clusters in columns.
+#' @return A matrix of probabilities, in the same dimensions as logliks. 
+#' @export 
+logliks2probs <- function(logliks) {
   templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
   # get on likelihood scale:
   liks <- exp(templogliks)
