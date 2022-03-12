@@ -14,8 +14,8 @@
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item clust: a vector given cells' cluster assignments
-#' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
-#' \item logliks: a matrix of each cell's log-likelihood under each cluster
+#' \item prob: a vector giving the confidence in each cell's cluster
+#' \item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 #' }
 #' @export
 insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size = 10, align_genes = TRUE) {
@@ -68,9 +68,11 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size 
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   names(clust) <- rownames(logliks)
   probs <- logliks2probs(logliks)
+  prob <- apply(probs, 1, max)
+  names(prob) <- names(clust)
   out = list(clust = clust,
-             probs = round(probs, 3),
-             logliks = round(logliks, 3))
+             prob = prob,
+             logliks = round(logliks, 4))
   return(out)    
   break()
 }

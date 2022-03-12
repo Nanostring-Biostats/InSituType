@@ -5,14 +5,17 @@
 \title{"Flightpath" (umap-like) plot of clustering results}
 \usage{
 flightpath_layout(
-  probs,
+  probs = NULL,
+  logliks = NULL,
   profiles = NULL,
   cluster_xpos = NULL,
   cluster_ypos = NULL
 )
 }
 \arguments{
-\item{probs}{Matrix of cells' probabilities of belonging to each cluster.}
+\item{probs}{Matrix of cells' probabilities of belonging to each cluster. Must provide this or logliks argument.}
+
+\item{logliks}{Matrix of cells' log-likelihoods under each cluster. Must provide this or probs argument.}
 
 \item{profiles}{Matrix of cell type mean expression profiles. If provided, profiles rather than probs will be used to lay out the centroids.}
 

@@ -45,7 +45,8 @@
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item clust: a vector given cells' cluster assignments
-#' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
+#' \item prob: a vector giving the confidence in each cell's cluster
+#' \item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 #' }
@@ -352,7 +353,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
       
       cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
       newnames <- setdiff(cluster_name_pool, colnames(clust3$profiles))[seq_along(flaggedclusters)]
-      names(newnames) = flaggedclusters
+      names(newnames) <- flaggedclusters
       
       # rename flagged clusters, then reassign flagged anchor cells back to their original cell type
       newclust = clust3$clust
@@ -383,8 +384,11 @@ runinsitutype <- function(counts, neg, bg = NULL,
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   names(clust) <- rownames(logliks) 
   probs <- logliks2probs(logliks)
-  out = list(clust = clust,
-             probs = round(probs, 3),
+  prob <- apply(probs, 1, max)
+  names(prob) <- names(clust)
+  out <- list(clust = clust,
+             prob = prob,
+             logliks = logliks,
              profiles = profiles,
              anchors = anchors) 
   return(out)

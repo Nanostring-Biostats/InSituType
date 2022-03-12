@@ -3,7 +3,8 @@
 #' "Flightpath" (umap-like) plot of clustering results
 #'
 #' Arrays cells in 2d space based on their probability of belonging to a given cluster.
-#' @param probs Matrix of cells' probabilities of belonging to each cluster.
+#' @param probs Matrix of cells' probabilities of belonging to each cluster. Must provide this or logliks argument.
+#' @param logliks Matrix of cells' log-likelihoods under each cluster. Must provide this or probs argument.
 #' @param profiles Matrix of cell type mean expression profiles. If provided, profiles rather than probs will be used to lay out the centroids. 
 #' @param cluster_xpos Vector of cluster centroids' x positions (i.e. where you want each cell type to appear in the plot)
 #' @param cluster_ypos Vector of cluster centroids' y positions
@@ -14,8 +15,14 @@
 #' }
 #' @importFrom umap umap
 #' @export
-flightpath_layout <- function(probs, profiles = NULL, cluster_xpos = NULL, cluster_ypos = NULL) {
+flightpath_layout <- function(probs = NULL, logliks = NULL, profiles = NULL, cluster_xpos = NULL, cluster_ypos = NULL) {
 
+  if (is.null(probs) & is.null(logliks)) {
+    stop("Must provide either probs or logliks.")
+  }
+  if (is.null(probs) & !is.null(logliks)) {
+    probs <- logliks2probs(logliks)
+  }
   # get cluster centroid positions if not pre-specified:
   if (is.null(cluster_xpos) | is.null(cluster_ypos)) {
     # controls for a umap-based layout:
@@ -74,7 +81,7 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
     stop("Must provide either flightpath_result or insitutype_result.")
   }
   if (is.null(flightpath_result)) {
-    flightpath_result <- flightpath_layout(probs = insitutype_result$probs, profiles = insitutype_result$profiles)
+    flightpath_result <- flightpath_layout(logliks = insitutype_result$logliks, profiles = insitutype_result$profiles)
   }
   
   # create color scheme if needed:

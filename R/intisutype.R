@@ -46,7 +46,8 @@
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item clust: a vector given cells' cluster assignments
-#' \item probs: a matrix of probabilies of all cells (rows) belonging to all clusters (columns)
+#' \item prob: a vector giving the confidence in each cell's cluster
+#' \item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 #' }
@@ -165,7 +166,7 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
       
       for (oldname in unknownclusternames) {
         tempres$clust[tempres$clust == oldname] <- replacementnames[oldname]
-        colnames(tempres$probs)[colnames(tempres$probs) == oldname] <- replacementnames[oldname]
+        colnames(tempres$logliks)[colnames(tempres$logliks) == oldname] <- replacementnames[oldname]
         colnames(tempres$profiles)[colnames(tempres$profiles) == oldname] <- replacementnames[oldname]  
       }
     }
@@ -193,7 +194,9 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   out <- list()
   out$clust <- rep(NA, nrow(counts))
   names(out$clust) <- rownames(counts)
-  out$probs <- matrix(0, nrow(counts), length(uniqueclusts),
+  out$prob <- rep(NA, nrow(counts))
+  names(out$prob) <- rownames(counts)
+  out$logliks <- matrix(0, nrow(counts), length(uniqueclusts),
                       dimnames = list(rownames(counts), uniqueclusts))
   out$profiles <- matrix(NA, ncol(counts), length(uniqueclusts),
                          dimnames = list(colnames(counts), uniqueclusts))
@@ -202,16 +205,23 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   # fill in output:
   for (tiss in names(resultslist)) {
     tempcells <- names(resultslist[[tiss]]$clust)
-    tempcelltypes <- colnames(resultslist[[tiss]]$probs)
+    tempcelltypes <- colnames(resultslist[[tiss]]$logliks)
     out$clust[tempcells] <- resultslist[[tiss]]$clust
-    out$probs[tempcells, tempcelltypes] <- resultslist[[tiss]]$probs
+    
+    templogliks <- resultslist[[tiss]]$logliks[tempcells, tempcelltypes]
+    out$logliks[tempcells, tempcelltypes] <- round(templogliks, 4)
+
+    tempprobs <- logliks2probs(templogliks)
+    tempprob <- apply(tempprobs, 1, max)
+    names(tempprob) <- tempcells
+    out$prob[tempcells] <- tempprob
   }
   
   # estimate profiles using all tissues:
   out$profiles <- Estep(counts, 
                         clust = out$clust,
                         neg = neg)
-  out$profiles <- out$profiles[, colnames(out$probs)]
+  out$profiles <- out$profiles[, colnames(out$logliks)]
   
   return(out)
 }

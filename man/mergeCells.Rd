@@ -4,7 +4,7 @@
 \alias{mergeCells}
 \title{Merge cell types in a clustering result}
 \usage{
-mergeCells(merges = NULL, to_delete = NULL, probs)
+mergeCells(merges = NULL, to_delete = NULL, logliks)
 }
 \arguments{
 \item{merges}{A named vector in which the elements give new cluster names and
@@ -13,13 +13,13 @@ the names give old cluster names. OK to omit cell types that aren't being merged
 \item{to_delete}{Cluster names to delete. All cells assigned to these clusters 
 will be reassigned to the next best cluster.}
 
-\item{probs}{Matrix of probabilities}
+\item{logliks}{Matrix of log-likelihoods output by insitutype, cells in rows, clusters in columns}
 }
 \value{
 A list with two elements:
 \enumerate{
 \item clust: a vector of cluster assignments
-\item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
+\item logliks: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 }
 }
 \description{
