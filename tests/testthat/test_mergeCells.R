@@ -1,10 +1,7 @@
-
-
 # example logliks:
 logliks <- matrix(c(-3,-3,-2,-1,-1,-2), 
                   nrow = 2,
                   dimnames = list(paste0("cell", 1:2), paste0("old_", letters[1:3])))
-#probs <- logliks2probs(logliks)
 
 # define merges:
 merges <- c("old_a" = "new1", "old_b" = "new1")

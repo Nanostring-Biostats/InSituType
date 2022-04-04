@@ -1,9 +1,10 @@
-set.seed(0)
 
 # load data ("raw" and "cellannot"):
 data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
+
+set.seed(0)
 
 if (FALSE) {
   library(testthat)
