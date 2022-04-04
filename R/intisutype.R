@@ -196,7 +196,7 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
   names(out$clust) <- rownames(counts)
   out$prob <- rep(NA, nrow(counts))
   names(out$prob) <- rownames(counts)
-  out$logliks <- matrix(0, nrow(counts), length(uniqueclusts),
+  out$logliks <- matrix(NA, nrow(counts), length(uniqueclusts),
                       dimnames = list(rownames(counts), uniqueclusts))
   out$profiles <- matrix(NA, ncol(counts), length(uniqueclusts),
                          dimnames = list(colnames(counts), uniqueclusts))

@@ -23,6 +23,8 @@ flightpath_layout <- function(probs = NULL, logliks = NULL, profiles = NULL, clu
   if (is.null(probs) & !is.null(logliks)) {
     probs <- logliks2probs(logliks)
   }
+  # force NA probs to 0:
+  probs <- replace(probs, is.na(probs), 0)
   # get cluster centroid positions if not pre-specified:
   if (is.null(cluster_xpos) | is.null(cluster_ypos)) {
     # controls for a umap-based layout:
@@ -137,7 +139,7 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
 #' @return a vector of mean confidences, with values of 1 corresponding to clusters with only prob == 1
 getMeanClusterConfidence <- function(probs) {
   
-  maxprobs <- apply(probs, 1, max)
+  maxprobs <- apply(probs, 1, max, na.rm = TRUE)
   meanconfidence <- sapply(colnames(probs), function(name){
     thisclust <- probs[, name] == maxprobs
     mean(probs[thisclust, name, drop = FALSE])

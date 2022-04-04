@@ -1,9 +1,10 @@
-set.seed(0)
 
 # load data ("raw" and "cellannot"):
 data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
+
+set.seed(0)
 
 if (FALSE) {
   library(testthat)
@@ -173,6 +174,21 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
   expect_true(is.matrix(semi$logliks))
   expect_true(is.matrix(semi$profiles))
 })
+
+
+# test merge cells with multi-sample clustering:
+merge2 <- mergeCells(
+  merges =  c("B-cell" = "lymphoid", "a_cl1" = "cancer", "b_cl2" = "cancer"), 
+  to_delete = c("endothelial", "b_cl1"), 
+  logliks = semi$logliks)
+testthat::test_that("mergecells works when merges and deletions are asked for", {
+  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast", "a_cl2"))))
+  expect_true(all(is.na(merge2$logliks[semi$logliks[, "endothelial"] == 1, 1])))
+  expect_equal(names(merge2$clust), names(semi$clust))
+})
+
+
+
 
 
 # semi supervised with choosing cluster number

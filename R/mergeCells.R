@@ -45,7 +45,7 @@ mergeCells <- function(merges = NULL, to_delete = NULL, logliks) {
                        dimnames = list(rownames(logliks), unique(merges)))
   newlogliks <- sapply(unique(merges), function(newname) {
     oldnames <- names(merges)[merges == newname]
-    newlogliks[, newname] = apply(logliks[, oldnames, drop = FALSE], 1, max)
+    newlogliks[, newname] = apply(logliks[, oldnames, drop = FALSE], 1, max, na.rm = TRUE)
   })
   if (length(newlogliks) > 0) {
     newlogliks <- cbind(newlogliks, logliks[, setdiff(colnames(logliks), names(merges)), drop = FALSE])
@@ -74,11 +74,11 @@ probs2logliks <- function(probs) {
 #' @return A matrix of probabilities, in the same dimensions as logliks. 
 #' @export 
 logliks2probs <- function(logliks) {
-  templogliks <- sweep(logliks, 1, apply(logliks, 1, max ), "-" )
+  templogliks <- sweep(logliks, 1, apply(logliks, 1, max, na.rm = TRUE), "-" )
   # get on likelihood scale:
   liks <- exp(templogliks)
   # convert to probs
-  probs <- sweep(liks, 1, rowSums(liks), "/")
+  probs <- sweep(liks, 1, rowSums(liks, na.rm = TRUE), "/")
   return(probs)
 }
 
