@@ -28,29 +28,35 @@ flightpath_layout <- function(probs = NULL, logliks = NULL, profiles = NULL, clu
   # get cluster centroid positions if not pre-specified:
   if (is.null(cluster_xpos) | is.null(cluster_ypos)) {
     # controls for a umap-based layout:
-    conf = umap::umap.defaults
+    conf <- umap::umap.defaults
     conf$min_dist = 3
     conf$spread = conf$min_dist * 1.1
     conf$n_neighbors = ncol(probs)
     if (!is.null(profiles)) {
-      clustum = umap(t(sqrt(profiles)), config = conf)$layout
+      clustum <- umap(t(sqrt(profiles)), config = conf)$layout
     } else {
-      clustum = umap(t(probs), config = conf)$layout
+      clustum <- umap(t(probs), config = conf)$layout
     }
     
-    cluster_xpos = clustum[, 1]
-    cluster_ypos = clustum[, 2]
+    cluster_xpos <- clustum[, 1]
+    cluster_ypos <- clustum[, 2]
   }
 
   # get cell xy positions as a weighted average of the umap positions
-  ux = probs %*% clustum[, 1]
-  uy = probs %*% clustum[, 2]
+  ux <- probs %*% clustum[, 1]
+  uy <- probs %*% clustum[, 2]
+  
+  # jitter the xy positions, jittering widely for prob = 1 cells and minimally for prob < 0.5 cells:
+  jitterrange <- 0.01 * c(0.0005, 0.9) * max(diff(range(ux)), diff(range(uy))) 
+  jitteramount <- jitterrange[1] + pmax((2 * apply(probs, 1, max) - 1), 0)  * jitterrange[2]
+  ux <- ux + rnorm(length(ux), mean = 0, sd = jitteramount)
+  uy <- uy + rnorm(length(ux), mean = 0, sd = jitteramount)
 
-  out = list(clustpos = cbind(cluster_xpos, cluster_ypos),
+  out <- list(clustpos = cbind(cluster_xpos, cluster_ypos),
              cellpos = cbind(ux, uy),
              clust = colnames(probs)[apply(probs, 1, which.max)])
-  colnames(out$clustpos) = c("x", "y")
-  colnames(out$cellpos) = c("x", "y")
+  colnames(out$clustpos) <- c("x", "y")
+  colnames(out$cellpos) <- c("x", "y")
   
   # get clusters' mean confidence:
   out$meanconfidence <- getMeanClusterConfidence(probs)
