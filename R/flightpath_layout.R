@@ -3,8 +3,8 @@
 #' "Flightpath" (umap-like) plot of clustering results
 #'
 #' Arrays cells in 2d space based on their probability of belonging to a given cluster.
-#' @param probs Matrix of cells' probabilities of belonging to each cluster. Must provide this or logliks argument.
 #' @param logliks Matrix of cells' log-likelihoods under each cluster. Must provide this or probs argument.
+#' @param probs Matrix of cells' probabilities of belonging to each cluster. Must provide this or logliks argument.
 #' @param profiles Matrix of cell type mean expression profiles. If provided, profiles rather than probs will be used to lay out the centroids. 
 #' @param cluster_xpos Vector of cluster centroids' x positions (i.e. where you want each cell type to appear in the plot)
 #' @param cluster_ypos Vector of cluster centroids' y positions
@@ -15,7 +15,7 @@
 #' }
 #' @importFrom umap umap
 #' @export
-flightpath_layout <- function(probs = NULL, logliks = NULL, profiles = NULL, cluster_xpos = NULL, cluster_ypos = NULL) {
+flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, cluster_xpos = NULL, cluster_ypos = NULL) {
 
   if (is.null(probs) & is.null(logliks)) {
     stop("Must provide either probs or logliks.")
@@ -28,29 +28,35 @@ flightpath_layout <- function(probs = NULL, logliks = NULL, profiles = NULL, clu
   # get cluster centroid positions if not pre-specified:
   if (is.null(cluster_xpos) | is.null(cluster_ypos)) {
     # controls for a umap-based layout:
-    conf = umap::umap.defaults
+    conf <- umap::umap.defaults
     conf$min_dist = 3
     conf$spread = conf$min_dist * 1.1
     conf$n_neighbors = ncol(probs)
     if (!is.null(profiles)) {
-      clustum = umap(t(sqrt(profiles)), config = conf)$layout
+      clustum <- umap(t(sqrt(profiles)), config = conf)$layout
     } else {
-      clustum = umap(t(probs), config = conf)$layout
+      clustum <- umap(t(probs), config = conf)$layout
     }
     
-    cluster_xpos = clustum[, 1]
-    cluster_ypos = clustum[, 2]
+    cluster_xpos <- clustum[, 1]
+    cluster_ypos <- clustum[, 2]
   }
 
   # get cell xy positions as a weighted average of the umap positions
-  ux = probs %*% clustum[, 1]
-  uy = probs %*% clustum[, 2]
+  ux <- probs %*% clustum[, 1]
+  uy <- probs %*% clustum[, 2]
+  
+  # jitter the xy positions, jittering widely for prob = 1 cells and minimally for prob < 0.5 cells:
+  jitterrange <- 0.01 * c(0.0005, 0.9) * max(diff(range(ux)), diff(range(uy))) 
+  jitteramount <- jitterrange[1] + pmax((2 * apply(probs, 1, max) - 1), 0)  * jitterrange[2]
+  ux <- ux + rnorm(length(ux), mean = 0, sd = jitteramount)
+  uy <- uy + rnorm(length(ux), mean = 0, sd = jitteramount)
 
-  out = list(clustpos = cbind(cluster_xpos, cluster_ypos),
+  out <- list(clustpos = cbind(cluster_xpos, cluster_ypos),
              cellpos = cbind(ux, uy),
              clust = colnames(probs)[apply(probs, 1, which.max)])
-  colnames(out$clustpos) = c("x", "y")
-  colnames(out$cellpos) = c("x", "y")
+  colnames(out$clustpos) <- c("x", "y")
+  colnames(out$cellpos) <- c("x", "y")
   
   # get clusters' mean confidence:
   out$meanconfidence <- getMeanClusterConfidence(probs)
