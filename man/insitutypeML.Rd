@@ -33,6 +33,7 @@ A list, with the following elements:
 \enumerate{
 \item clust: a vector given cells' cluster assignments
 \item prob: a vector giving the confidence in each cell's cluster
+\item profiles: Matrix of clusters' mean background-subtracted profiles
 \item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 }
 }

@@ -15,6 +15,7 @@
 #' \enumerate{
 #' \item clust: a vector given cells' cluster assignments
 #' \item prob: a vector giving the confidence in each cell's cluster
+#' \item profiles: Matrix of clusters' mean background-subtracted profiles
 #' \item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 #' }
 #' @export
@@ -70,8 +71,14 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size 
   probs <- logliks2probs(logliks)
   prob <- apply(probs, 1, max)
   names(prob) <- names(clust)
+  profiles <- Estep(counts, 
+                    clust = clust,
+                    neg = neg)
+  profiles <- profiles[, colnames(logliks)]
+  
   out = list(clust = clust,
              prob = prob,
+             profiles = profiles,
              logliks = round(logliks, 4))
   return(out)    
   break()
