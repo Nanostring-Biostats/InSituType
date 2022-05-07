@@ -375,21 +375,13 @@ runinsitutype <- function(counts, neg, bg = NULL,
   #### phase 4: -----------------------------------------------------------------
   message(paste0("phase 4: classifying all ", nrow(counts), " cells"))
   
-  logliks <- apply(profiles, 2, function(ref) {
-    lldist(x = ref,
-           mat = counts,
-           bg = bg,
-           size = nb_size)
-  })
-  clust <- colnames(logliks)[apply(logliks, 1, which.max)]
-  names(clust) <- rownames(logliks) 
-  probs <- logliks2probs(logliks)
-  prob <- apply(probs, 1, max)
-  names(prob) <- names(clust)
-  out <- list(clust = clust,
-             prob = prob,
-             logliks = logliks,
-             profiles = profiles,
-             anchors = anchors) 
+  out <- insitutypeML(counts = counts, 
+                      neg = neg, 
+                      bg = bg, 
+                      fixed_profiles = profiles, 
+                      nb_size = nb_size, 
+                      align_genes = TRUE) 
+  out$anchors <- anchors
+  
   return(out)
 }
