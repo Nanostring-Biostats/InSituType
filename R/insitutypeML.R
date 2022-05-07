@@ -68,6 +68,16 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size 
   # get remaining outputs
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   names(clust) <- rownames(logliks)
+  
+  # estimate cluster frequencies:
+  profiles_freq <- prop.table(table(clust))
+  profiles_freq <- profiles_freq[colnames(logliks)]
+  profiles_freq <- pmax(profiles_freq, 1e-3)
+  # update logliks and clustering based on cell type frequencies:
+  logliks <- sweep(logliks, 2, log(profiles_freq), "+")
+  clust <- colnames(logliks)[apply(logliks, 1, which.max)]
+  names(clust) <- rownames(logliks)
+  
   probs <- logliks2probs(logliks)
   prob <- apply(probs, 1, max)
   names(prob) <- names(clust)
