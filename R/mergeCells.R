@@ -10,6 +10,7 @@
 #' @return A list with two elements:
 #' \enumerate{
 #' \item clust: a vector of cluster assignments
+#' \item prob: Vector of posterior probabilities for each cell type
 #' \item logliks: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' }
 #' @export
@@ -56,7 +57,12 @@ mergeCells <- function(merges = NULL, to_delete = NULL, logliks) {
   # get new cluster assignments:
   clust <- colnames(newlogliks)[apply(newlogliks, 1, which.max)]
   names(clust) <- rownames(newlogliks)
-  out <- list(clust = clust, logliks = round(newlogliks, 4))  # (rounding logliks to save memory)
+  
+  probs <- logliks2probs(logliks)
+  prob <- apply(probs, 1, max)
+  names(prob) <- names(clust)
+  
+  out <- list(clust = clust, prob = prob, logliks = round(newlogliks, 4))  # (rounding logliks to save memory)
   return(out)
 }
 
