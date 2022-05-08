@@ -63,25 +63,31 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param counts Counts matrix, cells * genes.
 #' @param means Matrix of mean cluster profiles,
 #'  with genes in rows and clusters in columns.
-#' @param freq a vector of cells frequencies summing up equal to 1. 
+#' @param cohort a vector of cells' "cohort" assignment, used to update logliks 
+#'  based on cluster frequencies within a cohort.
 #' @param bg Expected background
 #' @param size NB size parameter
 #' @param digits Round the output to this many digits (saves memory)
 #' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
 #' @export
-Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
+Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
     lldist(x = x, mat = counts, bg = bg, size = size)
   })
+  # adjust by cohort frequency:
+  logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 
+                                              cohort = cohort, 
+                                              minfreq = 1e-4, 
+                                              nbaselinecells = 1000) 
   if (return_loglik) {
     return(round(logliks, digits))
   } else {
     # first rescale (ie recenter on log scale) to avoid rounding errors:
     logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
     # get on likelihood scale:
-    liks <- sweep(exp( logliks ), 2, freq, "*")
+    liks <- exp(logliks)
     # convert to probs
     probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
     return(round(probs, digits))
@@ -131,6 +137,7 @@ Estep <- function(counts, clust, neg) {
 #' If NULL, initial assignments will be automatically inferred.
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #' @param nb_size The size parameter to assume for the NB distribution.
+#' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
 #' @param  Numer of iterations
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
 #'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
@@ -150,7 +157,8 @@ Estep <- function(counts, clust, neg) {
 #' @export
 nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
-                    nb_size = 10,
+                    nb_size = 10, 
+                    cohort, 
                     pct_drop = 1/10000,   
                     min_prob_increase = 0.05, max_iters = 40, logresults = FALSE) {
 
@@ -201,15 +209,13 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     clusterlog <- init_clust
   }
   
-  profiles_freq <- setNames(rep(1/ncol(profiles), ncol(profiles)), colnames(profiles))
-
   for (iter in seq_len(max_iters)) {
     message(paste0("iter ", iter))
     # M-step: get cell * cluster probs:
     
     probs <- Mstep(counts = counts,
                    means = profiles,
-                   freq = profiles_freq, 
+                   cohort = cohort, 
                    bg = bg,
                    size = nb_size)
     # override assignments for anchor cells
@@ -257,11 +263,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
       }
     }
     clust_old = colnames(probs)[apply(probs, 1, which.max)]
-    profiles_freq <- setNames(data.frame(prop.table(table(clust_old)))$Freq, 
-                              data.frame(prop.table(table(clust_old)))$clust_old)
-    profiles_freq <- profiles_freq[colnames(profiles)]
-    # prevent any freqs from going all the way to zero:
-    profiles_freq <- pmax(profiles_freq, 1e-3)
     probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
