@@ -73,7 +73,7 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
     if (length(usecells) > 0) {
       templl[usecells] <- Mstep(counts = counts[usecells, ], 
                                 means = profiles[, cell, drop = FALSE],
-                                freq = 1,
+                                cohort = rep("all", length(usecells)),
                                 bg = bg[usecells], 
                                 size = size, 
                                 digits = 3, return_loglik = T) 

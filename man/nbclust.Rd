@@ -13,6 +13,7 @@ nbclust(
   init_clust = NULL,
   n_clusts = NULL,
   nb_size = 10,
+  cohort = NULL,
   pct_drop = 1/10000,
   min_prob_increase = 0.05,
   max_iters = 40,
@@ -40,6 +41,8 @@ If NULL, initial assignments will be automatically inferred.}
 \item{n_clusts}{Number of clusters, in addition to any pre-specified cell types.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
+
+\item{cohort}{Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster.}
 
 \item{pct_drop}{the decrease in percentage of cell types with a valid switchover to 
 another cell type compared to the last iteration. Default value: 1/10000. A valid 

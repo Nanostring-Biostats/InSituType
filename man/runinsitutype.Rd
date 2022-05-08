@@ -92,6 +92,8 @@ type switchover}
 
 \item{anchor_replacement_thresh}{Threshold for calling whether a cluster has wandered away from its anchor cells. 
 Clusters whose anchors are reassigned at this rate or higher will be renamed, and only their anchor cells will be used to define a profile for the cluster.}
+
+\item{cohort}{Vector of cells' cohort memberships}
 }
 \value{
 A list, with the following elements:

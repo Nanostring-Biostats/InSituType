@@ -19,6 +19,7 @@ will be reassigned to the next best cluster.}
 A list with two elements:
 \enumerate{
 \item clust: a vector of cluster assignments
+\item prob: Vector of posterior probabilities for each cell type
 \item logliks: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 }
 }

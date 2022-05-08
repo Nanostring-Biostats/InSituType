@@ -300,20 +300,22 @@ ismax <- function(x) {
 update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-4, nbaselinecells = 100) {
   # get overall cluster frequencies:
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
-  baselinefreqs <- prop.table(table(clust))[colnames(logliks)]
+  baselinefreqs <- prop.table(table(clust))
+  baselinefreqs[setdiff(unique(colnames(logliks)), names(baselinefreqs))] <- 0
+  baselinefreqs <- baselinefreqs[colnames(logliks)]
   
   for (cohortname in unique(cohort)) {
     use <- cohort == cohortname
     # get cluster frequencies in cohort:
     cohortabundances <- (table(clust[use]))
-    cohortabundances[setdiff(unique(clust), names(cohortabundances))] <- 0
+    cohortabundances[setdiff(unique(colnames(logliks)), names(cohortabundances))] <- 0
     cohortabundances <- cohortabundances[colnames(logliks)]
     
     # add atop 1000 cells' worth of baselinefreqs:
     cohortfreqs <- prop.table(baselinefreqs * nbaselinecells + cohortabundances)
     cohortfreqs <- cohortfreqs + minfreq
     # adjust the logliks:
-    logliks[use, ] <- sweep(logliks[use, ], 2, log(cohortfreqs), "+")
+    logliks[use, ] <- sweep(logliks[use, , drop = FALSE], 2, log(cohortfreqs), "+")
   }
   return(logliks)
 }
