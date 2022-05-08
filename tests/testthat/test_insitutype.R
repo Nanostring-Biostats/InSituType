@@ -1,3 +1,4 @@
+#devtools::test()
 
 # load data ("raw" and "cellannot"):
 data("ioprofiles")
