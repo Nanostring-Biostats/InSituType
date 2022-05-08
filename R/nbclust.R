@@ -80,7 +80,7 @@ Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, retur
   logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 
                                               cohort = cohort, 
                                               minfreq = 1e-4, 
-                                              nbaselinecells = 1000) 
+                                              nbaselinecells = 100) 
   if (return_loglik) {
     return(round(logliks, digits))
   } else {
@@ -130,6 +130,7 @@ Estep <- function(counts, clust, neg) {
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 #'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 #'  for cells to be held constant throughout iterations. 
+#' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
 #' @param init_profiles Matrix of cluster profiles under which to begin iterations.
 #' If NULL, initial assignments will be automatically inferred, using init_clust 
 #' if available, and using random clusters if not. 
@@ -137,7 +138,6 @@ Estep <- function(counts, clust, neg) {
 #' If NULL, initial assignments will be automatically inferred.
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
 #' @param  Numer of iterations
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
 #'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
@@ -158,7 +158,7 @@ Estep <- function(counts, clust, neg) {
 nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     nb_size = 10, 
-                    cohort, 
+                    cohort = NULL, 
                     pct_drop = 1/10000,   
                     min_prob_increase = 0.05, max_iters = 40, logresults = FALSE) {
 
@@ -178,6 +178,10 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
 
   clusterlog = NULL
 
+  if (is.null(cohort)) {
+    cohort <- rep("all", length(neg))
+  }
+  
   #### get initial profiles: ----------------------------------
   
   if (is.null(init_profiles) & is.null(init_clust)) {
@@ -293,7 +297,7 @@ ismax <- function(x) {
 #' @param nbaselinecells Number of cells from baseline distribution to add to the 
 #'  cohort-specific frequencies, thereby shrinking each cohort's data towards the population
 #' @return An adjusted logliks matrix
-update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-4, nbaselinecells = 1000) {
+update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-4, nbaselinecells = 100) {
   # get overall cluster frequencies:
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   baselinefreqs <- prop.table(table(clust))[colnames(logliks)]

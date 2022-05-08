@@ -8,6 +8,7 @@
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 #'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 #'  for cells to be held constant throughout iterations. 
+#' @param cohort Vector of cells' cohort memberships
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #'  Enter 0 to run purely supervised cell typing from fixed profiles. 
 #'  Enter a range of integers to automatically select the optimal number of clusters. 
@@ -53,9 +54,9 @@
 #' }
 #' @export
 
-
 insitutype <- function(counts, tissue = NULL, neg, bg = NULL, 
                        anchors = NULL,
+                       cohort = NULL,
                        n_clusts,
                        fixed_profiles = NULL, 
                        sketchingdata = NULL,
@@ -143,6 +144,7 @@ insitutype <- function(counts, tissue = NULL, neg, bg = NULL,
       neg = neg[use], 
       bg = bg[use], 
       anchors = anchors[use],
+      cohort = cohort[use],
       n_clusts = n_clusts,
       fixed_profiles = fixed_profiles, 
       sketchingdata = sketchingdata,
