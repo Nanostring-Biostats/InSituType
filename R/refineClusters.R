@@ -72,7 +72,7 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
   # perform subclustering:
   for (name in names(subcluster)) {
     message(paste0("Subclustering ", name))
-    use <- which(colnames(logliks)[apply(logliks, 1, which.max)] == name)
+    use <- which(colnames(newlogliks)[apply(newlogliks, 1, which.max)] == name)
     # run insitutype on just the named cell type:
     temp <- MLEcell:::runinsitutype(counts = counts[use, ],
                           neg = neg[use],
@@ -83,21 +83,21 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
                           n_phase1 = 2000, n_phase2 = 10000, n_phase3 = 20000,
                           n_chooseclusternumber = 2000)
     # get logliks for all cells vs. the new clusters:
-    newlogliks <- insitutypeML(counts = counts,
-                               neg = neg,
-                               bg = bg,
-                               cohort = cohort,
-                               fixed_profiles = temp$profiles,
-                               align_genes = TRUE)$loglik
-    colnames(newlogliks) <- paste0(name, "_", seq_len(ncol(newlogliks)))
+    subclustlogliks <- insitutypeML(counts = counts,
+                                    neg = neg,
+                                    bg = bg,
+                                    cohort = cohort,
+                                    fixed_profiles = temp$profiles,
+                                    align_genes = TRUE)$loglik
+    colnames(subclustlogliks) <- paste0(name, "_", seq_len(ncol(subclustlogliks)))
     # safeguard in case we've created a cell type name that already exists:
-    if (any(is.element(colnames(newlogliks), colnames(logliks)))) {
-      colnames(newlogliks) <- paste0(colnames(newlogliks), "subcluster")
+    if (any(is.element(colnames(subclustlogliks), colnames(newlogliks)))) {
+      colnames(subclustlogliks) <- paste0(colnames(subclustlogliks), "subcluster")
     }
     
     # update logliks matrix:
-    logliks <- logliks[, setdiff(colnames(logliks), name)]
-    logliks <- cbind(logliks, newlogliks)
+    newlogliks <- newlogliks[, setdiff(colnames(newlogliks), name)]
+    newlogliks <- cbind(newlogliks, subclustlogliks)
   }
   
   # get new cluster assignments:
