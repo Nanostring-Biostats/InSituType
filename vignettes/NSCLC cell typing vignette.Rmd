@@ -26,7 +26,7 @@ knitr::opts_chunk$set(
 
 
 ## Vignette to-dos:
-- add section at end on mergecells function
+- add section at end on refineClusters function
 - save clustering results in package data to save time when running?
 
 
@@ -268,10 +268,12 @@ Here we can see that clusters b and f are often confused.
 Sometimes it becomes clear that two clusters come from the same cell type. 
 When this happens, it can be convenient to merge them. 
 
-To get new cell type probabilities from merged cell types, use the mergeCells function:
+We might also want to delete a cluster from consideration, or sub-cluster a cell type. 
 
-```{r mergecells}
-newprobs <- mergeCells(merges = c("a" = "newcluster", "b" = "newcluster"), 
+To get new cell type probabilities from merged/deleted/subclustered cell types, use the refineClusters function:
+
+```{r refineClusters}
+newprobs <- refineClusters(merges = c("a" = "newcluster", "b" = "newcluster"), 
                        probs = unsup$probs) 
 str(newprobs)
 ```
