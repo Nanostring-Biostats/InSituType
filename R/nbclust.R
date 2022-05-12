@@ -297,7 +297,7 @@ ismax <- function(x) {
 #' @param nbaselinecells Number of cells from baseline distribution to add to the 
 #'  cohort-specific frequencies, thereby shrinking each cohort's data towards the population
 #' @return An adjusted logliks matrix
-update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-4, nbaselinecells = 100) {
+update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-6, nbaselinecells = 100) {
   # get overall cluster frequencies:
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   baselinefreqs <- prop.table(table(clust))
@@ -311,7 +311,7 @@ update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-4, nb
     cohortabundances[setdiff(unique(colnames(logliks)), names(cohortabundances))] <- 0
     cohortabundances <- cohortabundances[colnames(logliks)]
     
-    # add atop 1000 cells' worth of baselinefreqs:
+    # add atop 100 cells' worth of baselinefreqs:
     cohortfreqs <- prop.table(baselinefreqs * nbaselinecells + cohortabundances)
     cohortfreqs <- cohortfreqs + minfreq
     # adjust the logliks:
