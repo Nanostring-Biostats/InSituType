@@ -30,9 +30,9 @@ fastCohorting <- function(mat, n_cohorts = NULL, gaussian_transform = TRUE) {
   # choose number of cohorts:
   if (is.null(n_cohorts)) {
     n_cohorts <- 3
-    if (nrow(mat) > 10000) {n_cohorts <- 5} 
-    if (nrow(mat) > 50000) {n_cohorts <- 10}
-    if (nrow(mat) > 100000) {n_cohorts <- 20}
+    if (nrow(mat) > 10000) {n_cohorts <- 10} 
+    if (nrow(mat) > 30000) {n_cohorts <- 20}
+    if (nrow(mat) > 100000) {n_cohorts <- 50}
   }
   
   # cluster in a subsample:
