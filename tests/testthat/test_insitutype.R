@@ -30,6 +30,7 @@ if (FALSE) {
 sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
                       bg = NULL,
+                      cohort = rep(c("a", "b"), each = nrow(mini_nsclc$counts) / 2),
                       fixed_profiles = ioprofiles[,1:6],
                       nb_size = 10, 
                       align_genes = TRUE) 
@@ -39,7 +40,6 @@ testthat::test_that("supervised cell typing produces correct outputs", {
   expect_true(is.vector(sup$clust))
   expect_true(is.vector(sup$prob))
   expect_true(is.matrix(sup$logliks))
-  
 })
 
 # test semi-supervised with 0 new clusts:
@@ -79,6 +79,7 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     init_clust = NULL, n_clusts = 2:5,
                     fixed_profiles = NULL,
                     anchors = NULL,
+                    cohort = rep(c("a", "b"), each = nrow(mini_nsclc$counts) / 2),
                     nb_size = 10,
                     n_starts = 2,
                     align_genes = TRUE,

@@ -9,6 +9,7 @@ runinsitutype(
   neg,
   bg = NULL,
   anchors = NULL,
+  cohort = NULL,
   n_clusts,
   fixed_profiles = NULL,
   sketchingdata = NULL,
@@ -41,6 +42,8 @@ runinsitutype(
 \item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 for cells to be held constant throughout iterations.}
+
+\item{cohort}{Vector of cells' cohort memberships}
 
 \item{n_clusts}{Number of clusters, in addition to any pre-specified cell types.
 Enter 0 to run purely supervised cell typing from fixed profiles. 
@@ -92,8 +95,6 @@ type switchover}
 
 \item{anchor_replacement_thresh}{Threshold for calling whether a cluster has wandered away from its anchor cells. 
 Clusters whose anchors are reassigned at this rate or higher will be renamed, and only their anchor cells will be used to define a profile for the cluster.}
-
-\item{cohort}{Vector of cells' cohort memberships}
 }
 \value{
 A list, with the following elements:
