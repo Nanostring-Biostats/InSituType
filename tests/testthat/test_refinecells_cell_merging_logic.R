@@ -7,7 +7,7 @@ logliks <- matrix(c(-3,-3,-2,-1,-1,-2),
 merges <- c("old_a" = "new1", "old_b" = "new1")
 
 # run:
-res <- mergeCells(merges = merges, logliks = logliks)
+res <- refineClusters(merges = merges, logliks = logliks)
 
 # confirm it works:
 testthat::test_that("new cluster names are right", {

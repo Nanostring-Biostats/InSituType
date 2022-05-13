@@ -242,7 +242,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
         init_clust = tempinit, 
         n_clusts = n_clusts,
         nb_size = nb_size,
-        pct_drop = pct_drop,
+        pct_drop = 1/500,
         min_prob_increase = min_prob_increase,
         max_iters = max_iters
       )$profiles
@@ -298,7 +298,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                     init_clust = temp_init_clust, 
                     n_clusts = n_clusts,
                     nb_size = nb_size,
-                    pct_drop = pct_drop,
+                    pct_drop = 1/1000,
                     min_prob_increase = min_prob_increase,
                     max_iters = max_iters)
   tempprofiles <- clust2$profiles
