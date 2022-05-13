@@ -8,11 +8,12 @@
 #'  Colnames must all be included in the init_clust variable.
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
+#' @param max_rescaling Scaling factors will be truncated above by this value and below by its inverse (at 1/value and value)
 #' @return A profiles matrix with the rows rescaled according to platform effects, 
 #'  and a vector of genes' scaling factors (what they were multiplied by when updating the reference profiles). 
 #' @export
 #' @importFrom MASS glm.nb
-rescaleProfiles <- function(counts, neg, fixed_profiles, align_genes = TRUE, nb_size = 10) {
+rescaleProfiles <- function(counts, neg, fixed_profiles, align_genes = TRUE, nb_size = 10, max_rescaling = 5) {
   
   # align genes:
   if (align_genes) {
@@ -43,7 +44,10 @@ rescaleProfiles <- function(counts, neg, fixed_profiles, align_genes = TRUE, nb_
                       bg = sum(neg), 
                       X = fixed_profiles, 
                       resid_thresh = Inf)
-  scaling_factors <- 2^res$resids[, 1]
+  log2resids <- res$resids[, 1]
+  log2resids <- log2resids - mean(log2resids)
+  scaling_factors <- 2^log2resids
+  scaling_factors <- pmax(pmin(scaling_factors, max_rescaling), max_rescaling^-1)
   rescaledprofiles <- sweep(fixed_profiles, 1, scaling_factors, "*")
   
   out = list(profiles = rescaledprofiles,
