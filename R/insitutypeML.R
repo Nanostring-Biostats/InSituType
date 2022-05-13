@@ -8,7 +8,6 @@
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
-#' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
 #' @return A list, with the following elements:
