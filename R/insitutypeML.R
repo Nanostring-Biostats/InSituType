@@ -50,11 +50,11 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, fixed_pro
     
     # warn about genes being lost:
     if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from cell typing: ",
                      paste0(lostgenes, collapse = ",")))
     }
     if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from cell typing"))
     }
   }
   
@@ -87,12 +87,16 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, fixed_pro
   profiles <- Estep(counts, 
                     clust = clust,
                     neg = neg)
-  profiles <- profiles[, colnames(logliks)]
+  # aligns profiles and logliks, removing lost clusters:
+  logliks_from_lost_celltypes <- logliks[, !is.element(colnames(logliks), unique(clust)), drop = FALSE]
+  logliks <- logliks[, is.element(colnames(logliks), clust), drop = FALSE]
+  profiles <- profiles[, colnames(logliks), drop = FALSE]
   
   out = list(clust = clust,
              prob = prob,
              profiles = profiles,
-             logliks = round(logliks, 4))
+             logliks = round(logliks, 4),
+             logliks_from_lost_celltypes = round(logliks_from_lost_celltypes, 4))
   return(out)    
   break()
 }
