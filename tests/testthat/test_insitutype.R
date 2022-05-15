@@ -36,7 +36,7 @@ sup <- insitutypeML(counts = mini_nsclc$counts,
                       align_genes = TRUE) 
   
 testthat::test_that("supervised cell typing produces correct outputs", {
-  expect_true(all(is.element(c("clust", "prob", "logliks"), names(sup))))
+  expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.vector(sup$prob))
   expect_true(is.matrix(sup$logliks))
