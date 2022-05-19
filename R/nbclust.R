@@ -127,9 +127,6 @@ Estep <- function(counts, clust, neg) {
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
-#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
-#'  for cells to be held constant throughout iterations. 
 #' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
 #' @param init_profiles Matrix of cluster profiles under which to begin iterations.
 #' If NULL, initial assignments will be automatically inferred, using init_clust 
@@ -155,7 +152,7 @@ Estep <- function(counts, clust, neg) {
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
 #' @export
-nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
+nbclust <- function(counts, neg, bg = NULL, 
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     nb_size = 10, 
                     cohort = NULL, 
@@ -171,9 +168,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
   }
   if (length(bg) == 1) {
     bg = rep(bg, nrow(counts))
-  }
-  if (!is.null(anchors) & !identical(names(anchors), rownames(counts))) {
-    stop("names of anchors and rownames of counts are misaligned")
   }
 
   clusterlog = NULL
@@ -222,14 +216,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                    cohort = cohort, 
                    bg = bg,
                    size = nb_size)
-    # override assignments for anchor cells
-    if (!is.null(anchors)) {
-      for (cell in setdiff(unique(anchors), NA)) {
-        temprows <- which((anchors == cell) & !is.na(anchors))
-        probs[temprows, cell] <- 1 #rep(1, sum((anchors == cell) & !is.na(anchors)))
-        probs[temprows, setdiff(colnames(probs), cell)] <- 0
-      }
-    }
     if (logresults) {
       clusterlog <- cbind(clusterlog, colnames(probs)[apply(probs, 1, which.max)])
     }
