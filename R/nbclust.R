@@ -63,25 +63,31 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param counts Counts matrix, cells * genes.
 #' @param means Matrix of mean cluster profiles,
 #'  with genes in rows and clusters in columns.
-#' @param freq a vector of cells frequencies summing up equal to 1. 
+#' @param cohort a vector of cells' "cohort" assignment, used to update logliks 
+#'  based on cluster frequencies within a cohort.
 #' @param bg Expected background
 #' @param size NB size parameter
 #' @param digits Round the output to this many digits (saves memory)
 #' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
 #' @export
-Mstep <- function(counts, means, freq, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
+Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- apply(means, 2, function(x) {
     lldist(x = x, mat = counts, bg = bg, size = size)
   })
+  # adjust by cohort frequency:
+  logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 
+                                              cohort = cohort, 
+                                              minfreq = 1e-4, 
+                                              nbaselinecells = 100) 
   if (return_loglik) {
     return(round(logliks, digits))
   } else {
     # first rescale (ie recenter on log scale) to avoid rounding errors:
     logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
     # get on likelihood scale:
-    liks <- sweep(exp( logliks ), 2, freq, "*")
+    liks <- exp(logliks)
     # convert to probs
     probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
     return(round(probs, digits))
@@ -124,6 +130,7 @@ Estep <- function(counts, clust, neg) {
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 #'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 #'  for cells to be held constant throughout iterations. 
+#' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
 #' @param init_profiles Matrix of cluster profiles under which to begin iterations.
 #' If NULL, initial assignments will be automatically inferred, using init_clust 
 #' if available, and using random clusters if not. 
@@ -150,7 +157,8 @@ Estep <- function(counts, clust, neg) {
 #' @export
 nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
-                    nb_size = 10,
+                    nb_size = 10, 
+                    cohort = NULL, 
                     pct_drop = 1/10000,   
                     min_prob_increase = 0.05, max_iters = 40, logresults = FALSE) {
 
@@ -170,6 +178,10 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
 
   clusterlog = NULL
 
+  if (is.null(cohort)) {
+    cohort <- rep("all", length(neg))
+  }
+  
   #### get initial profiles: ----------------------------------
   
   if (is.null(init_profiles) & is.null(init_clust)) {
@@ -201,15 +213,13 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     clusterlog <- init_clust
   }
   
-  profiles_freq <- setNames(rep(1/ncol(profiles), ncol(profiles)), colnames(profiles))
-
   for (iter in seq_len(max_iters)) {
     message(paste0("iter ", iter))
     # M-step: get cell * cluster probs:
     
     probs <- Mstep(counts = counts,
                    means = profiles,
-                   freq = profiles_freq, 
+                   cohort = cohort, 
                    bg = bg,
                    size = nb_size)
     # override assignments for anchor cells
@@ -257,11 +267,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
       }
     }
     clust_old = colnames(probs)[apply(probs, 1, which.max)]
-    profiles_freq <- setNames(data.frame(prop.table(table(clust_old)))$Freq, 
-                              data.frame(prop.table(table(clust_old)))$clust_old)
-    profiles_freq <- profiles_freq[colnames(profiles)]
-    # prevent any freqs from going all the way to zero:
-    profiles_freq <- pmax(profiles_freq, 1e-3)
     probs_old_max = apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
@@ -283,3 +288,34 @@ ismax <- function(x) {
   return(x == max(x, na.rm = T))
 }
 
+
+
+#' Update logliks based on frequencies
+#' @param logliks Matrix of cells' (rows) loglikelihoods under clusters (columns)
+#' @param cohort Vector of cells' cohort memberships
+#' @param minfreq Minimum frequency to give any cell type in any cohort
+#' @param nbaselinecells Number of cells from baseline distribution to add to the 
+#'  cohort-specific frequencies, thereby shrinking each cohort's data towards the population
+#' @return An adjusted logliks matrix
+update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-6, nbaselinecells = 100) {
+  # get overall cluster frequencies:
+  clust <- colnames(logliks)[apply(logliks, 1, which.max)]
+  baselinefreqs <- prop.table(table(clust))
+  baselinefreqs[setdiff(unique(colnames(logliks)), names(baselinefreqs))] <- 0
+  baselinefreqs <- baselinefreqs[colnames(logliks)]
+  
+  for (cohortname in unique(cohort)) {
+    use <- cohort == cohortname
+    # get cluster frequencies in cohort:
+    cohortabundances <- (table(clust[use]))
+    cohortabundances[setdiff(unique(colnames(logliks)), names(cohortabundances))] <- 0
+    cohortabundances <- cohortabundances[colnames(logliks)]
+    
+    # add atop 100 cells' worth of baselinefreqs:
+    cohortfreqs <- prop.table(baselinefreqs * nbaselinecells + cohortabundances)
+    cohortfreqs <- cohortfreqs + minfreq
+    # adjust the logliks:
+    logliks[use, ] <- sweep(logliks[use, , drop = FALSE], 2, log(cohortfreqs), "+")
+  }
+  return(logliks)
+}

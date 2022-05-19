@@ -8,6 +8,7 @@ insitutypeML(
   counts,
   neg = NULL,
   bg = NULL,
+  cohort = NULL,
   fixed_profiles,
   nb_size = 10,
   align_genes = TRUE
@@ -19,6 +20,8 @@ insitutypeML(
 \item{neg}{Vector of mean negprobe counts per cell. Can be provided}
 
 \item{bg}{Expected background}
+
+\item{cohort}{Vector of cells' cohort memberships}
 
 \item{fixed_profiles}{Matrix of expression profiles of pre-defined clusters,
 e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.

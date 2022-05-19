@@ -20,9 +20,10 @@
 #'              "B-cells" = "lymphoid")
 #' # define clusters to delete:
 #' to_delete =  c("a", "f") 
-mergeCells <- function(merges = NULL, to_delete = NULL, logliks) {
+refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, logliks,
+                       counts = NULL, neg = NULL, bg = NULL, cohort = NULL) {
   
-  # check that merges and to_delete names are all in logliks:
+  # check that provided cell names are all in logliks:
   if (any(!is.element(names(merges), colnames(logliks)))) {
     mismatch <- setdiff(names(merges), colnames(logliks))
     stop(paste0("The following user-provided cluster name(s) in the merges argument are missing from colnames(logliks): ",
@@ -33,8 +34,22 @@ mergeCells <- function(merges = NULL, to_delete = NULL, logliks) {
     stop(paste0("The following user-provided cluster name(s) in the to_delete argument are missing from colnames(logliks): ",
                 paste0(mismatch, collapse = ", ")))
   }
+  if (any(!is.element(names(subcluster), colnames(logliks)))) {
+    mismatch <- setdiff(names(subcluster), colnames(logliks))
+    stop(paste0("The following user-provided cluster name(s) in the merges argument are missing from colnames(logliks): ",
+                paste0(mismatch, collapse = ", ")))
+  }
   if (length(setdiff(colnames(logliks), to_delete)) == 0) {
     stop("The to_delete argument is asking for all clusters to be deleted.")
+  }
+  # check that subcluster data is available:
+  if (!is.null(subcluster)) {
+    if (is.null(counts)) {
+      stop("Must provide counts data to subcluster")
+    }
+    if (is.null(neg)) {
+      stop("Must provide neg vector to subcluster")
+    }
   }
 
   # delete those called for:
@@ -54,6 +69,37 @@ mergeCells <- function(merges = NULL, to_delete = NULL, logliks) {
     newlogliks <- logliks
   }
 
+  # perform subclustering:
+  for (name in names(subcluster)) {
+    message(paste0("Subclustering ", name))
+    use <- which(colnames(newlogliks)[apply(newlogliks, 1, which.max)] == name)
+    # run insitutype on just the named cell type:
+    temp <- runinsitutype(counts = counts[use, ],
+                          neg = neg[use],
+                          bg = bg[use],
+                          cohort = cohort[use],
+                          n_clusts = subcluster[[name]],
+                          n_starts = 3, n_benchmark_cells = 5000,
+                          n_phase1 = 2000, n_phase2 = 10000, n_phase3 = 20000,
+                          n_chooseclusternumber = 2000)
+    # get logliks for all cells vs. the new clusters:
+    subclustlogliks <- insitutypeML(counts = counts,
+                                    neg = neg,
+                                    bg = bg,
+                                    cohort = cohort,
+                                    fixed_profiles = temp$profiles,
+                                    align_genes = TRUE)$loglik
+    colnames(subclustlogliks) <- paste0(name, "_", seq_len(ncol(subclustlogliks)))
+    # safeguard in case we've created a cell type name that already exists:
+    if (any(is.element(colnames(subclustlogliks), colnames(newlogliks)))) {
+      colnames(subclustlogliks) <- paste0(colnames(subclustlogliks), "subcluster")
+    }
+    
+    # update logliks matrix:
+    newlogliks <- newlogliks[, setdiff(colnames(newlogliks), name)]
+    newlogliks <- cbind(newlogliks, subclustlogliks)
+  }
+  
   # get new cluster assignments:
   clust <- colnames(newlogliks)[apply(newlogliks, 1, which.max)]
   names(clust) <- rownames(newlogliks)

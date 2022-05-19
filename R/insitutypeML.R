@@ -5,6 +5,7 @@
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell. Can be provided 
 #' @param bg Expected background
+#' @param cohort Vector of cells' cohort memberships
 #' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
@@ -19,7 +20,7 @@
 #' \item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 #' }
 #' @export
-insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size = 10, align_genes = TRUE) {
+insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, fixed_profiles, nb_size = 10, align_genes = TRUE) {
   
   # get vector of expected background:
   if (is.null(bg) & is.null(neg)) {
@@ -49,12 +50,17 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size 
     
     # warn about genes being lost:
     if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from cell typing: ",
                      paste0(lostgenes, collapse = ",")))
     }
     if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from cell typing"))
     }
+  }
+  
+  # prep cohort vector:
+  if (is.null(cohort)) {
+    cohort <- rep("all", length(bg))
   }
   
   # get logliks
@@ -65,16 +71,13 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size 
            size = nb_size)
   })
   
-  # get remaining outputs
-  clust <- colnames(logliks)[apply(logliks, 1, which.max)]
-  names(clust) <- rownames(logliks)
+  # update logliks based on frequencies within cohorts:
+  logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 
+                                              cohort = cohort, 
+                                              minfreq = 1e-4, 
+                                              nbaselinecells = 100) 
   
-  # estimate cluster frequencies:
-  profiles_freq <- prop.table(table(clust))
-  profiles_freq <- profiles_freq[colnames(logliks)]
-  profiles_freq <- pmax(profiles_freq, 1e-3)
-  # update logliks and clustering based on cell type frequencies:
-  logliks <- sweep(logliks, 2, log(profiles_freq), "+")
+  # get remaining outputs
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   names(clust) <- rownames(logliks)
   
@@ -84,12 +87,16 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, fixed_profiles, nb_size 
   profiles <- Estep(counts, 
                     clust = clust,
                     neg = neg)
-  profiles <- profiles[, colnames(logliks)]
+  # aligns profiles and logliks, removing lost clusters:
+  logliks_from_lost_celltypes <- logliks[, !is.element(colnames(logliks), unique(clust)), drop = FALSE]
+  logliks <- logliks[, is.element(colnames(logliks), clust), drop = FALSE]
+  profiles <- profiles[, colnames(logliks), drop = FALSE]
   
   out = list(clust = clust,
              prob = prob,
              profiles = profiles,
-             logliks = round(logliks, 4))
+             logliks = round(logliks, 4),
+             logliks_from_lost_celltypes = round(logliks_from_lost_celltypes, 4))
   return(out)    
   break()
 }

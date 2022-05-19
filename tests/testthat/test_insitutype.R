@@ -1,3 +1,4 @@
+#devtools::test()
 
 # load data ("raw" and "cellannot"):
 data("ioprofiles")
@@ -29,16 +30,16 @@ if (FALSE) {
 sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
                       bg = NULL,
+                      cohort = rep(c("a", "b"), each = nrow(mini_nsclc$counts) / 2),
                       fixed_profiles = ioprofiles[,1:6],
                       nb_size = 10, 
                       align_genes = TRUE) 
   
 testthat::test_that("supervised cell typing produces correct outputs", {
-  expect_true(all(is.element(c("clust", "prob", "logliks"), names(sup))))
+  expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.vector(sup$prob))
   expect_true(is.matrix(sup$logliks))
-  
 })
 
 # test semi-supervised with 0 new clusts:
@@ -78,6 +79,7 @@ unsup <- insitutype(counts = mini_nsclc$counts,
                     init_clust = NULL, n_clusts = 2:5,
                     fixed_profiles = NULL,
                     anchors = NULL,
+                    cohort = rep(c("a", "b"), each = nrow(mini_nsclc$counts) / 2),
                     nb_size = 10,
                     n_starts = 2,
                     align_genes = TRUE,
@@ -177,12 +179,16 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
 
 
 # test merge cells with multi-sample clustering:
-merge2 <- mergeCells(
+merge2 <- refineClusters(
   merges =  c("B-cell" = "lymphoid", "a_cl1" = "cancer", "b_cl2" = "cancer"), 
   to_delete = c("endothelial", "b_cl1"), 
-  logliks = semi$logliks)
-testthat::test_that("mergecells works when merges and deletions are asked for", {
-  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast", "a_cl2"))))
+  subcluster = list("fibroblast" = 2),
+  logliks = semi$logliks, 
+  counts = mini_nsclc$counts,
+  neg = Matrix::rowMeans(mini_nsclc$neg),
+  bg = NULL, cohort = NULL)
+testthat::test_that("refineClusters works when merges and deletions are asked for", {
+  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast_1", "fibroblast_2","a_cl2"))))
   expect_true(all(is.na(merge2$logliks[semi$logliks[, "endothelial"] == 1, 1])))
   expect_equal(names(merge2$clust), names(semi$clust))
 })
@@ -313,18 +319,21 @@ testthat::test_that("find_anchor_cells produces correct outputs when none select
 
 
 # test merge cells:
-merge1 <- mergeCells(
-  merges = NULL, to_delete = NULL, logliks = sup$logliks)
-merge2 <- mergeCells(
+merge1 <- refineClusters(
+  merges = NULL, to_delete = NULL, subcluster = NULL, logliks = sup$logliks)
+merge2 <- refineClusters(
   merges =  c("macrophage" = "myeloid", "mDC" = "myeloid","B-cell" = "lymphoid"), 
   to_delete = "endothelial", 
-  logliks = sup$logliks)
-testthat::test_that("mergecells works when no directions are passed to it", {
+  subcluster = list("fibroblast" = 2),
+  logliks = sup$logliks,
+  counts = mini_nsclc$counts,
+  neg = Matrix::rowMeans(mini_nsclc$neg))
+testthat::test_that("refineClusters works when no directions are passed to it", {
   expect_equal(sup$logliks, merge1$logliks, tolerance = 1e-2)
   expect_equal(sup$clust, merge1$clust)
 })
-testthat::test_that("mergecells works when merges and deletions are asked for", {
-  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "myeloid", "fibroblast", "mast"))))
+testthat::test_that("refineClusters works when merges and deletions are asked for", {
+  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "myeloid", "fibroblast_1", "fibroblast_2", "mast"))))
   expect_true(all(is.na(merge2$logliks[sup$logliks[, "endothelial"] == 1, 1])))
   expect_equal(names(merge2$clust), names(sup$clust))
 })

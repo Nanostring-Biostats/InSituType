@@ -7,6 +7,7 @@
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 #'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 #'  for cells to be held constant throughout iterations. 
+#' @param cohort Vector of cells' cohort memberships
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #'  Enter 0 to run purely supervised cell typing from fixed profiles. 
 #'  Enter a range of integers to automatically select the optimal number of clusters. 
@@ -52,6 +53,7 @@
 #' }
 runinsitutype <- function(counts, neg, bg = NULL, 
                        anchors = NULL,
+                       cohort = NULL,
                        n_clusts,
                        fixed_profiles = NULL, 
                        sketchingdata = NULL,
@@ -79,6 +81,9 @@ runinsitutype <- function(counts, neg, bg = NULL,
     stop("length of neg should equal nrows of counts.")
   }
   
+  if (is.null(cohort)) {
+    cohort <- rep("all", length(neg))
+  }
   
   ### infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
@@ -232,6 +237,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
         anchors = anchors[random_start_subsets[[i]]], 
+        cohort = cohort[random_start_subsets[[i]]],
         init_profiles = NULL,
         init_clust = tempinit, 
         n_clusts = n_clusts,
@@ -287,6 +293,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                     neg = neg[phase2_sample], 
                     bg = bg[phase2_sample],
                     anchors = anchors[phase2_sample],
+                    cohort = cohort[phase2_sample],
                     init_profiles = tempprofiles, 
                     init_clust = temp_init_clust, 
                     n_clusts = n_clusts,
@@ -317,6 +324,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                     neg = neg[phase3_sample], 
                     bg = bg[phase3_sample],
                     anchors = anchors[phase3_sample],
+                    cohort = cohort[phase3_sample],
                     init_profiles = tempprofiles, 
                     init_clust = NULL,  #temp_init_clust, 
                     n_clusts = n_clusts,
@@ -332,7 +340,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
   if (!is.null(anchors)) {
     anchorprobs <- Mstep(counts = counts[!is.na(anchors), ],
                          means = profiles,
-                         freq = rep(1/ncol(profiles), ncol(profiles)), 
+                         cohort = cohort[!is.na(anchors)], 
                          bg = bg[!is.na(anchors)],
                          size = nb_size)
     
@@ -379,6 +387,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                       neg = neg, 
                       bg = bg, 
                       fixed_profiles = profiles, 
+                      cohort = cohort,
                       nb_size = nb_size, 
                       align_genes = TRUE) 
   out$anchors <- anchors

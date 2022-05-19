@@ -7,7 +7,7 @@
 Mstep(
   counts,
   means,
-  freq,
+  cohort,
   bg = 0.01,
   size = 10,
   digits = 2,
@@ -20,7 +20,8 @@ Mstep(
 \item{means}{Matrix of mean cluster profiles,
 with genes in rows and clusters in columns.}
 
-\item{freq}{a vector of cells frequencies summing up equal to 1.}
+\item{cohort}{a vector of cells' "cohort" assignment, used to update logliks 
+based on cluster frequencies within a cohort.}
 
 \item{bg}{Expected background}
 
