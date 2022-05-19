@@ -201,9 +201,10 @@ merge2 <- refineClusters(
   logliks = semi$logliks, 
   counts = mini_nsclc$counts,
   neg = Matrix::rowMeans(mini_nsclc$neg),
-  bg = NULL, cohort = NULL)
+  bg = NULL, 
+  cohort = NULL)
 testthat::test_that("refineClusters works when merges and deletions are asked for", {
-  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast_1", "fibroblast_2","a_cl2"))))
+  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast_1", "fibroblast_2","a_cl2", "b_cl3"))))
   expect_true(all(is.na(merge2$logliks[semi$logliks[, "endothelial"] == 1, 1])))
   expect_equal(names(merge2$clust), names(semi$clust))
 })
