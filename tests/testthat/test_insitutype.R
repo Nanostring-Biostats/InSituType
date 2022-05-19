@@ -27,16 +27,17 @@ if (FALSE) {
 }
 
 # test nbclust smei-sup
-sharedgenes <- intersect(colnames(counts), rownames(fixed_profiles))
-nbres <- nbclust(counts[, sharedgenes], neg, bg = NULL, 
-                 fixed_profiles = fixed_profiles[sharedgenes, ],
-                 init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(counts) / 2), n_clusts = 2,
+sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
+nbres <- nbclust(counts = mini_nsclc$counts[, sharedgenes], 
+                 neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL, 
+                 fixed_profiles = ioprofiles[sharedgenes, 1:3],
+                 init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(mini_nsclc$counts) / 2), 
                  nb_size = 10, 
-                 cohort = rep("a", nrow(counts)), 
+                 cohort = rep("a", nrow(mini_nsclc$counts)), 
                  pct_drop = 1/10000,    
                  min_prob_increase = 0.05, max_iters = 3, logresults = FALSE) 
 testthat::test_that("semi-sup nbclust preserves fixedprofiles", {
-  expect_true(all(abs(diag(cor(nbres$profiles[, colnames(fixed_profiles)], fixed_profiles[sharedgenes, ]))) == 1))
+  expect_true(all(abs(diag(cor(nbres$profiles[, colnames(ioprofiles)[1:3]], ioprofiles[sharedgenes, ]))) == 1))
 })
 
 
