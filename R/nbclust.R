@@ -133,7 +133,6 @@ Estep <- function(counts, clust, neg) {
 #' if available, and using random clusters if not. 
 #' @param init_clust Vector of initial cluster assignments.
 #' If NULL, initial assignments will be automatically inferred.
-#' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param  Numer of iterations
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
@@ -154,7 +153,7 @@ Estep <- function(counts, clust, neg) {
 #' @export
 nbclust <- function(counts, neg, bg = NULL, 
                     fixed_profiles = NULL,
-                    init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
+                    init_profiles = NULL, init_clust = NULL, 
                     nb_size = 10, 
                     cohort = NULL, 
                     pct_drop = 1/10000,   
@@ -231,12 +230,10 @@ nbclust <- function(counts, neg, bg = NULL,
     oldprofiles <- profiles
 
     # E-step: update profiles:
-    if (n_clusts != 0){
-      tempclust <- colnames(probs)[apply(probs, 1, which.max)]
-      profiles <- Estep(counts = counts,
-                        clust = tempclust,
-                        neg = neg)        
-    }
+    tempclust <- colnames(probs)[apply(probs, 1, which.max)]
+    profiles <- Estep(counts = counts,
+                      clust = tempclust,
+                      neg = neg)        
     
     # for any profiles that have been lost, replace them with their previous version:
     lostprofiles = setdiff(clustnames, colnames(profiles))
