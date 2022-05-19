@@ -153,6 +153,7 @@ Estep <- function(counts, clust, neg) {
 #' }
 #' @export
 nbclust <- function(counts, neg, bg = NULL, 
+                    fixed_profiles = NULL,
                     init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
                     nb_size = 10, 
                     cohort = NULL, 
@@ -168,6 +169,11 @@ nbclust <- function(counts, neg, bg = NULL,
   }
   if (length(bg) == 1) {
     bg = rep(bg, nrow(counts))
+  }
+  if (!is.null(fixed_profiles)) {
+    if (!identical(rownames(fixed_profiles), rownames(counts))) {
+      stop("gene ids in fixed profiles and counts aren't aligned")
+    }
   }
 
   clusterlog = NULL
@@ -198,7 +204,9 @@ nbclust <- function(counts, neg, bg = NULL,
     profiles <- Estep(counts = counts[!is.na(clust_old), ],
                       clust = init_clust[!is.na(clust_old)],
                       neg = neg[!is.na(clust_old)])
-    clustnames <- unique(init_clust)
+    # keep fixed_profiles unchanged:
+    profiles[, colnames(fixed_profiles), drop = FALSE] <- fixed_profiles
+    clustnames <- colnames(profiles)
   }
   
   #### run EM algorithm iterations: ----------------------------------
@@ -233,6 +241,8 @@ nbclust <- function(counts, neg, bg = NULL,
     # for any profiles that have been lost, replace them with their previous version:
     lostprofiles = names(which(colSums(!is.na(profiles)) == 0))
     profiles[, lostprofiles] = oldprofiles[, lostprofiles]
+    # keep fixed_profiles unchanged:
+    profiles[, colnames(fixed_profiles), drop = FALSE] <- fixed_profiles
     
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, which.max)]
