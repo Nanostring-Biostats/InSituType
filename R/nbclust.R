@@ -171,7 +171,7 @@ nbclust <- function(counts, neg, bg = NULL,
     bg = rep(bg, nrow(counts))
   }
   if (!is.null(fixed_profiles)) {
-    if (!identical(rownames(fixed_profiles), rownames(counts))) {
+    if (!identical(rownames(fixed_profiles), colnames(counts))) {
       stop("gene ids in fixed profiles and counts aren't aligned")
     }
   }
@@ -205,7 +205,7 @@ nbclust <- function(counts, neg, bg = NULL,
                       clust = init_clust[!is.na(clust_old)],
                       neg = neg[!is.na(clust_old)])
     # keep fixed_profiles unchanged:
-    profiles[, colnames(fixed_profiles), drop = FALSE] <- fixed_profiles
+    profiles <- cbind(profiles[, setdiff(colnames(profiles), colnames(fixed_profiles))], fixed_profiles)
     clustnames <- colnames(profiles)
   }
   
@@ -239,10 +239,10 @@ nbclust <- function(counts, neg, bg = NULL,
     }
     
     # for any profiles that have been lost, replace them with their previous version:
-    lostprofiles = names(which(colSums(!is.na(profiles)) == 0))
-    profiles[, lostprofiles] = oldprofiles[, lostprofiles]
+    lostprofiles = setdiff(clustnames, colnames(profiles))
+    profiles <- cbind(profiles, oldprofiles[, lostprofiles, drop = FALSE])[, clustnames]
     # keep fixed_profiles unchanged:
-    profiles[, colnames(fixed_profiles), drop = FALSE] <- fixed_profiles
+    profiles[, colnames(fixed_profiles)] <- as.vector(fixed_profiles)
     
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, which.max)]

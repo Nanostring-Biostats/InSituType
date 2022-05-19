@@ -26,6 +26,20 @@ if (FALSE) {
   sketchingdata = NULL; anchor_replacement_thresh = 5
 }
 
+# test nbclust smei-sup
+sharedgenes <- intersect(colnames(counts), rownames(fixed_profiles))
+nbres <- nbclust(counts[, sharedgenes], neg, bg = NULL, 
+                 fixed_profiles = fixed_profiles[sharedgenes, ],
+                 init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(counts) / 2), n_clusts = 2,
+                 nb_size = 10, 
+                 cohort = rep("a", nrow(counts)), 
+                 pct_drop = 1/10000,    
+                 min_prob_increase = 0.05, max_iters = 3, logresults = FALSE) 
+testthat::test_that("semi-sup nbclust preserves fixedprofiles", {
+  expect_true(all(abs(diag(cor(nbres$profiles[, colnames(fixed_profiles)], fixed_profiles[sharedgenes, ]))) == 1))
+})
+
+
 # test supervised cell typing using direct loglik calcs:
 sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
