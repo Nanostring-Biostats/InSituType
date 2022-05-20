@@ -1,12 +1,56 @@
+
+#' Update reference profiles
+#' 
+#' Update reference profiles using pre-specified anchor cells, or if no anchors are specified, by first choosing anchor cells
+updateReferenceProfiles <- function(reference_profiles, counts, neg, 
+                                      anchors = NULL, n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01) {
+  
+  ## step 1: if no anchors are provided, select them automatically:
+  if (is.null(anchors)) {
+    message("automatically selecting anchor cells with the best fits to fixed profiles")
+    anchors <- find_anchor_cells(counts = counts, 
+                                 neg = NULL, 
+                                 bg = bg, 
+                                 profiles = reference_profiles, 
+                                 size = nb_size, 
+                                 n_cells = n_anchor_cells, 
+                                 min_cosine = min_anchor_cosine, 
+                                 min_scaled_llr = min_anchor_llr,
+                                 insufficient_anchors_thresh = insufficient_anchors_thresh) 
+  }
+  
+  if (is.null(anchors))  {
+    stop("No anchors were selected. The algorithm can't run under these conditions. 
+         Solutions include: 1. make anchor selection more generous. 2. select anchors by hand.")
+  }
+  
+  # test anchors are valid:
+  if (!is.null(anchors) & (length(anchors) != nrow(counts))) {
+    stop("anchors must have length equal to the number of cells (row) in counts")
+  }
+  names(anchors) <- rownames(counts)
+  
+  ## step 2: use the anchors to update the reference profiles
+  
+  updated_profiles <- updateProfilesFromAnchors(counts = counts, 
+                                                neg = neg, 
+                                                anchors = anchors, 
+                                                reference_profiles = reference_profiles, 
+                                                align_genes = TRUE, nb_size = 10, max_rescaling = 5)
+
+  
+  
+}
+
 #' Rescale rows of reference profiles
 #' 
 #' Estimates platform effects and rescales the reference matrix accordingly
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell. Can be provided 
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
+#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
-#' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
+#' @param align_genes Logical, for whether to align the counts matrix and the reference_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param max_rescaling Scaling factors will be truncated above by this value and below by its inverse (at 1/value and value)
 #' @return 
@@ -16,24 +60,24 @@
 #' }
 #' @export
 #' @importFrom SpatialDecon spatialdecon
-rescaleProfiles <- function(counts, neg, fixed_profiles, align_genes = TRUE, nb_size = 10, max_rescaling = 5) {
+rescaleProfiles <- function(counts, neg, reference_profiles, align_genes = TRUE, nb_size = 10, max_rescaling = 5) {
   
   # align genes:
   if (align_genes) {
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    sharedgenes <- intersect(rownames(reference_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(reference_profiles))
     
     # subset:
     counts <- counts[, sharedgenes]
-    fixed_profiles <- fixed_profiles[sharedgenes, ]
+    reference_profiles <- reference_profiles[sharedgenes, ]
     
     # warn about genes being lost:
     if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
+      message(paste0("The following genes in the count data are missing from reference_profiles and will be omitted from anchor selection: ",
                      paste0(lostgenes, collapse = ",")))
     }
     if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
+      message(paste0(length(lostgenes), " genes in the count data are missing from reference_profiles and will be omitted from anchor selection"))
     }
   }
   
@@ -45,13 +89,13 @@ rescaleProfiles <- function(counts, neg, fixed_profiles, align_genes = TRUE, nb_
   # deconvolve the bulk profile with spatialdecon:
   res <- SpatialDecon::spatialdecon(norm = cbind(totcounts, totcounts), 
                       bg = sum(neg), 
-                      X = fixed_profiles, 
+                      X = reference_profiles, 
                       resid_thresh = Inf)
   log2resids <- res$resids[, 1]
   log2resids <- log2resids - mean(log2resids)
   scaling_factors <- 2^log2resids
   scaling_factors <- pmax(pmin(scaling_factors, max_rescaling), max_rescaling^-1)
-  rescaledprofiles <- sweep(fixed_profiles, 1, scaling_factors, "*")
+  rescaledprofiles <- sweep(reference_profiles, 1, scaling_factors, "*")
   
   out = list(profiles = rescaledprofiles,
              scaling_factors = scaling_factors)
@@ -69,10 +113,10 @@ rescaleProfiles <- function(counts, neg, fixed_profiles, align_genes = TRUE, nb_
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell. Can be provided 
 #' @param anchors Vector of anchor assignments
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
+#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
-#' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
+#' @param align_genes Logical, for whether to align the counts matrix and the reference_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param max_rescaling Scaling factors will be truncated above by this value and below by its inverse (at 1/value and value)
 #' @return 
@@ -81,7 +125,7 @@ rescaleProfiles <- function(counts, neg, fixed_profiles, align_genes = TRUE, nb_
 #' \item scaling_factors: A vector of genes' scaling factors (what they were multiplied by when updating the reference profiles). 
 #' }
 #' @export
-rescaleProfiles <- function(counts, neg, anchors, fixed_profiles, align_genes = TRUE, nb_size = 10, max_rescaling = 5) {
+updateProfilesFromAnchors <- function(counts, neg, anchors, reference_profiles, align_genes = TRUE, nb_size = 10, max_rescaling = 5) {
   
   # get total expression and negs per anchor cell type:
   sums <- sapply(by(counts, anchors, colSums), cbind)
@@ -92,12 +136,12 @@ rescaleProfiles <- function(counts, neg, anchors, fixed_profiles, align_genes = 
   negsums <- negsums[colnames(sums)]
   
   ### build data frame for estimating row/gene scaling factors:
-  celltypes <- intersect(colnames(fixed_profiles), unique(anchors))
-  genes <- intersect(rownames(sums), rownames(fixed_profiles))
+  celltypes <- intersect(colnames(reference_profiles), unique(anchors))
+  genes <- intersect(rownames(sums), rownames(reference_profiles))
   df <- data.frame(
     gene = rep(genes, length(celltypes)),
     celltype = rep(celltypes, each = lenght(genes)),
-    ref = as.vector(fixed_profiles[genes, celltypes]),
+    ref = as.vector(reference_profiles[genes, celltypes]),
     rnasum = as.vector(sums[genes, celltypes]),
     negsum = rep(negsums, each = length(genes))
   )

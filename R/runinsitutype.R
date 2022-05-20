@@ -11,9 +11,11 @@
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #'  Enter 0 to run purely supervised cell typing from fixed profiles. 
 #'  Enter a range of integers to automatically select the optimal number of clusters. 
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
+#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
+#' @param update_reference_profiles Logical, for whether to use the data to update the reference profiles. Default and strong recommendation is TRUE. 
+#'   (However, if the reference profiles are from the same platform as the study, then FALSE could be better.)
 #' @param sketchingdata Optional matrix of data for use in non-random sampling via "sketching".
 #'  If not provided, then the data's first 20 PCs will be used. 
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
@@ -55,14 +57,15 @@ runinsitutype <- function(counts, neg, bg = NULL,
                        anchors = NULL,
                        cohort = NULL,
                        n_clusts,
-                       fixed_profiles = NULL, 
+                       reference_profiles = NULL, 
+                       update_reference_profiles = TRUE,
                        sketchingdata = NULL,
                        align_genes = TRUE, nb_size = 10, 
                        init_clust = NULL, n_starts = 5, n_benchmark_cells = 5000,
                        n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                        n_chooseclusternumber = 2000,
                        pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
-                       n_anchor_cells = 500, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 20,
+                       n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 20,
                        anchor_replacement_thresh = 0.75) {
   
   #### preliminaries ---------------------------
@@ -95,6 +98,21 @@ runinsitutype <- function(counts, neg, bg = NULL,
   if (length(bg) == 1) {
     bg <- rep(bg, nrow(counts))
     names(bg) <- rownames(counts)
+  }
+  
+  #### update reference profiles ----------------------------------
+  if (!is.null(reference_profiles)) {
+    if (update_reference_profiles) {
+      fixed_profiles <- update_reference_profiles(reference_profiles,
+                                                  counts = counts, 
+                                                  neg = neg,
+                                                  anchors = NULL,
+                                                  n_anchor_cells = n_anchor_cells, 
+                                                  min_anchor_cosine = min_anchor_cosine, 
+                                                  min_anchor_llr = min_anchor_llr)
+    } else {
+      fixed_profiles <- reference_profiles
+    }
   }
   
   #### select anchor cells if not provided: ------------------------------
