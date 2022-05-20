@@ -353,3 +353,16 @@ testthat::test_that("refineClusters works when merges and deletions are asked fo
   expect_true(all(is.na(merge2$logliks[sup$logliks[, "endothelial"] == 1, 1])))
   expect_equal(names(merge2$clust), names(sup$clust))
 })
+
+
+# test rescaleProfiles:
+rescaled <- rescaleProfiles(counts = mini_nsclc$counts,
+                            neg = mini_nsclc$neg, 
+                            fixed_profiles = ioprofiles, 
+                            max_rescaling = 5)
+testthat::test_that("rescaleProfiles works as intended", {
+  expect_true(is.matrix(rescaled$profiles))
+  expect_true(is.vector(rescaled$scaling_factors))
+  expect_true(all(rescaled$scaling_factors >= 1/5))
+  expect_true(all(rescaled$scaling_factors <= 5))
+})
