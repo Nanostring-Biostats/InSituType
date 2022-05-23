@@ -5,13 +5,16 @@
 updateReferenceProfiles <- function(reference_profiles, counts, neg, 
                                       anchors = NULL, n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01) {
   
+  
   ## step 1: if no anchors are provided, select them automatically:
   if (is.null(anchors)) {
     message("automatically selecting anchor cells with the best fits to fixed profiles")
-    anchors <- find_anchor_cells(counts = counts, 
+    # align genes:
+    sharedgenes <- intersect(colnames(counts), rownames(reference_profiles))
+    anchors <- find_anchor_cells(counts = counts[, sharedgenes], 
                                  neg = NULL, 
                                  bg = bg, 
-                                 profiles = reference_profiles, 
+                                 profiles = reference_profiles[sharedgenes, ], 
                                  size = nb_size, 
                                  n_cells = n_anchor_cells, 
                                  min_cosine = min_anchor_cosine, 
@@ -31,15 +34,12 @@ updateReferenceProfiles <- function(reference_profiles, counts, neg,
   names(anchors) <- rownames(counts)
   
   ## step 2: use the anchors to update the reference profiles
-  
   updated_profiles <- updateProfilesFromAnchors(counts = counts, 
                                                 neg = neg, 
                                                 anchors = anchors, 
                                                 reference_profiles = reference_profiles, 
                                                 align_genes = TRUE, nb_size = 10, max_rescaling = 5)
-
-  
-  
+  return(updated_profiles)
 }
 
 #' Rescale rows of reference profiles
