@@ -134,15 +134,15 @@ runinsitutype <- function(counts, neg, bg = NULL,
   n_benchmark_cells = min(n_benchmark_cells, nrow(counts))
   
   
-  ### choose cluster number: -----------------------------
+  #### choose cluster number: -----------------------------
   if (!is.null(init_clust)) {
     if (!is.null(n_clusts)) {
       message("init_clust was specified; this will overrule the n_clusts argument.")
     }
-    n_clusts <- length(setdiff(unique(init_clust), unique(anchors)))
+    n_clusts <- length(setdiff(unique(init_clust), colnames(fixed_profiles)))
   }
   if (is.null(n_clusts)) {
-    n_clusts <- 1:12 + (is.null(anchors))
+    n_clusts <- 5:15 + 5*(is.null(fixed_profiles))
   }
   # get optimal number of clusters
   if (length(n_clusts) > 1) {
@@ -191,8 +191,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                                              returnBins=FALSE,
                                              minCellsPerBin = 1,
                                              seed=NULL)
-      random_start_subsets[[i]] <- unique(c(random_start_subsets[[i]], anchorcellnames))
-      
+
       # convert IDs to row indices:
       random_start_subsets[[i]] <- match(random_start_subsets[[i]], rownames(counts))
       
@@ -216,11 +215,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
       cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
       tempinit <- rep(cluster_name_pool[seq_len(n_clusts)], each = ceiling(length(random_start_subsets[[i]]) / n_clusts))[
         seq_along(random_start_subsets[[i]])]
-      if (!is.null(anchors)) {
-        anchors_in_subset <- anchors[random_start_subsets[[i]]]
-        tempinit[!is.na(anchors_in_subset)] <- anchors_in_subset[!is.na(anchors_in_subset)]
-      }
-      
+     
       profiles_from_random_starts[[i]] <- nbclust(
         counts = counts[random_start_subsets[[i]], ], 
         neg = neg[random_start_subsets[[i]]], 
@@ -263,8 +258,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
                              seed=NULL)
-  phase2_sample <- unique(c(phase2_sample, anchorcellnames))
-  
+
   # convert IDs to row indices:
   phase2_sample <- match(phase2_sample, rownames(counts))
   
@@ -299,8 +293,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
                              seed=NULL)
-  phase3_sample <- unique(c(phase3_sample, anchorcellnames))
-  
+
   # convert IDs to row indices:
   phase3_sample <- match(phase3_sample, rownames(counts))
   
@@ -319,52 +312,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                     max_iters = max_iters)
   profiles <- clust3$profiles
   
-  #### if anchor cells were used, check their assignments and rename clusters that have moved away from their anchor cells:
-  
-  # get best-fitting clusters for anchor cells:
-  if (!is.null(anchors)) {
-    anchorprobs <- Mstep(counts = counts[!is.na(anchors), ],
-                         means = profiles,
-                         cohort = cohort[!is.na(anchors)], 
-                         bg = bg[!is.na(anchors)],
-                         size = nb_size)
-    
-    anchor_bestclusters <- colnames(anchorprobs)[apply(anchorprobs, 1, which.max)]
-    # flag clusters that have moved from anchor cells
-    temptable <- table(anchors[!is.na(anchors)], anchor_bestclusters)
-    anchor_transition_table = matrix(0, ncol(anchorprobs), ncol(anchorprobs),
-                                     dimnames = list(colnames(anchorprobs), colnames(anchorprobs)))
-    anchor_transition_table[rownames(temptable), colnames(temptable)] = temptable
-    wandering_score <- diag(anchor_transition_table) / table(anchors[!is.na(anchors)])[rownames(anchor_transition_table)]
-    flaggedclusters <- names(which(wandering_score < anchor_replacement_thresh))
-    
-    if (length(flaggedclusters) > 0) {
-      
-      # warn:
-      message(paste0("The following clusters moved away from their anchor cells and were renamed: ",
-                     paste0(flaggedclusters, collapse = ", ")))
-      
-      cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
-      newnames <- setdiff(cluster_name_pool, colnames(clust3$profiles))[seq_along(flaggedclusters)]
-      names(newnames) <- flaggedclusters
-      
-      # rename flagged clusters, then reassign flagged anchor cells back to their original cell type
-      newclust = clust3$clust
-      for (clustname in names(newnames)) {
-        # rename all cells in the cluster to the new name: 
-        newclust[newclust == clustname] <- newnames[clustname]
-        # save the anchor cells:
-        newclust[!is.na(anchors[phase3_sample]) & (anchors[phase3_sample] == clustname)] <- clustname
-      }
-      
-      # re-compute profiles:
-      profiles <- Estep(counts[phase3_sample, ], 
-                        clust = newclust,
-                        neg = neg[phase3_sample])
-    }
-  }
 
-  
   #### phase 4: -----------------------------------------------------------------
   message(paste0("phase 4: classifying all ", nrow(counts), " cells"))
   
