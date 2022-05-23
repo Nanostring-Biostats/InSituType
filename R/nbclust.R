@@ -193,7 +193,6 @@ nbclust <- function(counts, neg, bg = NULL,
     clust_old <- rep("unassigned", nrow(counts))
     names(clust_old) <- rownames(counts)
     profiles <- init_profiles
-    clustnames <- colnames(init_profiles)
   } 
   # if no init_profiles are provided, derive them:
   if (is.null(init_profiles)) {
@@ -203,10 +202,10 @@ nbclust <- function(counts, neg, bg = NULL,
     profiles <- Estep(counts = counts[!is.na(clust_old), ],
                       clust = init_clust[!is.na(clust_old)],
                       neg = neg[!is.na(clust_old)])
-    # keep fixed_profiles unchanged:
-    profiles <- cbind(profiles[, setdiff(colnames(profiles), colnames(fixed_profiles))], fixed_profiles)
-    clustnames <- colnames(profiles)
   }
+  # keep fixed_profiles unchanged:
+  profiles <- cbind(profiles[, setdiff(colnames(profiles), colnames(fixed_profiles))], fixed_profiles)
+  clustnames <- colnames(profiles)
   
   #### run EM algorithm iterations: ----------------------------------
   pct_changed = c()
