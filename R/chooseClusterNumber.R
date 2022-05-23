@@ -4,9 +4,8 @@
 #'  Report on loglikelihood vs. number of clusters, and suggest a best choice.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
-#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
-#'  for cells to be held constant throughout iterations. 
+#' @param fixed_profiles Matrix of cluster profiles to hold unchanged throughout iterations.
+#' @param cohort Vector of cells' cohort assignments. 
 #' @param init_clust Vector of initial cluster assignments.
 #' @param n_clusts Vector giving a range of cluster numbers to consider.
 #' @param max_iters Number of iterations in each clustering attempt. Recommended to choose
@@ -27,7 +26,7 @@
 #' \itemize{
 #'  \item
 #' }
-chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, init_clust = NULL, n_clusts = 2:12,
+chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, cohort = NULL, init_clust = NULL, n_clusts = 2:12,
                                 max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, 
                                 pct_drop = 0.005, min_prob_increase = 0.05,  ...) {
 
@@ -38,20 +37,15 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, init_clu
     bg <- bgmod$fitted
   } 
 
-
   # subset the data:
   set.seed(0)
   use <- sample(seq_len(nrow(counts)), subset_size)
-  use <- unique(c(use, which(!is.na(anchors))))
   counts <- counts[use, ]
   s <- s[use]
   neg <- neg[use]
   bg <- bg[use]
   if (!is.null(init_clust)) {
     init_clust <- init_clust[use]
-  }
-  if (!is.null(anchors)) {
-    anchors <- anchors[use]
   }
 
   if (length(n_clusts) <=0 ){
@@ -60,26 +54,27 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, anchors = NULL, init_clu
     stop("n_clusts need to be a vector of positive integers.")
   }
 
-  if (!is.null(anchors)) {
-    anchorcellnames <- names(anchors)[!is.na(anchors)]
-  }
-  # cluster under each iteration, and save loglik:
+  # align genes in fixed_profiles:
+  if (align_genes & !is.null(fixed_profiles)) {
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
+    counts <- counts[, sharedgenes]
+    fixed_profiles <- fixed_profiles[sharedgenes, ]
+  }  
+  # cluster under each value of n_clusts, and save loglik:
   totallogliks <- sapply(n_clusts, function(x) {
     
     # get init clust:
     tempinit <- rep(letters[seq_len(x)], each = ceiling(nrow(counts) / x))[
       seq_len(nrow(counts))]
-    if (!is.null(anchors)) {
-      anchors_in_subset <- anchors[rownames(counts)]
-      tempinit[!is.na(anchors_in_subset)] <- anchors_in_subset[!is.na(anchors_in_subset)]
-    }
-    
+   
     # run nbclust:
     message(sprintf("Clustering with n_clust = %s", x))
     tempclust <- nbclust(
       counts = counts, 
       neg = neg, 
       bg = bg, 
+      fixed_profiles = fixed_profiles,
+      cohort = cohort,
       init_clust = tempinit,
       nb_size = nb_size,
       pct_drop = pct_drop,

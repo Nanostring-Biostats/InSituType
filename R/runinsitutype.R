@@ -74,8 +74,6 @@ runinsitutype <- function(counts, neg, bg = NULL,
     stop("Cells with 0 counts were found. Please remove.")
   }
   
-  # (note: no longer aligning counts matrix to fixed profiles except within the find_anchor_cells function.)
-  
   ## get neg in condition 
   if (is.null(names(neg))) {
     names(neg) <- rownames(counts)
@@ -239,6 +237,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
         counts = counts[random_start_subsets[[i]], ], 
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
+        fixed_profiles = fixed_profiles,
         cohort = cohort[random_start_subsets[[i]]],
         init_profiles = NULL,
         init_clust = tempinit, 
