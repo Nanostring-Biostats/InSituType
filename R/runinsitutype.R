@@ -115,34 +115,6 @@ runinsitutype <- function(counts, neg, bg = NULL,
     }
   }
   
-  #### select anchor cells if not provided: ------------------------------
-  if (is.null(anchors) & !is.null(fixed_profiles)) {
-    message("automatically selecting anchor cells with the best fits to fixed profiles")
-    anchors <- find_anchor_cells(counts = counts, 
-                                 neg = NULL, 
-                                 bg = bg, 
-                                 profiles = fixed_profiles, 
-                                 size = nb_size, 
-                                 n_cells = n_anchor_cells, 
-                                 min_cosine = min_anchor_cosine, 
-                                 min_scaled_llr = min_anchor_llr,
-                                 insufficient_anchors_thresh = insufficient_anchors_thresh) 
-  }
-  if (is.null(anchors) & any(n_clusts == 0)) {
-    stop("No anchors were selected, and n_clusts = 0. The algorithm can't run under these conditions. 
-         Solutions include: 1. make anchor selection more generous. 2. select anchors by hand. 3. increase n_clusts")
-  }
-  
-  # test anchors are valid:
-  anchorcellnames = NULL
-  if (!is.null(anchors) & (length(anchors) != nrow(counts))) {
-    stop("anchors must have length equal to the number of cells (row) in counts")
-  }
-  if (!is.null(anchors)) {
-    names(anchors) <- rownames(counts)
-    anchorcellnames <- names(anchors)[!is.na(anchors)]
-  }
-  
   #### set up subsetting: ---------------------------------
   # get data for subsetting if not already provided
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
