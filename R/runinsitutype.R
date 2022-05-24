@@ -54,19 +54,19 @@
 #' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 #' }
 runinsitutype <- function(counts, neg, bg = NULL, 
-                       anchors = NULL,
-                       cohort = NULL,
-                       n_clusts,
-                       reference_profiles = NULL, 
-                       update_reference_profiles = TRUE,
-                       sketchingdata = NULL,
-                       align_genes = TRUE, nb_size = 10, 
-                       init_clust = NULL, n_starts = 5, n_benchmark_cells = 5000,
-                       n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
-                       n_chooseclusternumber = 2000,
-                       pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
-                       n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 20,
-                       anchor_replacement_thresh = 0.75) {
+                          anchors = NULL,
+                          cohort = NULL,
+                          n_clusts,
+                          reference_profiles = NULL, 
+                          update_reference_profiles = TRUE,
+                          sketchingdata = NULL,
+                          align_genes = TRUE, nb_size = 10, 
+                          init_clust = NULL, n_starts = 5, n_benchmark_cells = 5000,
+                          n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
+                          n_chooseclusternumber = 2000,
+                          pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
+                          n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 20,
+                          anchor_replacement_thresh = 0.75) {
   
   #### preliminaries ---------------------------
   
@@ -101,13 +101,15 @@ runinsitutype <- function(counts, neg, bg = NULL,
   #### update reference profiles ----------------------------------
   if (!is.null(reference_profiles)) {
     if (update_reference_profiles) {
-      fixed_profiles <- update_reference_profiles(reference_profiles,
-                                                  counts = counts, 
-                                                  neg = neg,
-                                                  anchors = NULL,
-                                                  n_anchor_cells = n_anchor_cells, 
-                                                  min_anchor_cosine = min_anchor_cosine, 
-                                                  min_anchor_llr = min_anchor_llr)
+      update_result <- updateReferenceProfiles(reference_profiles,
+                                                counts = counts, 
+                                                neg = neg,
+                                                anchors = NULL,
+                                                n_anchor_cells = n_anchor_cells, 
+                                                min_anchor_cosine = min_anchor_cosine, 
+                                                min_anchor_llr = min_anchor_llr)
+      fixed_profiles <- update_result$updated_profiles
+      anchors <- update_result$anchors
     } else {
       fixed_profiles <- reference_profiles
     }
@@ -123,11 +125,11 @@ runinsitutype <- function(counts, neg, bg = NULL,
     
     # warn about genes being lost:
     if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from clustering: ",
                      paste0(lostgenes, collapse = ",")))
     }
     if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from clustering"))
     }
   }
 

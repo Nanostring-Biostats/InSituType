@@ -204,7 +204,10 @@ nbclust <- function(counts, neg, bg = NULL,
                       neg = neg[!is.na(clust_old)])
   }
   # keep fixed_profiles unchanged:
-  profiles <- cbind(profiles[, setdiff(colnames(profiles), colnames(fixed_profiles))], fixed_profiles)
+  if (length(profiles) == 0) {
+    profiles <- NULL
+  }
+  profiles <- cbind(profiles[, setdiff(colnames(profiles), colnames(fixed_profiles)), drop = FALSE], fixed_profiles)
   clustnames <- colnames(profiles)
   
   #### run EM algorithm iterations: ----------------------------------
