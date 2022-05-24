@@ -83,7 +83,7 @@ updateProfilesFromAnchors_partial_update_incomplete_code <- function(counts, neg
   genes <- intersect(rownames(sums), rownames(reference_profiles))
   df <- data.frame(
     gene = rep(genes, length(celltypes)),
-    celltype = rep(celltypes, each = lenght(genes)),
+    celltype = rep(celltypes, each = length(genes)),
     ref = as.vector(reference_profiles[genes, celltypes]),
     rnasum = as.vector(sums[genes, celltypes]),
     negsum = rep(negsums, each = length(genes))
@@ -93,7 +93,7 @@ updateProfilesFromAnchors_partial_update_incomplete_code <- function(counts, neg
   
   ### calculate weights based on precision of anchors' total counts:
   # get sd of log(totrna - totneg) - log(ref), based on the delta method
-  df$sd <- sqrt(sum(c((df$rnasum-df$negsum)^-2, (df$rnasum-df$negsum)^-2, df$ref^-2) * c(df$rnasum, df$negsum, df$ref)))
+  df$sd <- sqrt(rowSums(cbind((df$rnasum-df$negsum)^-2, (df$rnasum-df$negsum)^-2, df$ref^-2) * cbind(df$rnasum, df$negsum, df$ref)))
   
   #get_sd_of_log_bgsub_totcounts <- function(i) {
   #  y <- df$rnasum[i]
@@ -118,15 +118,35 @@ updateProfilesFromAnchors_partial_update_incomplete_code <- function(counts, neg
   stderrs <- summary(mod)$coefficients[names(coefs), 2]
   # get a shrinkage estimate of coefs, assuming that coefs have a distribution with sd = log(1.25):
   priorvar <- log(1.25)^2
-  coefs <- (coefs - mean(coefs)) * priorvar / (stderrs^2 + priorvar)
+  coefs <- (coefs - weighted.mean(coefs, w = 1/stderrs)) * priorvar / (stderrs^2 + priorvar)
   # fill in missing genes:
   names(coefs) <- substr(names(coefs), 5, nchar(names(coefs)))
   coefs[is.na(coefs)] <- mean(coefs, na.rm = TRUE)
   coefs[setdiff(genes, names(coefs))] <- mean(coefs)
   
-  # convert to log2-scale:
-  log2_scaling <- log2(exp(1)) * coefs
+  ### now get bayesian estimates of element-wise updates of ref
+  ref_rescaled <- sweep(reference_profiles[, colnames(sums)], 1, exp(coefs), "*")
+  bgsub_profiles <- pmax(sweep(sums, 2, negsums, "-"), 0)[rownames(ref_rescaled), match(colnames(ref_rescaled), colnames(sums))]
+  logfoldchanges <- log(bgsub_profiles) - log(ref_rescaled)
+  # estimate SD of each element:
+  negmatrix = sweep(sums*0, 2, negsums, "+")
+  sdmat <- sums[genes, ] * NA
+  for (cell in colnames(sums)) {
+    sdmat[, cell] <- sqrt(rowSums(cbind((sums[genes, cell] - negmatrix[genes, cell])^-2, (sums[genes, cell] - negmatrix[genes, cell])^-2, ref_rescaled[genes, cell]^-2) * cbind(sums[genes, cell], negmatrix[genes, cell], ref_rescaled[genes, cell])))
+  }
+  # shrink each column of logfoldchanges to its weighted mean:
+  var_of_elementwise_logfoldchanges <- log(1.5)^2
+  shrunkenlogfoldchanges <- logfoldchanges * NA
+  for (cell in colnames(sums)) {
+    use = !is.na(logfoldchanges[, cell]) & (abs(logfoldchanges[, cell]) < Inf)
+    meanlogfc <- weighted.mean(logfoldchanges[use, cell], w = sdmat[use, cell]^-1)
+    shrunkenlogfoldchanges[, cell] <- pmax(pmin(logfoldchanges[, cell] - meanlogfc, log(50)), -log(50)) * 
+      var_of_elementwise_logfoldchanges / (sdmat[, cell]^2 + var_of_elementwise_logfoldchanges)
+    shrunkenlogfoldchanges[, cell][is.na(shrunkenlogfoldchanges[, cell])] <- 0
+  }
   
+  ### apply shrunkenlogfoldchanges to get an updated reference:
+  updated <- ref_rescaled * exp(shrunkenlogfoldchanges)
   STOP("THE REST OF THIS CODE IS UNDER DEVELOPENT IN THE SCH CUSTOM ANALYSIS FOLDER")
   
 }
