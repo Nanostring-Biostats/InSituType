@@ -102,12 +102,14 @@ runinsitutype <- function(counts, neg, bg = NULL,
   if (!is.null(reference_profiles)) {
     if (update_reference_profiles) {
       update_result <- updateReferenceProfiles(reference_profiles,
-                                                counts = counts, 
-                                                neg = neg,
-                                                anchors = NULL,
-                                                n_anchor_cells = n_anchor_cells, 
-                                                min_anchor_cosine = min_anchor_cosine, 
-                                                min_anchor_llr = min_anchor_llr)
+                                               counts = counts, 
+                                               neg = neg,
+                                               bg = bg,
+                                               nb_size = nb_size,
+                                               anchors = NULL,
+                                               n_anchor_cells = n_anchor_cells, 
+                                               min_anchor_cosine = min_anchor_cosine, 
+                                               min_anchor_llr = min_anchor_llr)
       fixed_profiles <- update_result$updated_profiles
       anchors <- update_result$anchors
     } else {

@@ -2,7 +2,7 @@
 #' Update reference profiles
 #' 
 #' Update reference profiles using pre-specified anchor cells, or if no anchors are specified, by first choosing anchor cells
-updateReferenceProfiles <- function(reference_profiles, counts, neg, 
+updateReferenceProfiles <- function(reference_profiles, counts, neg, bg = NULL, nb_size = 10,
                                     anchors = NULL, n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01) {
   
   
@@ -19,7 +19,7 @@ updateReferenceProfiles <- function(reference_profiles, counts, neg,
                                  n_cells = n_anchor_cells, 
                                  min_cosine = min_anchor_cosine, 
                                  min_scaled_llr = min_anchor_llr,
-                                 insufficient_anchors_thresh = insufficient_anchors_thresh) 
+                                 insufficient_anchors_thresh = 0) 
   }
   
   if (is.null(anchors))  {
@@ -41,12 +41,38 @@ updateReferenceProfiles <- function(reference_profiles, counts, neg,
                                                 align_genes = TRUE, nb_size = 10, max_rescaling = 5)
   out <- list(updated_profiles = updated_profiles,
               anchors = anchors)
-   return(out)
+  return(out)
 }
 
 
 
-
+#' PLACEHOLDER FUNCTION: Use anchor cells to update reference profiles, by just taking the mean profile of the anchors. 
+#' 
+#' Uses anchor cells to estimate platform effects / scaling factors to be applied to
+#'  the genes/rows of the reference profile matrix. Then uses Bayesian math to
+#'  update the individual elements on X. 
+#' @param counts Counts matrix, cells * genes.
+#' @param neg Vector of mean negprobe counts per cell. Can be provided 
+#' @param anchors Vector of anchor assignments
+#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
+#'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
+#'  Colnames must all be included in the init_clust variable.
+#' @param align_genes Logical, for whether to align the counts matrix and the reference_profiles by gene ID.
+#' @param nb_size The size parameter to assume for the NB distribution.
+#' @param max_rescaling Scaling factors will be truncated above by this value and below by its inverse (at 1/value and value)
+#' @return 
+#' \enumerate{
+#' \item profiles: A profiles matrix with the rows rescaled according to platform effects and individual elements updated further
+#' \item scaling_factors: A vector of genes' scaling factors (what they were multiplied by when updating the reference profiles). 
+#' }
+#' @export
+updateProfilesFromAnchors <- function(counts, neg, anchors, reference_profiles, align_genes = TRUE, nb_size = 10, max_rescaling = 5) {
+  use <- !is.na(anchors)
+  updated_profiles <- Estep(counts = counts[use, ], 
+                            clust = anchors[use],
+                            neg = neg[use])
+  return(updated_profiles)
+}
 
 #' Use anchor cells to update reference profiles
 #' 
@@ -62,7 +88,7 @@ updateReferenceProfiles <- function(reference_profiles, counts, neg,
 #' @param align_genes Logical, for whether to align the counts matrix and the reference_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param max_rescaling Scaling factors will be truncated above by this value and below by its inverse (at 1/value and value)
-#' @return 
+#' @return A matrix of updated reference profiles
 #' \enumerate{
 #' \item profiles: A profiles matrix with the rows rescaled according to platform effects and individual elements updated further
 #' \item scaling_factors: A vector of genes' scaling factors (what they were multiplied by when updating the reference profiles). 
