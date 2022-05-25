@@ -42,7 +42,7 @@
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
 #' @importFrom Matrix colSums
-#'
+#' @export
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item clust: a vector given cells' cluster assignments
