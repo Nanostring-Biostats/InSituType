@@ -39,8 +39,6 @@
 #' @param min_anchor_cosine For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.
 #' @param min_anchor_llr For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
 #' @param insufficient_anchors_thresh Cell types that end up with fewer than this many anchors after anchor selection will be discarded. 
-#' @param anchor_replacement_thresh Threshold for calling whether a cluster has wandered away from its anchor cells. 
-#'   Clusters whose anchors are reassigned at this rate or higher will be renamed, and only their anchor cells will be used to define a profile for the cluster.
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
 #' @importFrom Matrix colSums
@@ -65,8 +63,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                           n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
                           n_chooseclusternumber = 2000,
                           pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
-                          n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 20,
-                          anchor_replacement_thresh = 0.75) {
+                          n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.03, insufficient_anchors_thresh = 20) {
   
   #### preliminaries ---------------------------
   
