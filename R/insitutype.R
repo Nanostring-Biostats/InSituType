@@ -42,7 +42,7 @@
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
 #' @importFrom Matrix colSums
-#'
+#' @export
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item clust: a vector given cells' cluster assignments
@@ -51,7 +51,7 @@
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 #' }
-runinsitutype <- function(counts, neg, bg = NULL, 
+insitutype <- function(counts, neg, bg = NULL, 
                           anchors = NULL,
                           cohort = NULL,
                           n_clusts,
@@ -96,6 +96,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
   }
   
   #### update reference profiles ----------------------------------
+  fixed_profiles <- NULL
   if (!is.null(reference_profiles)) {
     if (update_reference_profiles) {
       update_result <- updateReferenceProfiles(reference_profiles,
@@ -180,7 +181,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
       counts = counts[chooseclusternumber_subset, ], 
       neg = neg[chooseclusternumber_subset], 
       bg = bg[chooseclusternumber_subset], 
-      fixed_profiles = fixed_profiles,
+      fixed_profiles = reference_profiles,
       init_clust = NULL, 
       n_clusts = n_clusts,
       max_iters = max_iters,
@@ -338,7 +339,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
   out <- insitutypeML(counts = counts, 
                       neg = neg, 
                       bg = bg, 
-                      fixed_profiles = profiles, 
+                      reference_profiles = profiles, 
                       cohort = cohort,
                       nb_size = nb_size, 
                       align_genes = TRUE) 

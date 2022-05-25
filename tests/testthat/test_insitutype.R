@@ -13,13 +13,12 @@ if (FALSE) {
   nbclust = MLEcell:::nbclust
   Mstep=MLEcell:::Mstep
   Estep=MLEcell:::Estep
-  runinsitutype=MLEcell:::runinsitutype
 }
 
 # for line-by-line debugging:
 if (FALSE) {
   counts = mini_nsclc$counts;neg = Matrix::rowMeans(mini_nsclc$neg);bg = NULL;anchors = NULL
-  init_clust = NULL; n_clusts = 2:3;fixed_profiles = ioprofiles[, 1:3];
+  init_clust = NULL; n_clusts = 2:3;fixed_profiles = ioprofiles[, 1:3];reference_profiles = ioprofiles[, 1:3];
   nb_size = 10;n_starts = 2;align_genes = TRUE;n_benchmark_cells = 200;n_phase1 = 300;n_phase2 = 500;n_phase3 = 1000;
   n_chooseclusternumber = 300;pct_drop = 1/5000;min_prob_increase = 0.05;max_iters = 4;n_anchor_cells = 20
   min_anchor_cosine = 0.3; min_anchor_llr = 0.1;sketchingdata=NULL;anchor_replacement_thresh=0.75;insufficient_anchors_thresh = 1
@@ -46,7 +45,7 @@ sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
                       bg = NULL,
                       cohort = rep(c("a", "b"), each = nrow(mini_nsclc$counts) / 2),
-                      fixed_profiles = ioprofiles[,1:6],
+                      reference_profiles = ioprofiles[,1:6],
                       nb_size = 10, 
                       align_genes = TRUE) 
   
@@ -60,12 +59,11 @@ testthat::test_that("supervised cell typing produces correct outputs", {
 # test semi-supervised with 0 new clusts:
 semi <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
-                  tissue = sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                   bg = NULL,
                   init_clust = NULL, 
                   n_clusts = 0,
                   anchors = NULL,
-                  fixed_profiles = ioprofiles[,1:6],
+                  reference_profiles = ioprofiles[,1:6],
                   nb_size = 10,
                   n_starts = 2,
                   align_genes = TRUE,
@@ -90,9 +88,8 @@ testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = NULL,
-                    tissue =  sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                     init_clust = NULL, n_clusts = 2:5,
-                    fixed_profiles = NULL,
+                    reference_profiles = NULL,
                     anchors = NULL,
                     cohort = rep(c("a", "b"), each = nrow(mini_nsclc$counts) / 2),
                     nb_size = 10,
@@ -124,10 +121,9 @@ init_clust <- rep(c("name1", "xxx", "ooo"), each = nrow(mini_nsclc$counts) / 3)[
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = 0.03,
-                    tissue = NULL,
                     init_clust = init_clust, 
                     n_clusts = 6,
-                    fixed_profiles = NULL,
+                    reference_profiles = NULL,
                     nb_size = 10,
                     n_starts = NULL,
                     align_genes = TRUE,
@@ -163,10 +159,9 @@ if (FALSE) {
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
-                   tissue =  sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                    anchors = NULL,
                    init_clust = NULL, n_clusts = 2,
-                   fixed_profiles = ioprofiles[, 1:3],
+                   reference_profiles = ioprofiles[, 1:3],
                    nb_size = 10,
                    n_starts = 2,
                    align_genes = TRUE,
@@ -195,8 +190,8 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
 
 # test merge cells with multi-sample clustering:
 merge2 <- refineClusters(
-  merges =  c("B-cell" = "lymphoid", "a_cl1" = "cancer", "b_cl2" = "cancer"), 
-  to_delete = c("endothelial", "b_cl1"), 
+  merges =  c("B-cell" = "lymphoid", "a" = "cancer", "b" = "cancer"), 
+  to_delete = c("endothelial"), 
   subcluster = list("fibroblast" = 2),
   logliks = semi$logliks, 
   counts = mini_nsclc$counts,
@@ -204,8 +199,7 @@ merge2 <- refineClusters(
   bg = NULL, 
   cohort = NULL)
 testthat::test_that("refineClusters works when merges and deletions are asked for", {
-  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast_1", "fibroblast_2","a_cl2", "b_cl3"))))
-  expect_true(all(is.na(merge2$logliks[semi$logliks[, "endothelial"] == 1, 1])))
+  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast_1", "fibroblast_2"))))
   expect_equal(names(merge2$clust), names(semi$clust))
 })
 
@@ -217,10 +211,9 @@ testthat::test_that("refineClusters works when merges and deletions are asked fo
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
-                   tissue = NULL,
                    anchors = NULL,
                    init_clust = NULL, n_clusts = 2:3,
-                   fixed_profiles = ioprofiles[, 1:3],
+                   reference_profiles = ioprofiles[, 1:3],
                    nb_size = 10,
                    n_starts = 2,
                    align_genes = TRUE,
@@ -358,7 +351,7 @@ testthat::test_that("refineClusters works when merges and deletions are asked fo
 # test rescaleProfiles:
 rescaled <- rescaleProfiles(counts = mini_nsclc$counts,
                             neg = mini_nsclc$neg, 
-                            fixed_profiles = ioprofiles, 
+                            reference_profiles = ioprofiles, 
                             max_rescaling = 5)
 testthat::test_that("rescaleProfiles works as intended", {
   expect_true(is.matrix(rescaled$profiles))

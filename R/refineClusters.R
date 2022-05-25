@@ -74,20 +74,20 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
     message(paste0("Subclustering ", name))
     use <- which(colnames(newlogliks)[apply(newlogliks, 1, which.max)] == name)
     # run insitutype on just the named cell type:
-    temp <- runinsitutype(counts = counts[use, ],
-                          neg = neg[use],
-                          bg = bg[use],
-                          cohort = cohort[use],
-                          n_clusts = subcluster[[name]],
-                          n_starts = 3, n_benchmark_cells = 5000,
-                          n_phase1 = 2000, n_phase2 = 10000, n_phase3 = 20000,
-                          n_chooseclusternumber = 2000)
+    temp <- insitutype(counts = counts[use, ],
+                       neg = neg[use],
+                       bg = bg[use],
+                       cohort = cohort[use],
+                       n_clusts = subcluster[[name]],
+                       n_starts = 3, n_benchmark_cells = 5000,
+                       n_phase1 = 2000, n_phase2 = 10000, n_phase3 = 20000,
+                       n_chooseclusternumber = 2000)
     # get logliks for all cells vs. the new clusters:
     subclustlogliks <- insitutypeML(counts = counts,
                                     neg = neg,
                                     bg = bg,
                                     cohort = cohort,
-                                    fixed_profiles = temp$profiles,
+                                    reference_profiles = temp$profiles,
                                     align_genes = TRUE)$logliks
     colnames(subclustlogliks) <- paste0(name, "_", seq_len(ncol(subclustlogliks)))
     # safeguard in case we've created a cell type name that already exists:
