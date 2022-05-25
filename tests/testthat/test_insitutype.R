@@ -13,7 +13,6 @@ if (FALSE) {
   nbclust = MLEcell:::nbclust
   Mstep=MLEcell:::Mstep
   Estep=MLEcell:::Estep
-  runinsitutype=MLEcell:::runinsitutype
 }
 
 # for line-by-line debugging:
@@ -60,7 +59,6 @@ testthat::test_that("supervised cell typing produces correct outputs", {
 # test semi-supervised with 0 new clusts:
 semi <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
-                  tissue = sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                   bg = NULL,
                   init_clust = NULL, 
                   n_clusts = 0,
@@ -90,7 +88,6 @@ testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = NULL,
-                    tissue =  sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                     init_clust = NULL, n_clusts = 2:5,
                     fixed_profiles = NULL,
                     anchors = NULL,
@@ -124,7 +121,6 @@ init_clust <- rep(c("name1", "xxx", "ooo"), each = nrow(mini_nsclc$counts) / 3)[
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = 0.03,
-                    tissue = NULL,
                     init_clust = init_clust, 
                     n_clusts = 6,
                     fixed_profiles = NULL,
@@ -163,7 +159,6 @@ if (FALSE) {
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
-                   tissue =  sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                    anchors = NULL,
                    init_clust = NULL, n_clusts = 2,
                    fixed_profiles = ioprofiles[, 1:3],
@@ -217,7 +212,6 @@ testthat::test_that("refineClusters works when merges and deletions are asked fo
 semi <- insitutype(counts = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
-                   tissue = NULL,
                    anchors = NULL,
                    init_clust = NULL, n_clusts = 2:3,
                    fixed_profiles = ioprofiles[, 1:3],

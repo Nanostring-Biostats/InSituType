@@ -8,7 +8,7 @@ update_logliks_with_cohort_freqs(
   logliks,
   cohort,
   minfreq = 1e-06,
-  nbaselinecells = 100
+  nbaselinecells = 50
 )
 }
 \arguments{

@@ -8,7 +8,8 @@ chooseClusterNumber(
   counts,
   neg,
   bg = NULL,
-  anchors = NULL,
+  fixed_profiles = NULL,
+  cohort = NULL,
   init_clust = NULL,
   n_clusts = 2:12,
   max_iters = 10,
@@ -26,9 +27,9 @@ chooseClusterNumber(
 
 \item{bg}{Expected background}
 
-\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
-Vector elements will be mainly NA's (for non-anchored cells) and cell type names
-for cells to be held constant throughout iterations.}
+\item{fixed_profiles}{Matrix of cluster profiles to hold unchanged throughout iterations.}
+
+\item{cohort}{Vector of cells' cohort assignments.}
 
 \item{init_clust}{Vector of initial cluster assignments.}
 

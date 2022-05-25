@@ -8,10 +8,9 @@ nbclust(
   counts,
   neg,
   bg = NULL,
-  anchors = NULL,
+  fixed_profiles = NULL,
   init_profiles = NULL,
   init_clust = NULL,
-  n_clusts = NULL,
   nb_size = 10,
   cohort = NULL,
   pct_drop = 1/10000,
@@ -27,18 +26,12 @@ nbclust(
 
 \item{bg}{Expected background}
 
-\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
-Vector elements will be mainly NA's (for non-anchored cells) and cell type names
-for cells to be held constant throughout iterations.}
-
 \item{init_profiles}{Matrix of cluster profiles under which to begin iterations.
 If NULL, initial assignments will be automatically inferred, using init_clust 
 if available, and using random clusters if not.}
 
 \item{init_clust}{Vector of initial cluster assignments.
 If NULL, initial assignments will be automatically inferred.}
-
-\item{n_clusts}{Number of clusters, in addition to any pre-specified cell types.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
