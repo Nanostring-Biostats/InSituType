@@ -11,9 +11,11 @@
 #' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #'  Enter 0 to run purely supervised cell typing from fixed profiles. 
 #'  Enter a range of integers to automatically select the optimal number of clusters. 
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
+#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
+#' @param update_reference_profiles Logical, for whether to use the data to update the reference profiles. Default and strong recommendation is TRUE. 
+#'   (However, if the reference profiles are from the same platform as the study, then FALSE could be better.)
 #' @param sketchingdata Optional matrix of data for use in non-random sampling via "sketching".
 #'  If not provided, then the data's first 20 PCs will be used. 
 #' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
@@ -37,8 +39,6 @@
 #' @param min_anchor_cosine For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.
 #' @param min_anchor_llr For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
 #' @param insufficient_anchors_thresh Cell types that end up with fewer than this many anchors after anchor selection will be discarded. 
-#' @param anchor_replacement_thresh Threshold for calling whether a cluster has wandered away from its anchor cells. 
-#'   Clusters whose anchors are reassigned at this rate or higher will be renamed, and only their anchor cells will be used to define a profile for the cluster.
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
 #' @importFrom Matrix colSums
@@ -52,26 +52,24 @@
 #' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
 #' }
 runinsitutype <- function(counts, neg, bg = NULL, 
-                       anchors = NULL,
-                       cohort = NULL,
-                       n_clusts,
-                       fixed_profiles = NULL, 
-                       sketchingdata = NULL,
-                       align_genes = TRUE, nb_size = 10, 
-                       init_clust = NULL, n_starts = 5, n_benchmark_cells = 5000,
-                       n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
-                       n_chooseclusternumber = 2000,
-                       pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
-                       n_anchor_cells = 500, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 20,
-                       anchor_replacement_thresh = 0.75) {
+                          anchors = NULL,
+                          cohort = NULL,
+                          n_clusts,
+                          reference_profiles = NULL, 
+                          update_reference_profiles = TRUE,
+                          sketchingdata = NULL,
+                          align_genes = TRUE, nb_size = 10, 
+                          init_clust = NULL, n_starts = 5, n_benchmark_cells = 5000,
+                          n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
+                          n_chooseclusternumber = 2000,
+                          pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
+                          n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.03, insufficient_anchors_thresh = 20) {
   
   #### preliminaries ---------------------------
   
   if (any(rowSums(counts) == 0)) {
     stop("Cells with 0 counts were found. Please remove.")
   }
-  
-  # (note: no longer aligning counts matrix to fixed profiles except within the find_anchor_cells function.)
   
   ## get neg in condition 
   if (is.null(names(neg))) {
@@ -97,33 +95,43 @@ runinsitutype <- function(counts, neg, bg = NULL,
     names(bg) <- rownames(counts)
   }
   
-  #### select anchor cells if not provided: ------------------------------
-  if (is.null(anchors) & !is.null(fixed_profiles)) {
-    message("automatically selecting anchor cells with the best fits to fixed profiles")
-    anchors <- find_anchor_cells(counts = counts, 
-                                 neg = NULL, 
-                                 bg = bg, 
-                                 profiles = fixed_profiles, 
-                                 size = nb_size, 
-                                 n_cells = n_anchor_cells, 
-                                 min_cosine = min_anchor_cosine, 
-                                 min_scaled_llr = min_anchor_llr,
-                                 insufficient_anchors_thresh = insufficient_anchors_thresh) 
+  #### update reference profiles ----------------------------------
+  if (!is.null(reference_profiles)) {
+    if (update_reference_profiles) {
+      update_result <- updateReferenceProfiles(reference_profiles,
+                                               counts = counts, 
+                                               neg = neg,
+                                               bg = bg,
+                                               nb_size = nb_size,
+                                               anchors = anchors,
+                                               n_anchor_cells = n_anchor_cells, 
+                                               min_anchor_cosine = min_anchor_cosine, 
+                                               min_anchor_llr = min_anchor_llr)
+      fixed_profiles <- update_result$updated_profiles
+      anchors <- update_result$anchors
+    } else {
+      fixed_profiles <- reference_profiles
+    }
   }
-  if (is.null(anchors) & any(n_clusts == 0)) {
-    stop("No anchors were selected, and n_clusts = 0. The algorithm can't run under these conditions. 
-         Solutions include: 1. make anchor selection more generous. 2. select anchors by hand. 3. increase n_clusts")
+  # align the genes from fixed_profiles and counts
+  if (align_genes & !is.null(fixed_profiles)) {
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    
+    # subset to only the shared genes:
+    counts <- counts[, sharedgenes]
+    fixed_profiles <- fixed_profiles[sharedgenes, ]
+    
+    # warn about genes being lost:
+    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from clustering: ",
+                     paste0(lostgenes, collapse = ",")))
+    }
+    if (length(lostgenes) > 50) {
+      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from clustering"))
+    }
   }
-  
-  # test anchors are valid:
-  anchorcellnames = NULL
-  if (!is.null(anchors) & (length(anchors) != nrow(counts))) {
-    stop("anchors must have length equal to the number of cells (row) in counts")
-  }
-  if (!is.null(anchors)) {
-    names(anchors) <- rownames(counts)
-    anchorcellnames <- names(anchors)[!is.na(anchors)]
-  }
+
   
   #### set up subsetting: ---------------------------------
   # get data for subsetting if not already provided
@@ -144,15 +152,15 @@ runinsitutype <- function(counts, neg, bg = NULL,
   n_benchmark_cells = min(n_benchmark_cells, nrow(counts))
   
   
-  ### choose cluster number: -----------------------------
+  #### choose cluster number: -----------------------------
   if (!is.null(init_clust)) {
     if (!is.null(n_clusts)) {
       message("init_clust was specified; this will overrule the n_clusts argument.")
     }
-    n_clusts <- length(setdiff(unique(init_clust), unique(anchors)))
+    n_clusts <- length(setdiff(unique(init_clust), colnames(fixed_profiles)))
   }
   if (is.null(n_clusts)) {
-    n_clusts <- 1:12 + (is.null(anchors))
+    n_clusts <- 5:15 + 5*(is.null(fixed_profiles))
   }
   # get optimal number of clusters
   if (length(n_clusts) > 1) {
@@ -166,14 +174,13 @@ runinsitutype <- function(counts, neg, bg = NULL,
                                      returnBins=FALSE,
                                      minCellsPerBin = 1,
                                      seed=NULL)
-    chooseclusternumber_subset <- unique(c(chooseclusternumber_subset, anchorcellnames))
     chooseclusternumber_subset <- match(chooseclusternumber_subset, rownames(counts))
     
     n_clusts <- chooseClusterNumber(
       counts = counts[chooseclusternumber_subset, ], 
       neg = neg[chooseclusternumber_subset], 
       bg = bg[chooseclusternumber_subset], 
-      anchors = anchors[chooseclusternumber_subset], 
+      fixed_profiles = fixed_profiles,
       init_clust = NULL, 
       n_clusts = n_clusts,
       max_iters = max_iters,
@@ -202,8 +209,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                                              returnBins=FALSE,
                                              minCellsPerBin = 1,
                                              seed=NULL)
-      random_start_subsets[[i]] <- unique(c(random_start_subsets[[i]], anchorcellnames))
-      
+
       # convert IDs to row indices:
       random_start_subsets[[i]] <- match(random_start_subsets[[i]], rownames(counts))
       
@@ -227,20 +233,15 @@ runinsitutype <- function(counts, neg, bg = NULL,
       cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
       tempinit <- rep(cluster_name_pool[seq_len(n_clusts)], each = ceiling(length(random_start_subsets[[i]]) / n_clusts))[
         seq_along(random_start_subsets[[i]])]
-      if (!is.null(anchors)) {
-        anchors_in_subset <- anchors[random_start_subsets[[i]]]
-        tempinit[!is.na(anchors_in_subset)] <- anchors_in_subset[!is.na(anchors_in_subset)]
-      }
-      
+     
       profiles_from_random_starts[[i]] <- nbclust(
         counts = counts[random_start_subsets[[i]], ], 
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
-        anchors = anchors[random_start_subsets[[i]]], 
+        fixed_profiles = fixed_profiles,
         cohort = cohort[random_start_subsets[[i]]],
         init_profiles = NULL,
         init_clust = tempinit, 
-        n_clusts = n_clusts,
         nb_size = nb_size,
         pct_drop = 1/500,
         min_prob_increase = min_prob_increase,
@@ -276,8 +277,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
                              seed=NULL)
-  phase2_sample <- unique(c(phase2_sample, anchorcellnames))
-  
+
   # convert IDs to row indices:
   phase2_sample <- match(phase2_sample, rownames(counts))
   
@@ -292,11 +292,10 @@ runinsitutype <- function(counts, neg, bg = NULL,
   clust2 <- nbclust(counts = counts[phase2_sample, ], 
                     neg = neg[phase2_sample], 
                     bg = bg[phase2_sample],
-                    anchors = anchors[phase2_sample],
+                    fixed_profiles = fixed_profiles,
                     cohort = cohort[phase2_sample],
                     init_profiles = tempprofiles, 
                     init_clust = temp_init_clust, 
-                    n_clusts = n_clusts,
                     nb_size = nb_size,
                     pct_drop = 1/1000,
                     min_prob_increase = min_prob_increase,
@@ -313,8 +312,7 @@ runinsitutype <- function(counts, neg, bg = NULL,
                              returnBins=FALSE,
                              minCellsPerBin = 1,
                              seed=NULL)
-  phase3_sample <- unique(c(phase3_sample, anchorcellnames))
-  
+
   # convert IDs to row indices:
   phase3_sample <- match(phase3_sample, rownames(counts))
   
@@ -323,63 +321,17 @@ runinsitutype <- function(counts, neg, bg = NULL,
   clust3 <- nbclust(counts = counts[phase3_sample, ], 
                     neg = neg[phase3_sample], 
                     bg = bg[phase3_sample],
-                    anchors = anchors[phase3_sample],
+                    fixed_profiles = fixed_profiles,
                     cohort = cohort[phase3_sample],
                     init_profiles = tempprofiles, 
-                    init_clust = NULL,  #temp_init_clust, 
-                    n_clusts = n_clusts,
+                    init_clust = NULL,  
                     nb_size = nb_size,
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase,
                     max_iters = max_iters)
   profiles <- clust3$profiles
   
-  #### if anchor cells were used, check their assignments and rename clusters that have moved away from their anchor cells:
-  
-  # get best-fitting clusters for anchor cells:
-  if (!is.null(anchors)) {
-    anchorprobs <- Mstep(counts = counts[!is.na(anchors), ],
-                         means = profiles,
-                         cohort = cohort[!is.na(anchors)], 
-                         bg = bg[!is.na(anchors)],
-                         size = nb_size)
-    
-    anchor_bestclusters <- colnames(anchorprobs)[apply(anchorprobs, 1, which.max)]
-    # flag clusters that have moved from anchor cells
-    temptable <- table(anchors[!is.na(anchors)], anchor_bestclusters)
-    anchor_transition_table = matrix(0, ncol(anchorprobs), ncol(anchorprobs),
-                                     dimnames = list(colnames(anchorprobs), colnames(anchorprobs)))
-    anchor_transition_table[rownames(temptable), colnames(temptable)] = temptable
-    wandering_score <- diag(anchor_transition_table) / table(anchors[!is.na(anchors)])[rownames(anchor_transition_table)]
-    flaggedclusters <- names(which(wandering_score < anchor_replacement_thresh))
-    
-    if (length(flaggedclusters) > 0) {
-      
-      # warn:
-      message(paste0("The following clusters moved away from their anchor cells and were renamed: ",
-                     paste0(flaggedclusters, collapse = ", ")))
-      
-      cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
-      newnames <- setdiff(cluster_name_pool, colnames(clust3$profiles))[seq_along(flaggedclusters)]
-      names(newnames) <- flaggedclusters
-      
-      # rename flagged clusters, then reassign flagged anchor cells back to their original cell type
-      newclust = clust3$clust
-      for (clustname in names(newnames)) {
-        # rename all cells in the cluster to the new name: 
-        newclust[newclust == clustname] <- newnames[clustname]
-        # save the anchor cells:
-        newclust[!is.na(anchors[phase3_sample]) & (anchors[phase3_sample] == clustname)] <- clustname
-      }
-      
-      # re-compute profiles:
-      profiles <- Estep(counts[phase3_sample, ], 
-                        clust = newclust,
-                        neg = neg[phase3_sample])
-    }
-  }
 
-  
   #### phase 4: -----------------------------------------------------------------
   message(paste0("phase 4: classifying all ", nrow(counts), " cells"))
   

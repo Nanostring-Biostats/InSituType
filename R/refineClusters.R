@@ -88,7 +88,7 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
                                     bg = bg,
                                     cohort = cohort,
                                     fixed_profiles = temp$profiles,
-                                    align_genes = TRUE)$loglik
+                                    align_genes = TRUE)$logliks
     colnames(subclustlogliks) <- paste0(name, "_", seq_len(ncol(subclustlogliks)))
     # safeguard in case we've created a cell type name that already exists:
     if (any(is.element(colnames(subclustlogliks), colnames(newlogliks)))) {

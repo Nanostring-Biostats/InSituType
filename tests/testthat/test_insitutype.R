@@ -26,6 +26,21 @@ if (FALSE) {
   sketchingdata = NULL; anchor_replacement_thresh = 5
 }
 
+# test nbclust smei-sup
+sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
+nbres <- nbclust(counts = mini_nsclc$counts[, sharedgenes], 
+                 neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL, 
+                 fixed_profiles = ioprofiles[sharedgenes, 1:3],
+                 init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(mini_nsclc$counts) / 2), 
+                 nb_size = 10, 
+                 cohort = rep("a", nrow(mini_nsclc$counts)), 
+                 pct_drop = 1/10000,    
+                 min_prob_increase = 0.05, max_iters = 3, logresults = FALSE) 
+testthat::test_that("semi-sup nbclust preserves fixedprofiles", {
+  expect_true(all(abs(diag(cor(nbres$profiles[, colnames(ioprofiles)[1:3]], ioprofiles[sharedgenes, ]))) == 1))
+})
+
+
 # test supervised cell typing using direct loglik calcs:
 sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
@@ -186,9 +201,10 @@ merge2 <- refineClusters(
   logliks = semi$logliks, 
   counts = mini_nsclc$counts,
   neg = Matrix::rowMeans(mini_nsclc$neg),
-  bg = NULL, cohort = NULL)
+  bg = NULL, 
+  cohort = NULL)
 testthat::test_that("refineClusters works when merges and deletions are asked for", {
-  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast_1", "fibroblast_2","a_cl2"))))
+  expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast_1", "fibroblast_2","a_cl2", "b_cl3"))))
   expect_true(all(is.na(merge2$logliks[semi$logliks[, "endothelial"] == 1, 1])))
   expect_equal(names(merge2$clust), names(semi$clust))
 })
@@ -336,4 +352,17 @@ testthat::test_that("refineClusters works when merges and deletions are asked fo
   expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "myeloid", "fibroblast_1", "fibroblast_2", "mast"))))
   expect_true(all(is.na(merge2$logliks[sup$logliks[, "endothelial"] == 1, 1])))
   expect_equal(names(merge2$clust), names(sup$clust))
+})
+
+
+# test rescaleProfiles:
+rescaled <- rescaleProfiles(counts = mini_nsclc$counts,
+                            neg = mini_nsclc$neg, 
+                            fixed_profiles = ioprofiles, 
+                            max_rescaling = 5)
+testthat::test_that("rescaleProfiles works as intended", {
+  expect_true(is.matrix(rescaled$profiles))
+  expect_true(is.vector(rescaled$scaling_factors))
+  expect_true(all(rescaled$scaling_factors >= 1/5))
+  expect_true(all(rescaled$scaling_factors <= 5))
 })

@@ -127,16 +127,12 @@ Estep <- function(counts, clust, neg) {
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
-#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
-#'  for cells to be held constant throughout iterations. 
 #' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
 #' @param init_profiles Matrix of cluster profiles under which to begin iterations.
 #' If NULL, initial assignments will be automatically inferred, using init_clust 
 #' if available, and using random clusters if not. 
 #' @param init_clust Vector of initial cluster assignments.
 #' If NULL, initial assignments will be automatically inferred.
-#' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param  Numer of iterations
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
@@ -155,8 +151,9 @@ Estep <- function(counts, clust, neg) {
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
 #' @export
-nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
-                    init_profiles = NULL, init_clust = NULL, n_clusts = NULL,
+nbclust <- function(counts, neg, bg = NULL, 
+                    fixed_profiles = NULL,
+                    init_profiles = NULL, init_clust = NULL, 
                     nb_size = 10, 
                     cohort = NULL, 
                     pct_drop = 1/10000,   
@@ -172,8 +169,10 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
   if (length(bg) == 1) {
     bg = rep(bg, nrow(counts))
   }
-  if (!is.null(anchors) & !identical(names(anchors), rownames(counts))) {
-    stop("names of anchors and rownames of counts are misaligned")
+  if (!is.null(fixed_profiles)) {
+    if (!identical(rownames(fixed_profiles), colnames(counts))) {
+      stop("gene ids in fixed profiles and counts aren't aligned")
+    }
   }
 
   clusterlog = NULL
@@ -194,7 +193,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     clust_old <- rep("unassigned", nrow(counts))
     names(clust_old) <- rownames(counts)
     profiles <- init_profiles
-    clustnames <- colnames(init_profiles)
   } 
   # if no init_profiles are provided, derive them:
   if (is.null(init_profiles)) {
@@ -204,8 +202,13 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     profiles <- Estep(counts = counts[!is.na(clust_old), ],
                       clust = init_clust[!is.na(clust_old)],
                       neg = neg[!is.na(clust_old)])
-    clustnames <- unique(init_clust)
   }
+  # keep fixed_profiles unchanged:
+  if (length(profiles) == 0) {
+    profiles <- NULL
+  }
+  profiles <- cbind(profiles[, setdiff(colnames(profiles), colnames(fixed_profiles)), drop = FALSE], fixed_profiles)
+  clustnames <- colnames(profiles)
   
   #### run EM algorithm iterations: ----------------------------------
   pct_changed = c()
@@ -222,14 +225,6 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
                    cohort = cohort, 
                    bg = bg,
                    size = nb_size)
-    # override assignments for anchor cells
-    if (!is.null(anchors)) {
-      for (cell in setdiff(unique(anchors), NA)) {
-        temprows <- which((anchors == cell) & !is.na(anchors))
-        probs[temprows, cell] <- 1 #rep(1, sum((anchors == cell) & !is.na(anchors)))
-        probs[temprows, setdiff(colnames(probs), cell)] <- 0
-      }
-    }
     if (logresults) {
       clusterlog <- cbind(clusterlog, colnames(probs)[apply(probs, 1, which.max)])
     }
@@ -237,16 +232,16 @@ nbclust <- function(counts, neg, bg = NULL, anchors = NULL,
     oldprofiles <- profiles
 
     # E-step: update profiles:
-    if (n_clusts != 0){
-      tempclust <- colnames(probs)[apply(probs, 1, which.max)]
-      profiles <- Estep(counts = counts,
-                        clust = tempclust,
-                        neg = neg)        
-    }
+    tempclust <- colnames(probs)[apply(probs, 1, which.max)]
+    profiles <- Estep(counts = counts,
+                      clust = tempclust,
+                      neg = neg)        
     
     # for any profiles that have been lost, replace them with their previous version:
-    lostprofiles = names(which(colSums(!is.na(profiles)) == 0))
-    profiles[, lostprofiles] = oldprofiles[, lostprofiles]
+    lostprofiles = setdiff(clustnames, colnames(profiles))
+    profiles <- cbind(profiles, oldprofiles[, lostprofiles, drop = FALSE])[, clustnames]
+    # keep fixed_profiles unchanged:
+    profiles[, colnames(fixed_profiles)] <- as.vector(fixed_profiles)
     
     # get cluster assignment
     clust = colnames(probs)[apply(probs, 1, which.max)]
@@ -297,7 +292,7 @@ ismax <- function(x) {
 #' @param nbaselinecells Number of cells from baseline distribution to add to the 
 #'  cohort-specific frequencies, thereby shrinking each cohort's data towards the population
 #' @return An adjusted logliks matrix
-update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-6, nbaselinecells = 100) {
+update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-6, nbaselinecells = 50) {
   # get overall cluster frequencies:
   clust <- colnames(logliks)[apply(logliks, 1, which.max)]
   baselinefreqs <- prop.table(table(clust))
