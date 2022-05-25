@@ -12,6 +12,7 @@
 #' \item clust: a vector of cluster assignments
 #' \item prob: Vector of posterior probabilities for each cell type
 #' \item logliks: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
+#' \item profiles: a matrix of the average background-subracted profile of each cell type after merging/deleting/subclustering
 #' }
 #' @export
 #' @examples
@@ -108,7 +109,14 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
   prob <- apply(probs, 1, max)
   names(prob) <- names(clust)
   
-  out <- list(clust = clust, prob = prob, logliks = round(newlogliks, 4))  # (rounding logliks to save memory)
+  # re-calculate profiles if available:
+  profiles <- NULL
+  if (!is.null(counts) & !is.null(neg)) {
+    profiles <- Estep(counts = counts,
+                      clust = clust,
+                      neg = neg)
+  }
+  out <- list(clust = clust, prob = prob, logliks = round(newlogliks, 4), profiles = profiles)  # (rounding logliks to save memory)
   return(out)
 }
 
