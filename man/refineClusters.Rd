@@ -30,6 +30,7 @@ A list with two elements:
 \item clust: a vector of cluster assignments
 \item prob: Vector of posterior probabilities for each cell type
 \item logliks: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
+\item profiles: a matrix of the average background-subracted profile of each cell type after merging/deleting/subclustering
 }
 }
 \description{
