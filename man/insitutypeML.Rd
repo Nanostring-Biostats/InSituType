@@ -9,7 +9,7 @@ insitutypeML(
   neg = NULL,
   bg = NULL,
   cohort = NULL,
-  fixed_profiles,
+  reference_profiles,
   nb_size = 10,
   align_genes = TRUE
 )
@@ -23,13 +23,13 @@ insitutypeML(
 
 \item{cohort}{Vector of cells' cohort memberships}
 
-\item{fixed_profiles}{Matrix of expression profiles of pre-defined clusters,
+\item{reference_profiles}{Matrix of expression profiles of pre-defined clusters,
 e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 Colnames must all be included in the init_clust variable.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
-\item{align_genes}{Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.}
+\item{align_genes}{Logical, for whether to align the counts matrix and the reference_profiles by gene ID.}
 }
 \value{
 A list, with the following elements:

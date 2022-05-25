@@ -6,11 +6,11 @@
 #' @param neg Vector of mean negprobe counts per cell. Can be provided 
 #' @param bg Expected background
 #' @param cohort Vector of cells' cohort memberships
-#' @param fixed_profiles Matrix of expression profiles of pre-defined clusters,
+#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
 #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 #'  Colnames must all be included in the init_clust variable.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
+#' @param align_genes Logical, for whether to align the counts matrix and the reference_profiles by gene ID.
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item clust: a vector given cells' cluster assignments
@@ -19,7 +19,7 @@
 #' \item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
 #' }
 #' @export
-insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, fixed_profiles, nb_size = 10, align_genes = TRUE) {
+insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, reference_profiles, nb_size = 10, align_genes = TRUE) {
   
   # get vector of expected background:
   if (is.null(bg) & is.null(neg)) {
@@ -40,20 +40,20 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, fixed_pro
   
   # align genes:
   if (align_genes) {
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    sharedgenes <- intersect(rownames(reference_profiles), colnames(counts))
+    lostgenes <- setdiff(colnames(counts), rownames(reference_profiles))
     
     # subset:
     counts <- counts[, sharedgenes]
-    fixed_profiles <- fixed_profiles[sharedgenes, ]
+    reference_profiles <- reference_profiles[sharedgenes, ]
     
     # warn about genes being lost:
     if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from cell typing: ",
+      message(paste0("The following genes in the count data are missing from reference_profiles and will be omitted from cell typing: ",
                      paste0(lostgenes, collapse = ",")))
     }
     if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from cell typing"))
+      message(paste0(length(lostgenes), " genes in the count data are missing from reference_profiles and will be omitted from cell typing"))
     }
   }
   
@@ -63,7 +63,7 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, fixed_pro
   }
   
   # get logliks
-  logliks <- apply(fixed_profiles, 2, function(ref) {
+  logliks <- apply(reference_profiles, 2, function(ref) {
     lldist(x = ref,
            mat = counts,
            bg = bg,

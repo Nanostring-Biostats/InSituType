@@ -96,6 +96,7 @@ insitutype <- function(counts, neg, bg = NULL,
   }
   
   #### update reference profiles ----------------------------------
+  fixed_profiles <- NULL
   if (!is.null(reference_profiles)) {
     if (update_reference_profiles) {
       update_result <- updateReferenceProfiles(reference_profiles,
@@ -180,7 +181,7 @@ insitutype <- function(counts, neg, bg = NULL,
       counts = counts[chooseclusternumber_subset, ], 
       neg = neg[chooseclusternumber_subset], 
       bg = bg[chooseclusternumber_subset], 
-      fixed_profiles = fixed_profiles,
+      fixed_profiles = reference_profiles,
       init_clust = NULL, 
       n_clusts = n_clusts,
       max_iters = max_iters,
@@ -338,7 +339,7 @@ insitutype <- function(counts, neg, bg = NULL,
   out <- insitutypeML(counts = counts, 
                       neg = neg, 
                       bg = bg, 
-                      fixed_profiles = profiles, 
+                      reference_profiles = profiles, 
                       cohort = cohort,
                       nb_size = nb_size, 
                       align_genes = TRUE) 
