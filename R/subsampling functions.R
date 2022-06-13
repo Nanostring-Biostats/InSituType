@@ -46,8 +46,7 @@ prepDataForSketching <- function(counts) {
 #' geoSketchRes <- geoSketch(X, N, returnBins=TRUE) # Generate list of sampled cells and return named vector of binIDs used for sampling
 
 
-#' @title geoSketch
-#' Function for sampling cells evenly across expression space
+#' Sampling cells evenly across expression space
 #'
 #' Given an expression matrix, evenly bin cells across expression space and return bin labels and/or sampled cellIDs
 #' @param X feature matrix with cellIDs as rows and featureIDs as columns (can be counts, normalized expression, PCA, UMAP, etc.)
