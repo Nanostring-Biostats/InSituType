@@ -14,6 +14,7 @@
 #' @export
 #' @importFrom mclust Mclust
 #' @importFrom mclust predict.Mclust
+#' @importFrom mclust mclustBIC
 fastCohorting <- function(mat, n_cohorts = NULL, gaussian_transform = TRUE) {
   
   if (any(is.na(mat))) {

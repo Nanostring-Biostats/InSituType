@@ -2,10 +2,7 @@
 % Please edit documentation in R/subsampling functions.R
 \name{geoSketch}
 \alias{geoSketch}
-\title{geoSketch
-Function for sampling cells evenly across expression space
-
-Given an expression matrix, evenly bin cells across expression space and return bin labels and/or sampled cellIDs}
+\title{Function for creating a biased sample of a given dataset with the aim of retaining cells with unique expression vectors}
 \usage{
 geoSketch(
   X,
@@ -52,4 +49,7 @@ N <- 100 # Select the desired sample size
 
 sampledCells <- geoSketch(X, N) # Generate list of sampled cells
 geoSketchRes <- geoSketch(X, N, returnBins=TRUE) # Generate list of sampled cells and return named vector of binIDs used for sampling
+Sampling cells evenly across expression space
+
+Given an expression matrix, evenly bin cells across expression space and return bin labels and/or sampled cellIDs
 }
