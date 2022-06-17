@@ -105,7 +105,7 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
   clust <- colnames(newlogliks)[apply(newlogliks, 1, which.max)]
   names(clust) <- rownames(newlogliks)
   
-  probs <- logliks2probs(logliks)
+  probs <- logliks2probs(newlogliks)
   prob <- apply(probs, 1, max)
   names(prob) <- names(clust)
   
@@ -116,7 +116,13 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
                       clust = clust,
                       neg = neg)
   }
-  out <- list(clust = clust, prob = prob, logliks = round(newlogliks, 4), profiles = profiles)  # (rounding logliks to save memory)
+  # aligns profiles and logliks, removing lost clusters:
+  logliks_from_lost_celltypes <- newlogliks[, !is.element(colnames(newlogliks), unique(clust)), drop = FALSE]
+  newlogliks <- newlogliks[, is.element(colnames(newlogliks), clust), drop = FALSE]
+  profiles <- profiles[, colnames(newlogliks), drop = FALSE]
+  
+  out <- list(clust = clust, prob = prob, logliks = round(newlogliks, 4), # (rounding logliks to save memory)
+              profiles = profiles, logliks_from_lost_celltypes = round(logliks_from_lost_celltypes, 4))  
   return(out)
 }
 

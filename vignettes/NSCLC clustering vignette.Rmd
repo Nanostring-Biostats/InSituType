@@ -143,7 +143,7 @@ unsup <- insitutype(counts = counts,
 The function returns 4 useful outputs: a vector of cells' cluster assignments, 
 a vector of the posterior probability for each cell typing call,
 a matrix of cells' log-likelihoods under each cluster, 
-and a matrix of the mean backgroud-subtracted expression profile of each cluster. 
+and a matrix of the mean background-subtracted expression profile of each cluster. 
 A fifth output, ignorable for unsupervised clustering, records log-likelihoods under clusters that ended up with no cells assigned to them.
 
 ```{r unsup_results, fig.width = 10, fig.height = 6}
@@ -161,11 +161,11 @@ par(mfrow = c(1,2))
 par(mar = c(0,0,3,0))
 
 plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
-          main = "cells in physical space,\ncolored by unsupervised cluster",
+          main = "cells in physical space",
      col = cols[unsup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
 
 plot(mini_nsclc$umap, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
-     main = "cells in UMAP space,\ncolored by unsupervised cluster",     
+     main = "cells in UMAP space",     
      col = cols[unsup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
 legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.7)
 
@@ -204,7 +204,7 @@ Clusters with average posterior probabilities are unreliable. You can either int
 
 Here we can see that clusters f is sometimes confused with clusters g and e (though at a very low rate).
 
-You can also extract the flightpath layout for plottong on your own:
+You can also extract the flightpath layout for plotting on your own:
 
 ```{r fp_layout}
 # compute the flightpath layout:
@@ -219,7 +219,9 @@ str(fp_layout)
 #### Updating clustering results 
 
 After close review, you might want to update your clustering results. 
+
 The function refineCells can modify your results in the following ways:
+
 * merge closely-related or frequently-confused clusters 
 * delete clusters (Sometimes a "catch-all" cluster arises that is frequently confused wiht multiple other clusters. It's best to delete these clusters and let their cells get reassigned to meaningful clusters.)
 * sub-cluster large clusters
