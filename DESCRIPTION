@@ -1,15 +1,17 @@
 Package: MLEcell
 Type: Package
 Title: An R package for performing cell typing in SMI and other single cell data
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut", "cre")),
              person("Zhi", "Yang", email = "zyang@nanostring.com", role = c("aut")))
 Description: An R package for performing cell typing in SMI and other single cell data
+biocViews:
 Imports:
   Matrix,
   RColorBrewer,
   scales,
-  umap
+  umap,
+  BiocManager
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
