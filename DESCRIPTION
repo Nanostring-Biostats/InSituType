@@ -1,7 +1,7 @@
 Package: MLEcell
 Type: Package
 Title: An R package for performing cell typing in SMI and other single cell data
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut", "cre")),
              person("Zhi", "Yang", email = "zyang@nanostring.com", role = c("aut")))
 Description: An R package for performing cell typing in SMI and other single cell data
@@ -11,13 +11,18 @@ Imports:
   RColorBrewer,
   scales,
   umap,
-  BiocManager
+  BiocManager,
+  ggplot2,
+  lsa,
+  SpatialDecon,
+  irlba,
+  mclust,
+  rmarkdown
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Suggests:
-  knitr,
-  rmarkdown
+  knitr
 VignetteBuilder: knitr
 Depends:
   R (>= 2.10)

@@ -30,25 +30,6 @@ prepDataForSketching <- function(counts) {
 #' Function for creating a biased sample of a given dataset with the aim of retaining cells with unique expression vectors
 #'
 #' @export geoSketch
-
-
-#' @examples
-#' 
-#' # Example use of geometric sketching to return sampled list of cellIDs and binIDs
-#' library(Ptolemy) # Load library
-#' data(mini_tma) # Load data
-#' 
-#' mini_tma <- runPCA(mini_tma, expression_values="raw", ncp = 5) # Run PCA
-#' X <- Giotto:::select_dimReduction(mini_tma, name = "pca") # Use PCA results as expression matrix
-#' N <- 100 # Select the desired sample size
-#' 
-#' sampledCells <- geoSketch(X, N) # Generate list of sampled cells
-#' geoSketchRes <- geoSketch(X, N, returnBins=TRUE) # Generate list of sampled cells and return named vector of binIDs used for sampling
-
-
-#' Sampling cells evenly across expression space
-#'
-#' Given an expression matrix, evenly bin cells across expression space and return bin labels and/or sampled cellIDs
 #' @param X feature matrix with cellIDs as rows and featureIDs as columns (can be counts, normalized expression, PCA, UMAP, etc.)
 #' @param N desired sample size
 #' @param alpha defines the acceptable minimum number of bins to sample from as `(1-alpha)*N`
