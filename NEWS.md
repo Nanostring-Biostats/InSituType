@@ -1,4 +1,12 @@
+# MLEcell 1.0.0
+
+* Integrated rcpp support for the package
+* Added `dnbinom` for `sparse matrices`
+* Updated the `unit tests`
+
 # MLEcell 0.1.2
+
+* Updated package dependencies
 
 # MLEcell 0.1.1
 

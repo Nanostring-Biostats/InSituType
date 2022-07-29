@@ -9,9 +9,9 @@ data("mini_nsclc")
 res <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = NULL,
-                    tissue =  sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
+                    # tissue =  sample(letters[1:2], nrow(mini_nsclc$counts), replace = TRUE),
                     init_clust = NULL, n_clusts = 2,
-                    fixed_profiles = NULL,
+                    # fixed_profiles = NULL,
                     anchors = NULL,
                     nb_size = 10,
                     n_starts = 2,
@@ -46,7 +46,7 @@ fp <- flightpath_layout(probs = NULL, logliks = res$logliks, profiles = res$prof
 #text(fp$clustpos[,1], fp$clustpos[,2], rownames(fp$clustpos), col = "red")
 
 test_that("flightpath_layout returns correct format", {
-  expect_true(all(dim(fp$clustpos) == c(4,2)))
+  expect_true(all(dim(fp$clustpos) == c(2,2)))
   expect_true(all(dim(fp$cellpos) == c(nrow(res$logliks),2)))
   expect_true(all(!is.na(fp$clustpos)))
   expect_true(all(!is.na(fp$cellpos)))

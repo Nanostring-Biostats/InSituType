@@ -14,7 +14,12 @@
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
-    mat <- matrix(mat, nrow = 1)
+    mat <- as(matrix(mat, nrow = 1), "dgCMatrix")
+  } else if (is.matrix(mat)){
+    mat <- as(mat, "dgCMatrix")
+  } else if(class(mat)!="dgCMatrix"){
+    errorMessage <- sprintf( "The `type` of parameter `mat` needs to be of one of dgCMatrix, vector, matrix, array, but is found to be of type %s",class(mat))
+    stop( errorMessage )
   }
   # Check dimensions on bg and stop with informative error if not
   #  conformant
@@ -26,7 +31,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
       stop( errorMessage )
     }
   }
-
+  
   # calc scaling factor to put y on the scale of x:
   if ( is.vector( bg ) )
   {
@@ -36,24 +41,27 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   {
     bgsub <- pmax( mat - bg , 0 )
   }
-  s <- rowSums( bgsub ) / sum( x )
+  sum_of_x <- sum( x )
+  s <- Matrix::rowSums( bgsub ) / sum_of_x
   # override it if s is negative:
-  s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
-
+  s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
+  
   # expected counts:
   if ( is.vector( bg ) )
   {
-    yhat <- sweep( s %*% t( x ) , 1 , bg , "+" )
+    yhat <- as(sweep(Matrix::Matrix(s) %*% Matrix::t(x) , 1 , bg , "+" ), "dgCMatrix")
   }
   else
   {
-    yhat <- s %*% t(x) + bg
+    yhat <- as(Matrix::Matrix(s) %*% Matrix::t(x) + bg, "dgCMatrix")
   }
-
   # loglik:
-  lls <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
-
-  return(round(rowSums(lls), digits))
+  # lls <- stats::dnbinom(x = Matrix::as.matrix(mat), size = size, mu = yhat, log = TRUE)
+  lls <- dnbinom_sparse(x = mat, mu = yhat, size_dnb = size)
+  rownames(lls) <- rownames(mat)
+  colnames(lls) <- colnames(mat)
+  
+  return(round(Matrix::rowSums(lls), digits))
 }
 
 
