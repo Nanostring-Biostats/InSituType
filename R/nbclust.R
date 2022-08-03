@@ -35,7 +35,9 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # calc scaling factor to put y on the scale of x:
   if ( is.vector( bg ) )
   {
-    bgsub <- pmax( sweep( mat , 1 , bg , "-" ) , 0 )
+    bgsub <- mat
+    bgsub@x <- bgsub@x - bg[bgsub@i+1]
+    bgsub <- pmax(bgsub, 0)
   }
   else
   {
