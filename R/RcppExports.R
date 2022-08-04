@@ -6,10 +6,10 @@
 #' Probability density function of the negative binomial distribution (written in C++)
 #'
 #' @param x dgCMatrix of quantiles
-#' @param mu dgCMatrix containing Mean of the distribution 
+#' @param mu matrix containing Mean of the distribution 
 #' @param size_dnb Dispersion parameter
 #'
-#' @return dgCMatrix of densities
+#' @return matrix of densities
 #' @useDynLib MLEcell, .registration = TRUE
 #' @importFrom Rcpp evalCpp
 #' @exportPattern "^[[:alpha:]]+" 

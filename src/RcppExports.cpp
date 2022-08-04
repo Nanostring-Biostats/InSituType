@@ -12,13 +12,13 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // dnbinom_sparse
-arma::sp_mat dnbinom_sparse(arma::sp_mat& x, arma::sp_mat& mu, int& size_dnb);
+arma::mat dnbinom_sparse(arma::sp_mat& x, arma::mat& mu, int& size_dnb);
 RcppExport SEXP _MLEcell_dnbinom_sparse(SEXP xSEXP, SEXP muSEXP, SEXP size_dnbSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::sp_mat& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< arma::sp_mat& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type mu(muSEXP);
     Rcpp::traits::input_parameter< int& >::type size_dnb(size_dnbSEXP);
     rcpp_result_gen = Rcpp::wrap(dnbinom_sparse(x, mu, size_dnb));
     return rcpp_result_gen;
