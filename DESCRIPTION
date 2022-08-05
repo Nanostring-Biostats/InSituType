@@ -1,7 +1,7 @@
 Package: MLEcell
 Type: Package
 Title: An R package for performing cell typing in SMI and other single cell data
-Version: 1.0.0
+Version: 1.0.0.9000
 Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut", "cre")),
              person("Zhi", "Yang", email = "zyang@nanostring.com", role = c("aut")))
 Description: An R package for performing cell typing in SMI and other single cell data
