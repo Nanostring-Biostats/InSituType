@@ -1,8 +1,11 @@
+# MLEcell (development version)
+
 # MLEcell 1.0.0
 
 * Integrated rcpp support for the package
 * Added `dnbinom` for `sparse matrices`
 * Updated the `unit tests`
+* Removed `.o` files in `src` folder
 
 # MLEcell 0.1.2
 
