@@ -15,19 +15,19 @@ using namespace arma;
 //' Probability density function of the negative binomial distribution (written in C++)
 //'
 //' @param x dgCMatrix of quantiles
-//' @param mu dgCMatrix containing Mean of the distribution 
+//' @param mu matrix containing Mean of the distribution 
 //' @param size_dnb Dispersion parameter
 //'
-//' @return dgCMatrix of densities
+//' @return matrix of densities
 //' @useDynLib MLEcell, .registration = TRUE
 //' @importFrom Rcpp evalCpp
 //' @exportPattern "^[[:alpha:]]+" 
 //' @export
 // [[Rcpp::export]]
-arma::sp_mat dnbinom_sparse(arma::sp_mat& x, arma::sp_mat& mu, int& size_dnb) {
-  arma::sp_mat res = arma::sp_mat(size(x));
-  arma::sp_mat::const_iterator mu_iter     = mu.begin();
-  arma::sp_mat::const_iterator mu_iter_end = mu.end();
+arma::mat dnbinom_sparse(arma::sp_mat& x, arma::mat& mu, int& size_dnb) {
+  arma::mat res = arma::mat(size(x));
+  arma::mat::const_row_col_iterator mu_iter     = mu.begin_row_col();
+  arma::mat::const_row_col_iterator mu_iter_end = mu.end_row_col();
   for(; mu_iter != mu_iter_end; ++mu_iter){
     double xval = x(mu_iter.row(),mu_iter.col());
     if(!arma::is_finite(xval)){

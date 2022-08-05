@@ -35,7 +35,9 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # calc scaling factor to put y on the scale of x:
   if ( is.vector( bg ) )
   {
-    bgsub <- pmax( sweep( mat , 1 , bg , "-" ) , 0 )
+    bgsub <- mat
+    bgsub@x <- bgsub@x - bg[bgsub@i+1]
+    bgsub <- pmax(bgsub, 0)
   }
   else
   {
@@ -49,19 +51,18 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # expected counts:
   if ( is.vector( bg ) )
   {
-    yhat <- as(sweep(Matrix::Matrix(s) %*% Matrix::t(x) , 1 , bg , "+" ), "dgCMatrix")
+    yhat <- sweep(s %*% t(x), 1, bg, "+")
   }
   else
   {
-    yhat <- as(Matrix::Matrix(s) %*% Matrix::t(x) + bg, "dgCMatrix")
+    yhat <- s %*% t(x) + bg
   }
   # loglik:
-  # lls <- stats::dnbinom(x = Matrix::as.matrix(mat), size = size, mu = yhat, log = TRUE)
+  # lls <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
   lls <- dnbinom_sparse(x = mat, mu = yhat, size_dnb = size)
   rownames(lls) <- rownames(mat)
   colnames(lls) <- colnames(mat)
-  
-  return(round(Matrix::rowSums(lls), digits))
+  return(round(rowSums(lls), digits))
 }
 
 

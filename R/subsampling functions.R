@@ -16,8 +16,9 @@
 #' @export
 prepDataForSketching <- function(counts) {
   # get PCs:
-  scaling_factors <- pmax(apply(counts, 2, quantile, 0.99), 5)
-  pcres <- irlba::prcomp_irlba(x = sweep(counts, 2, scaling_factors, "/"), n = min(20, ncol(counts)-5), retx = TRUE, center = TRUE, scale. = FALSE)$x
+  scaling_factors <- pmax(sparseMatrixStats::colQuantiles(counts, probs=0.99), 5)
+  x <- Matrix::t(Matrix::t(counts) / scaling_factors)
+  pcres <- irlba::prcomp_irlba(x = x, n = min(20, ncol(counts)-5), retx = TRUE, center = TRUE, scale. = FALSE)$x
   rownames(pcres) <- rownames(counts)
   return(pcres)
 }
