@@ -1,4 +1,7 @@
-# MLEcell (development version)
+# MLEcell 1.1.0
+
+* Fix several places counts matrix was being converted to dense to calculate a statistic
+  * Revert conversion to `sparse matrix` of `dense` `mu` matrix and result from `dnbinom`
 
 # MLEcell 1.0.0
 
