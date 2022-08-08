@@ -2,6 +2,7 @@
 #' Update reference profiles
 #' 
 #' Update reference profiles using pre-specified anchor cells, or if no anchors are specified, by first choosing anchor cells
+#' @export 
 updateReferenceProfiles <- function(reference_profiles, counts, neg, bg = NULL, nb_size = 10,
                                     anchors = NULL, n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01) {
   
@@ -180,65 +181,67 @@ updateProfilesFromAnchors_partial_update_incomplete_code <- function(counts, neg
 
 
 
-
-#' Rescale rows of reference profiles based on deconvolution of "bulk" data
-#' 
-#' Estimates platform effects and rescales the reference matrix accordingly
-#' @param counts Counts matrix, cells * genes.
-#' @param neg Vector of mean negprobe counts per cell. Can be provided 
-#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
-#'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-#'  Colnames must all be included in the init_clust variable.
-#' @param align_genes Logical, for whether to align the counts matrix and the reference_profiles by gene ID.
-#' @param nb_size The size parameter to assume for the NB distribution.
-#' @param max_rescaling Scaling factors will be truncated above by this value and below by its inverse (at 1/value and value)
-#' @return 
-#' \enumerate{
-#' \item profiles: A profiles matrix with the rows rescaled according to platform effects
-#' \item scaling_factors: A vector of genes' scaling factors (what they were multiplied by when updating the reference profiles). 
-#' }
-#' @export
-#' @importFrom SpatialDecon spatialdecon
-rescaleProfiles <- function(counts, neg, reference_profiles, align_genes = TRUE, nb_size = 10, max_rescaling = 5) {
-  
-  # align genes:
-  if (align_genes) {
-    sharedgenes <- intersect(rownames(reference_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(reference_profiles))
+if (FALSE) {
+#  #' Rescale rows of reference profiles based on deconvolution of "bulk" data
+#  #' 
+#  #' Estimates platform effects and rescales the reference matrix accordingly
+#  #' @param counts Counts matrix, cells * genes.
+#  #' @param neg Vector of mean negprobe counts per cell. Can be provided 
+#  #' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
+#  #'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
+#  #'  Colnames must all be included in the init_clust variable.
+#  #' @param align_genes Logical, for whether to align the counts matrix and the reference_profiles by gene ID.
+#  #' @param nb_size The size parameter to assume for the NB distribution.
+#  #' @param max_rescaling Scaling factors will be truncated above by this value and below by its inverse (at 1/value and value)
+#  #' @return 
+#  #' \enumerate{
+#  #' \item profiles: A profiles matrix with the rows rescaled according to platform effects
+#  #' \item scaling_factors: A vector of genes' scaling factors (what they were multiplied by when updating the reference profiles). 
+#  #' }
+#  #' @export
+#  #' @importFrom SpatialDecon spatialdecon
+  rescaleProfiles <- function(counts, neg, reference_profiles, align_genes = TRUE, nb_size = 10, max_rescaling = 5) {
     
-    # subset:
-    counts <- counts[, sharedgenes]
-    reference_profiles <- reference_profiles[sharedgenes, ]
+    # align genes:
+    if (align_genes) {
+      sharedgenes <- intersect(rownames(reference_profiles), colnames(counts))
+      lostgenes <- setdiff(colnames(counts), rownames(reference_profiles))
+      
+      # subset:
+      counts <- counts[, sharedgenes]
+      reference_profiles <- reference_profiles[sharedgenes, ]
+      
+      # warn about genes being lost:
+      if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+        message(paste0("The following genes in the count data are missing from reference_profiles and will be omitted from anchor selection: ",
+                       paste0(lostgenes, collapse = ",")))
+      }
+      if (length(lostgenes) > 50) {
+        message(paste0(length(lostgenes), " genes in the count data are missing from reference_profiles and will be omitted from anchor selection"))
+      }
+    }
     
-    # warn about genes being lost:
-    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from reference_profiles and will be omitted from anchor selection: ",
-                     paste0(lostgenes, collapse = ",")))
-    }
-    if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from reference_profiles and will be omitted from anchor selection"))
-    }
+    # get background-subtracted bulk profile:
+    totcounts <- matrix(colSums(counts), ncol(counts))
+    rownames(totcounts) <- colnames(counts)
+    totcountsbgsub <- pmax(totcounts - sum(neg), 0)
+    
+    # deconvolve the bulk profile with spatialdecon:
+    res <- SpatialDecon::spatialdecon(norm = cbind(totcounts, totcounts), 
+                                      bg = sum(neg), 
+                                      X = reference_profiles, 
+                                      resid_thresh = Inf)
+    log2resids <- res$resids[, 1]
+    log2resids <- log2resids - mean(log2resids)
+    scaling_factors <- 2^log2resids
+    scaling_factors <- pmax(pmin(scaling_factors, max_rescaling), max_rescaling^-1)
+    rescaledprofiles <- sweep(reference_profiles, 1, scaling_factors, "*")
+    
+    out = list(profiles = rescaledprofiles,
+               scaling_factors = scaling_factors)
+    return(out)
   }
   
-  # get background-subtracted bulk profile:
-  totcounts <- matrix(colSums(counts), ncol(counts))
-  rownames(totcounts) <- colnames(counts)
-  totcountsbgsub <- pmax(totcounts - sum(neg), 0)
-  
-  # deconvolve the bulk profile with spatialdecon:
-  res <- SpatialDecon::spatialdecon(norm = cbind(totcounts, totcounts), 
-                      bg = sum(neg), 
-                      X = reference_profiles, 
-                      resid_thresh = Inf)
-  log2resids <- res$resids[, 1]
-  log2resids <- log2resids - mean(log2resids)
-  scaling_factors <- 2^log2resids
-  scaling_factors <- pmax(pmin(scaling_factors, max_rescaling), max_rescaling^-1)
-  rescaledprofiles <- sweep(reference_profiles, 1, scaling_factors, "*")
-  
-  out = list(profiles = rescaledprofiles,
-             scaling_factors = scaling_factors)
-  return(out)
 }
   
 
