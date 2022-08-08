@@ -114,7 +114,7 @@ giving us a chance to review the results.
 Alternatively, these steps can be automated within insitutype by setting "update_reference_profiles = TRUE".
 
 
-```{r anchors}
+```{r anchors, fig.width=6, fig.height=5}
 # compute the statistics used to define anchor cells.
 # (This step is slow for big datasets. It's recommended to run this once and save the results. 
 # Then you can iteratively adjust your choices when selecting anchor cells)
@@ -122,29 +122,69 @@ astats <- get_anchor_stats(counts = mini_nsclc$counts,
                            neg = Matrix::rowMeans(mini_nsclc$neg),
                            profiles = ioprofiles)
 
+# estimate per-cell bg as a fraction of total counts:
+negmean.per.totcount = mean(rowMeans(mini_nsclc$neg)) / mean(rowSums(counts))
+per.cell.bg = rowSums(counts) * negmean.per.totcount
+
 # now choose anchors:
 anchors <- choose_anchors_from_stats(counts = counts, 
-                                     neg = annot$negmean, 
+                                     neg = mini_nsclc$negmean, 
+                                     bg = per.cell.bg,
                                      anchorstats = astats, 
-                                     n_cells = 500, 
+                                     n_cells = 50, # a very low value chosen for the mini dataset. Typically hundreds of cells  would be better. 
                                      min_cosine = 0.4, 
-                                     min_scaled_llr = 0.01, 
-                                     insufficient_anchors_thresh = 20)
+                                     min_scaled_llr = 0.03, 
+                                     insufficient_anchors_thresh = 5)
 
 # plot the anchors atop the UMAP:
-
-
-# To be extra careful, remove anchor cells that have high PanCK+ immunofluorescence stains:
-# (Our reference cell types are all PanCK-)
-
-
-
-
+par(mfrow = c(1,1))
+plot(mini_nsclc$umap, pch = 16, cex = 0.1, col = "peachpuff1", xaxt = "n",  yaxt = "n", xlab = "", ylab = "",
+     main = "Selected anchor cells")
+points(mini_nsclc$umap[!is.na(anchors), ], col = iocolors[anchors[!is.na(anchors)]], pch = 16, cex = 0.6)
+legend("topright", pch = 16, col = iocolors[setdiff(unique(anchors), NA)], legend = setdiff(unique(anchors), NA), cex = 0.65)
 
 ```
 
+The above example shows a mostly unsuccessful attempt at selecting anchor cells. 
+(The anchor selection code expects a bigger dataset.)
+
+Problems include:
+
+* No anchor cells were found for most immune cell types 
+* The macrophage anchors (green) occupy two sections of the UMAP - likely one of these sections is a different cell type
+* Half the endothelial anchors are mixed with the plasmablast anchors
 
 
+Countermeaures to these failures could include:
+
+* Use cells' immunofluorescence values to remove PanCK+ cells from the list of immune cell anchors
+* Delete the endothelial anchors that are mixed among the plasmablast anchors
+
+
+We'll continue our demonstration of semi-supervised cell typing pretending that the above anchors were satisfactory. 
+
+The next step is to use the anchors to update the reference profiles:
+
+```{r updateprofiles}
+updatedprofiles <- updateReferenceProfiles(reference_profiles = ioprofiles, 
+                                           counts = mini_nsclc$counts, 
+                                           neg = mini_nsclc$neg, 
+                                           bg = per.cell.bg,
+                                           anchors = anchors) 
+str(updatedprofiles)
+```
+
+If we'd been willing to trust the defaults and not examine partial results, we could have skipped 
+the above steps and just run:
+
+```{r updateprofiles_fast, eval = FALSE}
+updatedprofiles <- updatedprofiles(reference_profiles = ioprofiles, 
+                                           counts = mini_nsclc$counts, 
+                                           neg = mini_nsclc$neg, 
+                                           bg = per.cell.bg,
+                                           anchors = NULL) 
+
+```
 
 #### Incorporating additional data types
 
@@ -192,48 +232,54 @@ cohort <- fastCohorting(immunofluordata,
 table(cohort)
 ```
 
+### Semi-supervised clustering:
 
+The below command performs semi-supervised clustering. 
+We'll let the algorithm try to select the optimal number of clusters from 
+a range of plausible options using the n_clusts argument. 
 
-#### Supervised cell typing
+Note: this should take a few minutes on a standard laptop. 
 
-Run supervised cell typing by calling insitutypeML:
-
-```{r sup, echo=TRUE}
-
-sup <- insitutypeML(counts = mini_nsclc$counts,
-                    neg = Matrix::rowMeans(mini_nsclc$neg),
+```{r unsup, echo=TRUE}
+semisup <- insitutype(counts = counts,
+                    neg = negmean,
                     cohort = cohort,
-                    reference_profiles = ioprofiles)   
+                    bg = NULL, # Enter your own per-cell background estimates here if you have them; otherwise insitutype will use the negprobes to estimate background for you. 
+                    n_clusts = c(5, 6),  # condensed to save time. n_clusts = 5:15 would be more optimal
+                    reference_profiles = updatedprofiles$updated_profiles,
+                    update_reference_profiles = FALSE,
+                    n_phase1 = 200, n_phase2 = 500, n_phase3 = 2000, n_starts = 1, max_iters = 5) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
 ```
 
-The function returns 4 useful outputs: a vector of cell type assignments, 
+The function returns 4 useful outputs: a vector of cells' cluster assignments, 
 a vector of the posterior probability for each cell typing call,
-a matrix of cells' log-likelihoods under each cell typer, 
-and a matrix of the mean background-subtracted expression profile of each cell type
- (these profiles are based on the data, not the reference profiles). 
-A fifth output records log-likelihoods under cell types that ended up with no cells assigned to them.
+a matrix of cells' log-likelihoods under each cluster, 
+and a matrix of the mean background-subtracted expression profile of each cluster. 
+A fifth output records log-likelihoods under clusters that ended up with no cells assigned to them.
+
 
 ```{r unsup_results, fig.width = 10, fig.height = 6}
-str(sup)
-round(head(sup$prob),2)
-heatmap(sweep(sup$profiles, 1, pmax(apply(sup$profiles, 1, max), .2), "/"), scale = "none",
+str(semisup)
+round(head(semisup$prob),2)
+heatmap(sweep(semisup$profiles, 1, pmax(apply(semisup$profiles, 1, max), .2), "/"), scale = "none",
         main = "Mean cell type expression profiles")
 
 # define cluster colors:
 cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
-cols <- cols[seq_along(unique(sup$clust))]
-names(cols) <- unique(sup$clust)
+cols <- cols[seq_along(unique(semisup$clust))]
+names(cols) <- unique(semisup$clust)
+cols[is.element(names(cols), names(iocolors))] = iocolors[names(cols)[is.element(names(cols), names(iocolors))]]
 
 par(mfrow = c(1,2))
 par(mar = c(0,0,3,0))
 
 plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
           main = "cells in physical space",
-     col = cols[sup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+     col = cols[semisup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
 
 plot(mini_nsclc$umap, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
      main = "cells in UMAP space",     
-     col = cols[sup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+     col = cols[semisup$clust], xlab = "", ylab = "", xaxt = "n", yaxt = "n")
 legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.7)
 
 
@@ -248,13 +294,9 @@ This information lets us understand how clusters relate to each other.
 The flightpath_plot function arrays cells according to their cluster probabilities:
 
 ```{r flightpath, fig.width = 5, fig.height = 5}
-# define colors:
-cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
-cols <- cols[seq_along(unique(sup$clust))]
-names(cols) <- unique(sup$clust)
 
 # make the flightpath plot
-fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = sup, col = cols[sup$clust])
+fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = semisup, col = cols[semisup$clust])
 class(fp)
 print(fp)
 
@@ -264,7 +306,7 @@ print(fp)
 In the above plot, a cell atop a cluster centroid is near-certain, while cells 
  halfway between two centroids have 50% posterior probability of belonging to each of those two clusters. 
 The number by each centroid gives the average posterior probability of cells in the cluster. 
-Expect to see this value above 0.9 for clustering major cell type, and above 0.75 when clustering apart closely-related cell types. 
+Expect to see this value above 0.9 for clustering major cell types, and above 0.75 when clustering apart closely-related cell types. 
 Clusters with average posterior probabilities are unreliable. You can either interpret them with caution,
  or you can dissolve them and reassign their cells to other clusters. (The next section covers this operation.)
 
@@ -274,11 +316,11 @@ You can also extract the flightpath layout for plotting on your own:
 
 ```{r fp_layout}
 # compute the flightpath layout:
-fp_layout <- flightpath_layout(logliks = sup$logliks, profiles = sup$profiles)
+fp_layout <- flightpath_layout(logliks = semisup$logliks, profiles = semisup$profiles)
 str(fp_layout)
 # plot it:
 #par(mar = c(0,0,0,0))
-#plot(fp_layout$cellpos, pch = 16, cex = 0.5, col = cols[sup$clust], xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+#plot(fp_layout$cellpos, pch = 16, cex = 0.5, col = cols[semisup$clust], xaxt = "n", yaxt = "n", xlab = "", ylab = "")
 #text(fp_layout$clustpos, rownames(fp_layout$clustpos), cex = 0.5)
 ```
 
@@ -290,25 +332,23 @@ The function refineCells can modify your results in the following ways:
 
 * merge closely-related or frequently-confused clusters 
 * delete clusters (Sometimes a "catch-all" cluster arises that is frequently confused wiht multiple other clusters. It's best to delete these clusters and let their cells get reassigned to meaningful clusters.)
-* sub-cluster large clusters
+* sub-cluster large clusters 
 
 Here we use the refineClusters function to perform all these operations. 
 We also use its "merges" argument to rename cluster c. 
 
 ```{r refineClusters, fig.width = 5, fig.height = 5}
 # refine the clusters:
-newclusts <- refineClusters(logliks = sup$logliks,
-                            merges = c("monocyte" = "myeloid", "mDC" = "myeloid"), 
-                            to_delete = c("pDC"),
-                            subcluster = c("macrophage" = 2),
+newclusts <- refineClusters(logliks = semisup$logliks,
+                            merges = c("fibroblast" = "stroma", "endothelial" = "stroma"), 
+                            to_delete = c("a"),
+                            subcluster = NULL, # subclustering via refineClusters is not recommended for semi-supervised results
                             counts = counts,
                             neg = negmean) 
 str(newclusts)
 
 # plot the updated results:
-cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
-cols <- cols[seq_along(unique(newclusts$clust))]
-names(cols) <- unique(newclusts$clust)
+cols["stroma"] = "black"
 fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = newclusts, col = cols[newclusts$clust])
 class(fp)
 print(fp)
