@@ -2,6 +2,7 @@
 #' Update reference profiles
 #' 
 #' Update reference profiles using pre-specified anchor cells, or if no anchors are specified, by first choosing anchor cells
+#' @export 
 updateReferenceProfiles <- function(reference_profiles, counts, neg, bg = NULL, nb_size = 10,
                                     anchors = NULL, n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01) {
   
