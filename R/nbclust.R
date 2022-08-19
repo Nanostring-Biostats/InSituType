@@ -23,17 +23,18 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   }
   # Check dimensions on bg and stop with informative error if not
   #  conformant
-  if ( is.vector( bg ) )
+  if (is.vector(bg))
   {
-    if ( !identical( length( bg ) , nrow( mat ) ) )
+    if (!identical(length(bg), nrow(mat)))
     {
-      errorMessage <- sprintf( "Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d" , nrow( mat ) , length( bg ) )
-      stop( errorMessage )
+      errorMessage <- sprintf("Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d",
+                              nrow(mat), length(bg))
+      stop(errorMessage)
     }
   }
   
   # calc scaling factor to put y on the scale of x:
-  if ( is.vector( bg ) )
+  if (is.vector(bg))
   {
     bgsub <- mat
     bgsub@x <- bgsub@x - bg[bgsub@i+1]
@@ -41,28 +42,30 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   }
   else
   {
-    bgsub <- pmax( mat - bg , 0 )
+    bgsub <- pmax(mat - bg, 0)
   }
-  sum_of_x <- sum( x )
-  s <- Matrix::rowSums( bgsub ) / sum_of_x
+  sum_of_x <- sum(x)
+  s <- Matrix::rowSums(bgsub) / sum_of_x
   # override it if s is negative:
   s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
   
-  # expected counts:
-  if ( is.vector( bg ) )
-  {
-    yhat <- sweep(s %*% t(x), 1, bg, "+")
+  # iterate over each gene
+  res <- rep(0, nrow(mat))
+  for (j in seq_along(colnames(mat))) {
+    yhat <- s*x[j]
+    if (is.vector(bg))
+    {
+      yhat <- yhat + bg
+    }
+    else
+    {
+      yhat <- yhat + bg[, j]
+    }
+    lls.j <- stats::dnbinom(x = mat[, j], size = size, mu = s*x[j], log = TRUE)
+    res <- res + lls.j
   }
-  else
-  {
-    yhat <- s %*% t(x) + bg
-  }
-  # loglik:
-  # lls <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
-  lls <- dnbinom_sparse(x = mat, mu = yhat, size_dnb = size)
-  rownames(lls) <- rownames(mat)
-  colnames(lls) <- colnames(mat)
-  return(round(rowSums(lls), digits))
+  names(res) <- rownames(mat)
+  return(round(res, digits))
 }
 
 
