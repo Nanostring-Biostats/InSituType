@@ -10,33 +10,36 @@
 using namespace Rcpp; 
 using namespace arma;
 
-//' negative binomial density function
+//' sum from negative binomial density function
 //'
 //' Probability density function of the negative binomial distribution (written in C++)
 //'
-//' @param x dgCMatrix of quantiles
-//' @param mu matrix containing Mean of the distribution 
-//' @param size_dnb Dispersion parameter
+//' @param mat dgCMatrix expression counts
+//' @param s numeric scaling factor
+//' @param x numeric expression for reference profile
+//' @param bg numeric background level
+//' @param size_dnb int Dispersion parameter
 //'
-//' @return matrix of densities
+//' @return rowSums for matrix of densities
 //' @useDynLib MLEcell, .registration = TRUE
 //' @importFrom Rcpp evalCpp
 //' @exportPattern "^[[:alpha:]]+" 
 //' @export
 // [[Rcpp::export]]
-arma::mat dnbinom_sparse(arma::sp_mat& x, arma::mat& mu, int& size_dnb) {
-  arma::mat res = arma::mat(size(x));
-  arma::mat::const_row_col_iterator mu_iter     = mu.begin_row_col();
-  arma::mat::const_row_col_iterator mu_iter_end = mu.end_row_col();
-  for(; mu_iter != mu_iter_end; ++mu_iter){
-    double xval = x(mu_iter.row(),mu_iter.col());
-    if(!arma::is_finite(xval)){
-      res(mu_iter.row(),mu_iter.col()) = 1 ;
+Rcpp::NumericVector
+lls(arma::sp_mat& mat, arma::vec& s, arma::vec& x, arma::vec& bg, int& size_dnb) {
+  Rcpp::NumericVector res(s.n_rows);
+  arma::vec::const_iterator x_iter = x.begin();
+  for(; x_iter != x.end(); ++x_iter) {
+    arma::vec::const_iterator s_iter = s.begin();
+    arma::vec::const_iterator bg_iter = bg.begin();
+    for(; s_iter != s.end(); ++s_iter) {
+      double yhat = (*s_iter) * (*x_iter) + (*bg_iter);
+      int i = s_iter - s.begin();
+      int j = x_iter - x.begin();
+      res(i) += R::dnbinom_mu(mat(i, j), size_dnb, yhat, 1);
+      ++bg_iter;
     }
-    else {
-      res(mu_iter.row(),mu_iter.col()) = R::dnbinom_mu(xval,size_dnb,(*mu_iter),1);
-    }
-    
   }
   return res;
 }

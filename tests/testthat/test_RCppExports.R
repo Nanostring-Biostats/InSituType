@@ -1,16 +1,23 @@
 if (FALSE) {
   library(testthat)
   library(MLEcell)
+  library(Matrix)
 }
 
-i <- c(1,3:8)
-j <- c(2,9,6:10)
-x <- 7 * (1:7)
-A <- Matrix::sparseMatrix(i, j, x = x)
-x <- 1:7
-mu <- Matrix::sparseMatrix(i, j, x = x)
-result <- MLEcell::dnbinom_sparse(x=A, mu=mu, size_dnb = 10)
-result_n <- stats::dnbinom(x=as.matrix(A), mu=as.matrix(mu), size = 10, log=T)
+data("ioprofiles")
+data("mini_nsclc")
+mat <- mini_nsclc$counts
+bg <- Matrix::rowMeans(mini_nsclc$neg)
+genes <- intersect(dimnames(mini_nsclc$counts)[[2]], dimnames(ioprofiles)[[1]])
+x <- ioprofiles[genes, 1]
 testthat::test_that("negative binomial disrtibution is same as stats package", {
-  expect_true(identical(result_n, as.matrix(result)))
+  bgsub <- pmax( sweep( mat , 1 , bg , "-" ) , 0 )
+  s <- Matrix::rowSums(bgsub) / sum(x)
+  s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
+  result <- MLEcell::lls(as(mat, "dgCMatrix"), s, x, bg, 10)
+  names(result) <- rownames(mat)
+  yhat <- sweep( s %*% t( x ) , 1 , bg , "+" )
+  lls <- stats::dnbinom(x = as.matrix(mat), size = 10, mu = yhat, log = TRUE)
+  result_ref <- rowSums(lls)
+  expect_true(all.equal(result, result_ref, tolerance = 0.02))
 })

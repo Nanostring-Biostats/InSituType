@@ -38,7 +38,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   {
     bgsub <- mat
     bgsub@x <- bgsub@x - bg[bgsub@i+1]
-    bgsub <- pmax(bgsub, 0)
+    bgsub@x <- pmax(bgsub@x, 0)
   }
   else
   {
@@ -47,128 +47,18 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   sum_of_x <- sum(x)
   s <- Matrix::rowSums(bgsub) / sum_of_x
   # override it if s is negative:
-  s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
+  s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
   
-  # iterate over each gene
-  res <- rep(0, nrow(mat))
-  for (j in seq_along(names(x))) {
-    yhat <- s*x[j]
-    if (is.vector(bg))
-    {
-      yhat <- yhat + bg
-    }
-    else
-    {
-      yhat <- yhat + bg[, j]
-    }
-    lls.j <- stats::dnbinom(x = mat[, j], size = size, mu = s*x[j], log = TRUE)
-    res <- res + lls.j
-  }
-  names(res) <- rownames(mat)
-  return(round(res, digits))
-}
-
-lldist2 <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
-  # convert to matrix form if only a vector was input:
-  if (is.vector(mat)) {
-    mat <- as(matrix(mat, nrow = 1), "dgCMatrix")
-  } else if (is.matrix(mat)){
-    mat <- as(mat, "dgCMatrix")
-  } else if(class(mat)!="dgCMatrix"){
-    errorMessage <- sprintf( "The `type` of parameter `mat` needs to be of one of dgCMatrix, vector, matrix, array, but is found to be of type %s",class(mat))
-    stop( errorMessage )
-  }
-  # Check dimensions on bg and stop with informative error if not
-  #  conformant
-  if (is.vector(bg))
-  {
-    if (!identical(length(bg), nrow(mat)))
-    {
-      errorMessage <- sprintf("Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d",
-                              nrow(mat), length(bg))
-      stop(errorMessage)
-    }
-  }
-  
-  # calc scaling factor to put y on the scale of x:
-  if (is.vector(bg))
-  {
-    bgsub <- mat
-    bgsub@x <- bgsub@x - bg[bgsub@i+1]
-    bgsub <- pmax(bgsub, 0)
-  }
-  else
-  {
-    bgsub <- pmax(mat - bg, 0)
-  }
-  sum_of_x <- sum(x)
-  s <- Matrix::rowSums(bgsub) / sum_of_x
-  # override it if s is negative:
-  s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
-  
-  # iterate over each gene
-  res <- rep(0, nrow(mat))
-  for (j in seq_along(names(x))) {
-    yhat <- s*x[j]
-    if (is.vector(bg))
-    {
-      yhat <- yhat + bg
-    }
-    else
-    {
-      yhat <- yhat + bg[, j]
-    }
-    lls.j <- stats::dnbinom(x = mat[, j], size = size, mu = s*x[j], log = TRUE)
-    res <- res + lls.j
-  }
-  names(res) <- rownames(mat)
-  return(round(res, digits))
-}
-
-lldist.og <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
-  # convert to matrix form if only a vector was input:
-  if (is.vector(mat)) {
-    mat <- matrix(mat, nrow = 1)
-  }
-  # Check dimensions on bg and stop with informative error if not
-  #  conformant
-  if ( is.vector( bg ) )
-  {
-    if ( !identical( length( bg ) , nrow( mat ) ) )
-    {
-      errorMessage <- sprintf( "Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d" , nrow( mat ) , length( bg ) )
-      stop( errorMessage )
-    }
-  }
-
-  # calc scaling factor to put y on the scale of x:
-  if ( is.vector( bg ) )
-  {
-    bgsub <- pmax( sweep( mat , 1 , bg , "-" ) , 0 )
-  }
-  else
-  {
-    bgsub <- pmax( mat - bg , 0 )
-  }
-  s <- rowSums( bgsub ) / sum( x )
-  # override it if s is negative:
-  s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
-
-  # expected counts:
-  if ( is.vector( bg ) )
-  {
-    yhat <- sweep( s %*% t( x ) , 1 , bg , "+" )
-  }
-  else
-  {
+  if (is.vector(bg)) {
+    res <- lls(mat, s, x, bg, size)
+  } else {
     yhat <- s %*% t(x) + bg
+    res <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
   }
-
-  # loglik:
-  lls <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
-
-  return(round(rowSums(lls), digits))
+  names(res) <- rownames(mat)
+  return(round(res, digits))
 }
+
 #' M step
 #'
 #' Compute probability that each cell belongs to a given cluster

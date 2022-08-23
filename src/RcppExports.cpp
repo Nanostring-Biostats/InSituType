@@ -11,22 +11,24 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// dnbinom_sparse
-arma::mat dnbinom_sparse(arma::sp_mat& x, arma::mat& mu, int& size_dnb);
-RcppExport SEXP _MLEcell_dnbinom_sparse(SEXP xSEXP, SEXP muSEXP, SEXP size_dnbSEXP) {
+// lls
+Rcpp::NumericVector lls(arma::sp_mat& mat, arma::vec& s, arma::vec& x, arma::vec& bg, int& size_dnb);
+RcppExport SEXP _MLEcell_lls(SEXP matSEXP, SEXP sSEXP, SEXP xSEXP, SEXP bgSEXP, SEXP size_dnbSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::sp_mat& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::sp_mat& >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type bg(bgSEXP);
     Rcpp::traits::input_parameter< int& >::type size_dnb(size_dnbSEXP);
-    rcpp_result_gen = Rcpp::wrap(dnbinom_sparse(x, mu, size_dnb));
+    rcpp_result_gen = Rcpp::wrap(lls(mat, s, x, bg, size_dnb));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_MLEcell_dnbinom_sparse", (DL_FUNC) &_MLEcell_dnbinom_sparse, 3},
+    {"_MLEcell_lls", (DL_FUNC) &_MLEcell_lls, 5},
     {NULL, NULL, 0}
 };
 
