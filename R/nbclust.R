@@ -52,6 +52,7 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   if (is.vector(bg)) {
     res <- lls(mat, s, x, bg, size)
   } else {
+    # non-optimized code used if bg is cell x gene matrix
     yhat <- s %*% t(x) + bg
     res <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
   }
