@@ -1,0 +1,106 @@
+trigger:
+- main
+- master
+
+resources:
+- repo: self
+
+variables:
+ isMain: ${{eq(variables['Build.SourceBranch'], 'refs/heads/master')}}
+ isDevelop:  ${{eq(variables['Build.SourceBranch'], 'refs/heads/main')}}
+ isRelease:  ${{startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')}}
+
+stages:
+- stage: DEV
+  condition: and(or(eq(variables.isDevelop, 'True'), eq(variables.isMain, 'True')), succeeded(), ne(variables.isRelease, 'True'))
+  displayName: Pull and run image on DEV environment
+  jobs:
+  - job: Pull_and_run_smi_nanopipeline_build_environment_image
+    displayName: Pull and run existing smi_nanopipeline_build_environment image and upload atifacts
+    pool:
+      vmImage: ubuntu-latest
+    variables:
+      - group: smida-build-pipeline-variables
+    steps:
+    - task: ECRPullImage@1
+      inputs:
+        awsCredentials: 'dev-$(AWS_CREDENTIALS)'
+        regionName: '$(AWS_REGION)'
+        repository: 'dev-$(AWS_ECR_REPOSITORY_NAME)'
+        imageTag: latest
+    - task: Bash@3
+      displayName: Run Docker Image
+      inputs:
+        targetType: 'inline'
+        script: |
+          docker run --rm -v "$(pwd)":"/source" dev-$(AWS_ECR_REPOSITORY_NAME):latest
+    - task: Bash@3
+      displayName: Upload Artifacts to S3
+      inputs:
+        targetType: 'inline'
+        script: |
+          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
+          mv *.tar.gz smiDE_latest.tar.gz
+          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
+- stage: QA
+  condition: and(succeeded(), eq(variables.isRelease, 'True'))
+  displayName: Pull and run image to QA environment
+  jobs:
+  - job: Pull_and_run_smi_nanopipeline_build_environment_image
+    displayName: Pull and run existing smi_nanopipeline_build_environment image
+    pool:
+      vmImage: ubuntu-latest
+    variables:
+      - group: smida-build-pipeline-variables
+    steps:
+    - task: ECRPullImage@1
+      inputs:
+        awsCredentials: 'qa-$(AWS_CREDENTIALS)'
+        regionName: '$(AWS_REGION)'
+        repository: 'qa-$(AWS_ECR_REPOSITORY_NAME)'
+        imageTag: latest
+    - task: Bash@3
+      displayName: Run Docker Image
+      inputs:
+        targetType: 'inline'
+        script: |
+          docker run --rm -v "$(pwd)":"/source" qa-$(AWS_ECR_REPOSITORY_NAME):latest
+    - task: Bash@3
+      displayName: Upload Artifacts to S3
+      inputs:
+        targetType: 'inline'
+        script: |
+          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
+          mv *.tar.gz smiDE_latest.tar.gz
+          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
+- stage: UAT
+  condition: and(succeeded(), eq(variables.isRelease, 'True'))
+  displayName: Pull and run image to UAT environment
+  jobs:
+  - job: Pull_and_run_smi_nanopipeline_build_environment_image
+    displayName: Pull and run existing smi_nanopipeline_build_environment image
+    pool:
+      vmImage: ubuntu-latest
+    variables:
+      - group: smida-build-pipeline-variables
+    steps:
+    - task: ECRPullImage@1
+      inputs:
+        awsCredentials: 'uat-$(AWS_CREDENTIALS)'
+        regionName: '$(AWS_REGION)'
+        repository: 'uat-$(AWS_ECR_REPOSITORY_NAME)'
+        imageTag: latest
+    - task: Bash@3
+      displayName: Run Docker Image
+      inputs:
+        targetType: 'inline'
+        script: |
+          docker run --rm -v "$(pwd)":"/source" uat-$(AWS_ECR_REPOSITORY_NAME):latest
+    - task: Bash@3
+      displayName: Upload Artifacts to S3
+      inputs:
+        targetType: 'inline'
+        script: |
+          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
+          mv *.tar.gz smiDE_latest.tar.gz
+          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
