@@ -1,3 +1,18 @@
+#' Get number of cores for parallelized operations
+#'
+#' @export
+numCores <- function() {
+  num_cores <- 1
+  if (.Platform$OS.type == "unix") {
+    if (is.null(getOption("mc.cores"))) {
+      num_cores <- parallel::detectCores() - 2
+    } else {
+      num_cores <- getOption("mc.cores")
+    }
+    
+  }
+  return(num_cores)
+}
 
 #' Calculate the likelihood of the vector x using the reference vector of y
 #'
@@ -75,14 +90,13 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @return Matrix of probabilities of each cell belonging to each cluster
 #' @export
 Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
-  n <- ifelse(is.null(getOption("mc.cores")), parallel::detectCores() - 2, getOption("mc.cores"))
   # get logliks of cells * clusters
   logliks <- parallel::mclapply(asplit(means, 2),
                     lldist,
                     mat = counts,
                     bg = bg,
                     size = size,
-                    mc.cores = n)
+                    mc.cores = numCores())
   logliks <- do.call(cbind, logliks)
   
   # adjust by cohort frequency:
