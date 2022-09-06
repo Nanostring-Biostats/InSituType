@@ -82,12 +82,14 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
       max_iters = max_iters)  
 
     # get the loglik of the clustering result:
-    loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {
-      lldist(x = ref,
-             mat = counts,
-             bg = bg,
-             size = nb_size)
-    })
+    n <- ifelse(is.null(getOption("mc.cores")), parallel::detectCores() - 2, getOption("mc.cores"))
+    loglik_thisclust <- parallel::mclapply(asplit(tempclust$profiles, 2),
+                      lldist,
+                      mat = counts,
+                      bg = bg,
+                      size = nb_size,
+                      mc.cores = n)
+    loglik_thisclust <- do.call(cbind, loglik_thisclust)
     total_loglik_this_clust <- sum(apply(loglik_thisclust, 1, max))
   })
 

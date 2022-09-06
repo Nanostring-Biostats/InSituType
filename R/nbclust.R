@@ -75,10 +75,16 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @return Matrix of probabilities of each cell belonging to each cluster
 #' @export
 Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
+  n <- ifelse(is.null(getOption("mc.cores")), parallel::detectCores() - 2, getOption("mc.cores"))
   # get logliks of cells * clusters
-  logliks <- apply(means, 2, function(x) {
-    lldist(x = x, mat = counts, bg = bg, size = size)
-  })
+  logliks <- parallel::mclapply(asplit(means, 2),
+                    lldist,
+                    mat = counts,
+                    bg = bg,
+                    size = size,
+                    mc.cores = n)
+  logliks <- do.call(cbind, logliks)
+  
   # adjust by cohort frequency:
   logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 
                                               cohort = cohort, 

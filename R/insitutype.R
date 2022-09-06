@@ -253,12 +253,14 @@ insitutype <- function(counts, neg, bg = NULL,
     # find which profile matrix does best in the benchmarking subset:
     benchmarking_logliks <- c()
     for (i in 1:n_starts) {
-      templogliks <- apply(profiles_from_random_starts[[i]], 2, function(ref) {
-        lldist(x = ref,
-               mat = counts[benchmarking_subset, ],
-               bg = bg[benchmarking_subset],
-               size = nb_size)
-      })
+      n <- ifelse(is.null(getOption("mc.cores")), parallel::detectCores() - 2, getOption("mc.cores"))
+      templogliks <- parallel::mclapply(asplit(profiles_from_random_starts[[i]], 2),
+                        lldist,
+                        mat = counts[benchmarking_subset, ],
+                        bg = bg[benchmarking_subset],
+                        size = nb_size,
+                        mc.cores = n)
+      templogliks <- do.call(cbind, templogliks)
       # take the sum of cells' best logliks:
       benchmarking_logliks[i] = sum(apply(templogliks, 1, max))
     }
