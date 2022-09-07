@@ -138,7 +138,10 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
   flightpath_plot_filename <- paste(format(Sys.time(), "%Y-%m-%d_%H-%M-%S-%Z"), "flightpath_plot.png", sep="-")
   flightpath_plot_file <- paste(flightpath_plot_folder,flightpath_plot_filename , sep="/")
   message("Saving flightpath_plot to: ", flightpath_plot_file)
-  ggsave(filename = flightpath_plot_filename, plot = p, device = "png", path = flightpath_plot_folder)
+  ggsave(filename = flightpath_plot_filename, plot = p, device = "png", path = flightpath_plot_folder,
+         width = 7,
+         height = 7,
+         unit="in")
 
   return(p)
 }
