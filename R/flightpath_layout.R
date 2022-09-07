@@ -141,7 +141,7 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
   ggsave(filename = flightpath_plot_filename, plot = p, device = "png", path = flightpath_plot_folder,
          width = 7,
          height = 7,
-         unit="in")
+         units="in")
 
   return(p)
 }
