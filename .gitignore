@@ -2,5 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-.DS_Store
-.o
+*.DS_Store
+*.o
