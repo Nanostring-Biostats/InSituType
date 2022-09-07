@@ -1,3 +1,18 @@
+#' Get number of cores for parallelized operations
+#'
+#' @export
+numCores <- function() {
+  num_cores <- 1
+  if (.Platform$OS.type == "unix") {
+    if (is.null(getOption("mc.cores"))) {
+      num_cores <- parallel::detectCores() - 2
+    } else {
+      num_cores <- getOption("mc.cores")
+    }
+    
+  }
+  return(num_cores)
+}
 
 #' Calculate the likelihood of the vector x using the reference vector of y
 #'
@@ -23,48 +38,42 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   }
   # Check dimensions on bg and stop with informative error if not
   #  conformant
-  if ( is.vector( bg ) )
+  if (is.vector(bg))
   {
-    if ( !identical( length( bg ) , nrow( mat ) ) )
+    if (!identical(length(bg), nrow(mat)))
     {
-      errorMessage <- sprintf( "Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d" , nrow( mat ) , length( bg ) )
-      stop( errorMessage )
+      errorMessage <- sprintf("Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d",
+                              nrow(mat), length(bg))
+      stop(errorMessage)
     }
   }
   
   # calc scaling factor to put y on the scale of x:
-  if ( is.vector( bg ) )
+  if (is.vector(bg))
   {
     bgsub <- mat
     bgsub@x <- bgsub@x - bg[bgsub@i+1]
-    bgsub <- pmax(bgsub, 0)
+    bgsub@x <- pmax(bgsub@x, 0)
   }
   else
   {
-    bgsub <- pmax( mat - bg , 0 )
+    bgsub <- pmax(mat - bg, 0)
   }
-  sum_of_x <- sum( x )
-  s <- Matrix::rowSums( bgsub ) / sum_of_x
+  sum_of_x <- sum(x)
+  s <- Matrix::rowSums(bgsub) / sum_of_x
   # override it if s is negative:
-  s[s <= 0] = Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
+  s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
   
-  # expected counts:
-  if ( is.vector( bg ) )
-  {
-    yhat <- sweep(s %*% t(x), 1, bg, "+")
-  }
-  else
-  {
+  if (is.vector(bg)) {
+    res <- lls(mat, s, x, bg, size)
+  } else {
+    # non-optimized code used if bg is cell x gene matrix
     yhat <- s %*% t(x) + bg
+    res <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
   }
-  # loglik:
-  # lls <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
-  lls <- dnbinom_sparse(x = mat, mu = yhat, size_dnb = size)
-  rownames(lls) <- rownames(mat)
-  colnames(lls) <- colnames(mat)
-  return(round(rowSums(lls), digits))
+  names(res) <- rownames(mat)
+  return(round(res, digits))
 }
-
 
 #' M step
 #'
@@ -82,9 +91,14 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @export
 Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
-  logliks <- apply(means, 2, function(x) {
-    lldist(x = x, mat = counts, bg = bg, size = size)
-  })
+  logliks <- parallel::mclapply(asplit(means, 2),
+                    lldist,
+                    mat = counts,
+                    bg = bg,
+                    size = size,
+                    mc.cores = numCores())
+  logliks <- do.call(cbind, logliks)
+  
   # adjust by cohort frequency:
   logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 
                                               cohort = cohort, 

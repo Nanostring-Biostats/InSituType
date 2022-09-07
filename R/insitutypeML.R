@@ -63,12 +63,13 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, reference
   }
   
   # get logliks
-  logliks <- apply(reference_profiles, 2, function(ref) {
-    lldist(x = ref,
-           mat = counts,
-           bg = bg,
-           size = nb_size)
-  })
+  logliks <- parallel::mclapply(asplit(reference_profiles, 2),
+                    lldist,
+                    mat = counts,
+                    bg = bg,
+                    size = nb_size,
+                    mc.cores = numCores())
+  logliks <- do.call(cbind, logliks)
   
   # update logliks based on frequencies within cohorts:
   logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 
