@@ -2,7 +2,7 @@
 #' 
 #' Supervised classification of cells. Each cell is assigned to the cell type 
 #'  under which its observed expression profile is most likely. 
-#' @param counts Counts matrix, cells * genes.
+#' @param counts Counts matrix (or dgCMatrix), cells * genes.
 #' @param neg Vector of mean negprobe counts per cell. Can be provided 
 #' @param bg Expected background
 #' @param cohort Vector of cells' cohort memberships

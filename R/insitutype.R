@@ -1,7 +1,7 @@
 #' Run insitutype. 
 #'
 #' A wrapper for nbclust, to manage subsampling and multiple random starts.
-#' @param counts Counts matrix, cells * genes.
+#' @param counts Counts matrix (or dgCMatrix), cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
@@ -59,8 +59,8 @@ insitutype <- function(counts, neg, bg = NULL,
                           update_reference_profiles = TRUE,
                           sketchingdata = NULL,
                           align_genes = TRUE, nb_size = 10, 
-                          init_clust = NULL, n_starts = 5, n_benchmark_cells = 5000,
-                          n_phase1 = 5000, n_phase2 = 20000, n_phase3 = 100000,
+                          init_clust = NULL, n_starts = 10, n_benchmark_cells = 10000,
+                          n_phase1 = 10000, n_phase2 = 20000, n_phase3 = 100000,
                           n_chooseclusternumber = 2000,
                           pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
                           n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.03, insufficient_anchors_thresh = 20) {
@@ -184,7 +184,7 @@ insitutype <- function(counts, neg, bg = NULL,
       fixed_profiles = reference_profiles,
       init_clust = NULL, 
       n_clusts = n_clusts,
-      max_iters = max_iters,
+      max_iters = max(max_iters, 20),
       subset_size = length(chooseclusternumber_subset), 
       align_genes = TRUE, plotresults = FALSE, nb_size = nb_size)$best_clust_number 
   }
@@ -246,7 +246,7 @@ insitutype <- function(counts, neg, bg = NULL,
         nb_size = nb_size,
         pct_drop = 1/500,
         min_prob_increase = min_prob_increase,
-        max_iters = max_iters
+        max_iters = max(max_iters, 20),
       )$profiles
     }
     
