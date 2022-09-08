@@ -4,9 +4,15 @@
 #'  cluster assignments and probabilities under the merged cell types.
 #' @param merges A named vector in which the elements give new cluster names and
 #'  the names give old cluster names. OK to omit cell types that aren't being merged.
-#' @param to_delete Cluster names to delete. All cells assigned to these clusters 
+#' @param to_delete A vector of cluster names to delete. All cells assigned to these clusters 
 #'  will be reassigned to the next best cluster. 
+#' @param subcluster A list, where each element's name is a cell type to subcluster,
+#'   and the element itself is the cluster number(s) to use. E.g. list("macrophages" = 2, "cancer" = 2:3)
 #' @param logliks Matrix of log-likelihoods output by insitutype, cells in rows, clusters in columns
+#' @param counts Counts matrix, cells * genes. Only needed if subclustering is run.
+#' @param neg Vector of mean negprobe counts per cell. Only needed if subclustering is run.
+#' @param bg Expected background. Optional, and only used if subclustering is run. 
+#' @param cohort Vector of cells' cohort memberships. Optional, and only needed if subclustering is run.
 #' @return A list with two elements:
 #' \enumerate{
 #' \item clust: a vector of cluster assignments
@@ -16,11 +22,15 @@
 #' }
 #' @export
 #' @examples
-#' # define a "merges" input:
-#' merges = c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
-#'              "B-cells" = "lymphoid")
-#' # define clusters to delete:
-#' to_delete =  c("a", "f") 
+#' #example merges argument:
+#' merges = c("macrophages" = "myeloid",  # merge 3 clusters
+#'            "monocytes" = "myeloid", 
+#'            "mDC" = "myeloid",        
+#'            "B-cells" = "lymphoid"),    # just rename 1 cluster
+#' # example to_delete argument:            
+#' to_delete = c("neutrophils"),
+#' # example subcluster argument:
+#' subcluster = list("Myofibroblast" = 2:3)
 refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, logliks,
                        counts = NULL, neg = NULL, bg = NULL, cohort = NULL) {
   
@@ -83,14 +93,18 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
                        n_starts = 3, n_benchmark_cells = 5000,
                        n_phase1 = 2000, n_phase2 = 10000, n_phase3 = 20000,
                        n_chooseclusternumber = 2000)
-    # get logliks for all cells vs. the new clusters:
-    subclustlogliks <- insitutypeML(counts = counts,
-                                    neg = neg,
-                                    bg = bg,
-                                    cohort = cohort,
-                                    reference_profiles = temp$profiles,
-                                    align_genes = TRUE)$logliks
+ 
+    
+    # make logliks matrix for all cells vs. the new clusters, with cells outside 
+    # the selected cell type retaining their original loglik for the cluster
+    subclustlogliks <- matrix(rep(newlogliks[, name], ncol(temp$logliks)), nrow(counts))
+    rownames(subclustlogliks) <- rownames(counts)
+    colnames(subclustlogliks) <- colnames(temp$logliks)
+    # for cells with subclustering results, overwrite the old logliks:
+    subclustlogliks[rownames(temp$logliks), colnames(temp$logliks)] <- temp$logliks  
+    # better names:
     colnames(subclustlogliks) <- paste0(name, "_", seq_len(ncol(subclustlogliks)))
+    
     # safeguard in case we've created a cell type name that already exists:
     if (any(is.element(colnames(subclustlogliks), colnames(newlogliks)))) {
       colnames(subclustlogliks) <- paste0(colnames(subclustlogliks), "subcluster")

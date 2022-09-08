@@ -19,10 +19,21 @@ refineClusters(
 \item{merges}{A named vector in which the elements give new cluster names and
 the names give old cluster names. OK to omit cell types that aren't being merged.}
 
-\item{to_delete}{Cluster names to delete. All cells assigned to these clusters 
+\item{to_delete}{A vector of cluster names to delete. All cells assigned to these clusters 
 will be reassigned to the next best cluster.}
 
+\item{subcluster}{A list, where each element's name is a cell type to subcluster,
+and the element itself is the cluster number(s) to use. E.g. list("macrophages" = 2, "cancer" = 2:3)}
+
 \item{logliks}{Matrix of log-likelihoods output by insitutype, cells in rows, clusters in columns}
+
+\item{counts}{Counts matrix, cells * genes. Only needed if subclustering is run.}
+
+\item{neg}{Vector of mean negprobe counts per cell. Only needed if subclustering is run.}
+
+\item{bg}{Expected background. Optional, and only used if subclustering is run.}
+
+\item{cohort}{Vector of cells' cohort memberships. Optional, and only needed if subclustering is run.}
 }
 \value{
 A list with two elements:
@@ -38,9 +49,13 @@ Take a user-defined list of cells types to rename/combine, then re-compute
  cluster assignments and probabilities under the merged cell types.
 }
 \examples{
-# define a "merges" input:
-merges = c("macrophages" = "myeloid", "monocytes" = "myeloid", "mDC" = "myeloid",
-             "B-cells" = "lymphoid")
-# define clusters to delete:
-to_delete =  c("a", "f") 
+#example merges argument:
+merges = c("macrophages" = "myeloid",  # merge 3 clusters
+           "monocytes" = "myeloid", 
+           "mDC" = "myeloid",        
+           "B-cells" = "lymphoid"),    # just rename 1 cluster
+# example to_delete argument:            
+to_delete = c("neutrophils"),
+# example subcluster argument:
+subcluster = list("Myofibroblast" = 2:3)
 }
