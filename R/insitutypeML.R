@@ -21,6 +21,10 @@
 #' @export
 insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, reference_profiles, nb_size = 10, align_genes = TRUE) {
   
+  if (any(rowSums(counts) == 0)) {
+    stop("Cells with 0 counts were found. Please remove.")
+  }
+  
   # get vector of expected background:
   if (is.null(bg) & is.null(neg)) {
     stop("Must provide either bg or neg")

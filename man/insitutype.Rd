@@ -17,9 +17,9 @@ insitutype(
   align_genes = TRUE,
   nb_size = 10,
   init_clust = NULL,
-  n_starts = 5,
-  n_benchmark_cells = 5000,
-  n_phase1 = 5000,
+  n_starts = 10,
+  n_benchmark_cells = 10000,
+  n_phase1 = 10000,
   n_phase2 = 20000,
   n_phase3 = 1e+05,
   n_chooseclusternumber = 2000,
@@ -33,7 +33,7 @@ insitutype(
 )
 }
 \arguments{
-\item{counts}{Counts matrix, cells * genes.}
+\item{counts}{Counts matrix (or dgCMatrix), cells * genes.}
 
 \item{neg}{Vector of mean negprobe counts per cell}
 

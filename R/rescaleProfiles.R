@@ -2,6 +2,18 @@
 #' Update reference profiles
 #' 
 #' Update reference profiles using pre-specified anchor cells, or if no anchors are specified, by first choosing anchor cells
+#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
+#'  e.g. from previous scRNA-seq. 
+#' @param counts Counts matrix (or dgCMatrix), cells * genes.
+#' @param neg Vector of mean negprobe counts per cell
+#' @param bg Expected background
+#' @param nb_size The size parameter to assume for the NB distribution.
+#' @param anchors Vector giving "anchor" cells.
+#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+#'  for cells to be held constant throughout iterations. 
+#' @param n_anchor_cells For semi-supervised learning. Maximum number of anchor cells to use for each cell type. 
+#' @param min_anchor_cosine For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.
+#' @param min_anchor_llr For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
 #' @export 
 updateReferenceProfiles <- function(reference_profiles, counts, neg, bg = NULL, nb_size = 10,
                                     anchors = NULL, n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.01) {
@@ -47,7 +59,7 @@ updateReferenceProfiles <- function(reference_profiles, counts, neg, bg = NULL, 
 
 
 
-#' PLACEHOLDER FUNCTION: Use anchor cells to update reference profiles, by just taking the mean profile of the anchors. 
+#' Use anchor cells to update reference profiles, simply by taking the mean profile of the anchors. 
 #' 
 #' Uses anchor cells to estimate platform effects / scaling factors to be applied to
 #'  the genes/rows of the reference profile matrix. Then uses Bayesian math to

@@ -2,7 +2,7 @@
 % Please edit documentation in R/rescaleProfiles.R
 \name{updateProfilesFromAnchors}
 \alias{updateProfilesFromAnchors}
-\title{PLACEHOLDER FUNCTION: Use anchor cells to update reference profiles, by just taking the mean profile of the anchors.}
+\title{Use anchor cells to update reference profiles, simply by taking the mean profile of the anchors.}
 \usage{
 updateProfilesFromAnchors(
   counts,
