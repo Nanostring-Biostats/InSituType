@@ -6,7 +6,7 @@ output:
 fig_width: 10 
 fig_height: 6 
 vignette: >
-  %\VignetteIndexEntry{Supervised cell typing in a small CosMx dataset with InsitutypeML}
+  %\VignetteIndexEntry{Semi-supervised cell typing in a small CosMx dataset with Insitutype}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -23,11 +23,6 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
-
-
-## Vignette to-dos:
-- add section at end on refineClusters function
-- save clustering results in package data to save time when running?
 
 
 ### Installation
@@ -328,7 +323,7 @@ str(fp_layout)
 
 After close review, you might want to update your clustering results. 
 
-The function refineCells can modify your results in the following ways:
+The function refineClusters can modify your results in the following ways:
 
 * merge closely-related or frequently-confused clusters 
 * delete clusters (Sometimes a "catch-all" cluster arises that is frequently confused wiht multiple other clusters. It's best to delete these clusters and let their cells get reassigned to meaningful clusters.)

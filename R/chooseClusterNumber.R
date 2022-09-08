@@ -2,6 +2,7 @@
 #'
 #' For a subset of the data, perform clustering under a range of cluster numbers.
 #'  Report on loglikelihood vs. number of clusters, and suggest a best choice.
+#' @param counts Counts matrix, cells * genes. 
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param fixed_profiles Matrix of cluster profiles to hold unchanged throughout iterations.

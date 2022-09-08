@@ -25,11 +25,6 @@ knitr::opts_chunk$set(
 ```
 
 
-## Vignette to-dos:
-- add section at end on refineClusters function
-- save clustering results in package data to save time when running?
-
-
 ### Installation
 
 ```{r installation, eval=FALSE}
