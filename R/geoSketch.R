@@ -115,7 +115,7 @@ geoSketch_get_plaid <- function(X, N,
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
 #' @export
 #' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
-geoSketch_sample_from_plaids <- function(plaid, N, seed=NULL) {
+geoSketch_sample_from_plaids <- function(Plaid, N, seed=NULL) {
   
   # Define seed for sampling if given
   if (!is.null(seed)){

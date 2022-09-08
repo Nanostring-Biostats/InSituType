@@ -25,7 +25,7 @@ if (FALSE) {
   sketchingdata = NULL; anchor_replacement_thresh = 5
 }
 
-# test nbclust smei-sup
+# test nbclust semi-sup
 sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
 nbres <- nbclust(counts = mini_nsclc$counts[, sharedgenes], 
                  neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL, 
