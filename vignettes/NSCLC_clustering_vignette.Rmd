@@ -123,7 +123,7 @@ a matrix of cells log-likelihoods under each cluster,
 and a matrix of the mean background-subtracted expression profile of each cluster. 
 A fifth output, ignorable for unsupervised clustering, records log-likelihoods under clusters that ended up with no cells assigned to them.
 
-```{r unsup_results, fig.width = 10, fig.height = 6}
+```{r unsup_results, fig.width = 8, fig.height = 5}
 str(unsup)
 round(head(unsup$prob),2)
 heatmap(sweep(unsup$profiles, 1, pmax(apply(unsup$profiles, 1, max), .2), "/"), scale = "none",
@@ -227,7 +227,7 @@ The colorCellTypes function attempts to choose good colors for your cell types.
 Some of its options use the frequency of cell types in this decision. 
 Here are 3 versions:
 
-```{r colorCellTypes}
+```{r colorCellTypes, fig.width = 8, fig.height = 5}
 
 
 par(mfrow = c(1,3))

@@ -158,7 +158,7 @@ and a matrix of the mean background-subtracted expression profile of each cell t
  (these profiles are based on the data, not the reference profiles). 
 A fifth output records log-likelihoods under cell types that ended up with no cells assigned to them.
 
-```{r unsup_results, fig.width = 10, fig.height = 6}
+```{r unsup_results, fig.width = 8, fig.height = 5}
 str(sup)
 round(head(sup$prob),2)
 heatmap(sweep(sup$profiles, 1, pmax(apply(sup$profiles, 1, max), .2), "/"), scale = "none",
@@ -266,7 +266,7 @@ The colorCellTypes function attempts to choose good colors for your cell types.
 Some of its options use the frequency of cell types in this decision. 
 Here are 3 versions:
 
-```{r colorCellTypes}
+```{r colorCellTypes, fig.width = 8, fig.height = 5}
 
 
 par(mfrow = c(1,3))
