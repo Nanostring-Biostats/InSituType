@@ -173,7 +173,7 @@ If we'd been willing to trust the defaults and not examine partial results, we c
 the above steps and just run:
 
 ```{r updateprofiles_fast, eval = FALSE}
-updatedprofiles <- updatedprofiles(reference_profiles = ioprofiles, 
+updatedprofiles <- updateReferenceProfiles(reference_profiles = ioprofiles, 
                                            counts = mini_nsclc$counts, 
                                            neg = mini_nsclc$neg, 
                                            bg = per.cell.bg,
