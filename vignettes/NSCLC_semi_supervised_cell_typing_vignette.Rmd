@@ -352,6 +352,35 @@ print(fp)
 ```
 
 
+### Coloring cell types
+
+The colorCellTypes function attempts to choose good colors for your cell types. 
+Some of its options use the frequency of cell types in this decision. 
+Here are 3 versions:
+
+```{r colorCellTypes}
+
+
+par(mfrow = c(1,3))
+par(mar = c(0,0,3,0))
+
+plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+          main = "brewers palette",
+     col = colorCellTypes(freqs = table(semisup$clust), palette = "brewers")[semisup$clust], 
+     xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+          main = "tableau20 palette",
+     col = colorCellTypes(freqs = table(semisup$clust), palette = "tableau20")[semisup$clust], 
+     xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+          main = "earthplus palette",
+     col = colorCellTypes(freqs = table(semisup$clust), palette = "earthplus")[semisup$clust], 
+     xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+```
+
 
 ### Session Info
 
