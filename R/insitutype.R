@@ -180,16 +180,6 @@ insitutype <- function(counts, neg, bg = NULL,
                                                                N = min(n_chooseclusternumber, nrow(counts)),
                                                                seed = NULL)
     
-    #chooseclusternumber_subset <- geoSketch(X = sketchingdata,
-    #                                 N = min(n_chooseclusternumber, nrow(counts)),
-    #                                 alpha=0.1,
-    #                                 max_iter=200,
-    #                                 returnBins=FALSE,
-    #                                 minCellsPerBin = 1,
-    #                                 seed=NULL)
-    #chooseclusternumber_subset <- match(chooseclusternumber_subset, rownames(counts))
-    
-    
     n_clusts <- chooseClusterNumber(
       counts = counts[chooseclusternumber_subset, ], 
       neg = neg[chooseclusternumber_subset], 
@@ -219,32 +209,13 @@ insitutype <- function(counts, neg, bg = NULL,
       random_start_subsets[[i]] <- geoSketch_sample_from_plaids(Plaid = plaid, 
                                                                  N = min(n_phase1, nrow(counts)),
                                                                  seed = NULL)
-      #random_start_subsets[[i]] <- geoSketch(X = sketchingdata,
-      #                                       N = n_phase1,
-      #                                       alpha=0.1,
-      #                                       max_iter=200,
-      #                                       returnBins=FALSE,
-      #                                       minCellsPerBin = 1,
-      #                                       seed=NULL)
-      ## convert IDs to row indices:
-      #random_start_subsets[[i]] <- match(random_start_subsets[[i]], rownames(counts))
-      
     }
     
     # get a vector of cells IDs to be used in comparing the random starts:
     benchmarking_subset <- geoSketch_sample_from_plaids(Plaid = plaid, 
                                                         N = min(n_benchmark_cells, nrow(counts)),
                                                         seed = NULL)
-    #benchmarking_subset <- geoSketch(X = sketchingdata,
-    #                                 N = n_benchmark_cells,
-    #                                 alpha=0.1,
-    #                                 max_iter=200,
-    #                                 returnBins=FALSE,
-    #                                 minCellsPerBin = 1,
-    #                                 seed=NULL)
-    ## convert IDs to row indices:
-    #benchmarking_subset <- match(benchmarking_subset, rownames(counts))
-    
+
     # run nbclust from each of the random subsets, and save the profiles:
     profiles_from_random_starts <- list()
     for (i in 1:n_starts) {
@@ -293,16 +264,6 @@ insitutype <- function(counts, neg, bg = NULL,
   phase2_sample <- geoSketch_sample_from_plaids(Plaid = plaid, 
                                                 N = min(n_phase2, nrow(counts)),
                                                 seed = NULL)
-  #phase2_sample <- geoSketch(X = sketchingdata,
-  #                           N = n_phase2,
-  #                           alpha=0.1,
-  #                           max_iter=200,
-  #                           returnBins=FALSE,
-  #                           minCellsPerBin = 1,
-  #                           seed=NULL)
-
-  ## convert IDs to row indices:
-  #phase2_sample <- match(phase2_sample, rownames(counts))
   
   # get initial cell type assignments:
   temp_init_clust <- NULL
@@ -331,16 +292,6 @@ insitutype <- function(counts, neg, bg = NULL,
   phase3_sample <- geoSketch_sample_from_plaids(Plaid = plaid, 
                                                 N = min(n_phase3, nrow(counts)),
                                                 seed = NULL)
-  #phase3_sample <- geoSketch(X = sketchingdata,
-  #                           N = n_phase3,
-  #                           alpha=0.1,
-  #                           max_iter=200,
-  #                           returnBins=FALSE,
-  #                           minCellsPerBin = 1,
-  #                           seed=NULL)
-  # convert IDs to row indices:
-  #phase3_sample <- match(phase3_sample, rownames(counts))
-  
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
   clust3 <- nbclust(counts = counts[phase3_sample, ], 
