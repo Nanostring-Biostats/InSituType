@@ -72,7 +72,6 @@ flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, clu
 #'@param col Optional, a vector of cell colors, with length equal to the number of individual cells. 
 #'@importFrom utils data
 #'@importFrom scales alpha
-#'@importFrom RColorBrewer brewer.pal
 #'@import ggplot2
 #'@return a ggplot object
 #'
@@ -95,7 +94,9 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
   # create color scheme if needed:
   if (is.null(col)) {
     utils::data("iocolors", envir = environment())
-    scols <- c(RColorBrewer::brewer.pal(12, "Set3"), RColorBrewer::brewer.pal(9, "Set1"), sample(colors()[!grepl("grey", colors())], 100))[1:length(unique(flightpath_result$clust))]
+    scols <- c('#8DD3C7','#FFFFB3','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD',
+               '#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999', 
+               sample(colors()[!grepl("grey", colors())], 100))[1:length(unique(flightpath_result$clust))]
     names(scols) <- unique(flightpath_result$clust)
     iotypespresent = intersect(names(iocolors), names(scols))
     scols[iotypespresent] = iocolors[iotypespresent]
