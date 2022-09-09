@@ -66,6 +66,10 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
   # delete those called for:
   logliks <- logliks[, !is.element(colnames(logliks), to_delete)]
   
+  # prevent merging into existing names:
+  duplicatednames <- intersect(merges, colnames(logliks))
+  merges[is.element(merges, duplicatednames)] <- paste0(merges[is.element(merges, duplicatednames)], ".new")
+  
   # get logliks under merged categories: each cell's "new" loglik in a merged cell type is
   #  its best loglik under the "old" celltype.
   newlogliks <- matrix(NA, nrow(logliks), length(unique(merges)),
