@@ -1,3 +1,7 @@
+# MLEcell 1.1.1
+
+* Updated `flightpath_layout.R` to save the plot in a temp folder in the current work directory
+
 # MLEcell 1.1.0
 
 * Fix several places counts matrix was being converted to dense to calculate a statistic
