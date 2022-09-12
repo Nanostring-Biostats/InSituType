@@ -8,11 +8,12 @@ resources:
 variables:
  isMain: ${{eq(variables['Build.SourceBranch'], 'refs/heads/master')}}
  isDevelop:  ${{eq(variables['Build.SourceBranch'], 'refs/heads/main')}}
- isRelease:  ${{startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')}}
+ isRelease: True # ${{startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')}}
 
 stages:
 - stage: DEV
-  condition: and(or(eq(variables.isDevelop, 'True'), eq(variables.isMain, 'True')), succeeded(), ne(variables.isRelease, 'True'))
+  condition: and(or(eq(variables.isDevelop, 'True'), eq(variables.isMain, 'True')), succeeded())
+  #, ne(variables.isRelease, 'True'))
   displayName: Pull and run image on DEV environment
   jobs:
   - job: Pull_and_run_smi_nanopipeline_build_environment_image
