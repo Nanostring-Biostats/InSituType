@@ -36,7 +36,6 @@ prepDataForSketching <- function(counts) {
 #' @param seed set seed for random sampling
 #' 
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
-#' @export
 geoSketch_get_plaid <- function(X, N,
                                 alpha=0.1,
                                 max_iter=200,
@@ -112,7 +111,6 @@ geoSketch_get_plaid <- function(X, N,
 #' @param seed set seed for random sampling
 #' 
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
-#' @export
 #' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
 geoSketch_sample_from_plaids <- function(Plaid, N, seed=NULL) {
   
@@ -136,7 +134,6 @@ geoSketch_sample_from_plaids <- function(Plaid, N, seed=NULL) {
 
 #' Function for creating a biased sample of a given dataset with the aim of retaining cells with unique expression vectors
 #'
-#' @export geoSketch
 #' @param X feature matrix with cellIDs as rows and featureIDs as columns (can be counts, normalized expression, PCA, UMAP, etc.)
 #' @param N desired sample size
 #' @param alpha defines the acceptable minimum number of bins to sample from as `(1-alpha)*N`
