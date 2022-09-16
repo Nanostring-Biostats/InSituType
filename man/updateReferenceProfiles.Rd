@@ -16,6 +16,27 @@ updateReferenceProfiles(
   min_anchor_llr = 0.01
 )
 }
+\arguments{
+\item{reference_profiles}{Matrix of reference profiles, genes * cell types}
+
+\item{counts}{Counts matrix, cells * genes.}
+
+\item{neg}{Vector of mean negprobe counts per cell}
+
+\item{bg}{Expected background}
+
+\item{nb_size}{The size parameter to assume for the NB distribution.}
+
+\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
+Vector elements will be mainly NA's (for non-anchored cells) and cell type names
+for cells to be held constant throughout iterations.}
+
+\item{n_anchor_cells}{For semi-supervised learning. Maximum number of anchor cells to use for each cell type.}
+
+\item{min_anchor_cosine}{For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.}
+
+\item{min_anchor_llr}{For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor}
+}
 \description{
 Update reference profiles using pre-specified anchor cells, or if no anchors are specified, by first choosing anchor cells
 }
