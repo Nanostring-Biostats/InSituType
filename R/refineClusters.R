@@ -26,9 +26,9 @@
 #' merges = c("macrophages" = "myeloid",  # merge 3 clusters
 #'            "monocytes" = "myeloid", 
 #'            "mDC" = "myeloid",        
-#'            "B-cells" = "lymphoid"),    # just rename 1 cluster
+#'            "B-cells" = "lymphoid")    # just rename 1 cluster
 #' # example to_delete argument:            
-#' to_delete = c("neutrophils"),
+#' to_delete = c("neutrophils")
 #' # example subcluster argument:
 #' subcluster = list("Myofibroblast" = 2:3)
 refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, logliks,
@@ -145,7 +145,11 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
 }
 
 
-# get a logliks matrix from a probabilities matrix
+#' Get a logliks matrix from a probabilities matrix
+#'
+#' @param probs probability matrix
+#'
+#' @return log-transformed matrix
 probs2logliks <- function(probs) {
   return(log(probs))
 }
