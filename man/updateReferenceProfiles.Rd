@@ -17,10 +17,9 @@ updateReferenceProfiles(
 )
 }
 \arguments{
-\item{reference_profiles}{Matrix of expression profiles of pre-defined clusters,
-e.g. from previous scRNA-seq.}
+\item{reference_profiles}{Matrix of reference profiles, genes * cell types}
 
-\item{counts}{Counts matrix (or dgCMatrix), cells * genes.}
+\item{counts}{Counts matrix, cells * genes.}
 
 \item{neg}{Vector of mean negprobe counts per cell}
 
@@ -28,7 +27,7 @@ e.g. from previous scRNA-seq.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
-\item{anchors}{Vector giving "anchor" cells.
+\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 for cells to be held constant throughout iterations.}
 

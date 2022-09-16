@@ -52,7 +52,7 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, reference
     reference_profiles <- reference_profiles[sharedgenes, ]
     
     # warn about genes being lost:
-    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+    if ((length(lostgenes) > 0) & length(lostgenes) < 50) {
       message(paste0("The following genes in the count data are missing from reference_profiles and will be omitted from cell typing: ",
                      paste0(lostgenes, collapse = ",")))
     }

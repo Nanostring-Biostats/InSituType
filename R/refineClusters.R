@@ -156,7 +156,6 @@ probs2logliks <- function(probs) {
 #' From cell x cluster log-likelihoods, calculate cell x cluster probabilities
 #' @param logliks Matrix of loglikelihoods, as output by insitytupe. Cells in rows, clusters in columns.
 #' @return A matrix of probabilities, in the same dimensions as logliks. 
-#' @export 
 logliks2probs <- function(logliks) {
   templogliks <- sweep(logliks, 1, apply(logliks, 1, max, na.rm = TRUE), "-" )
   # get on likelihood scale:
