@@ -27,23 +27,8 @@ res <- insitutype(counts = mini_nsclc$counts,
                     max_iters = 2)   
 
 
-
-if (FALSE) {
-  # simulate probs and profiles:
-  celltypes <- letters[1:6]
-  probs <- matrix(runif(600), 100)
-  probs <- sweep(probs, 1, rowSums(probs), "/")
-  profiles <- matrix(rgamma(300, 1), 50)
-  colnames(probs) <- colnames(profiles) <- celltypes
-  logliks <- MLEcell:::probs2logliks(probs)
-  res <- list(logliks = logliks, profiles = profiles, clust = colnames(logliks)[apply(logliks,1,which.max)])
-}
-
 # test flightpath_layout
 fp <- flightpath_layout(probs = NULL, logliks = res$logliks, profiles = res$profiles)
-
-#plot(fp$cellpos)
-#text(fp$clustpos[,1], fp$clustpos[,2], rownames(fp$clustpos), col = "red")
 
 test_that("flightpath_layout returns correct format", {
   expect_true(all(dim(fp$clustpos) == c(2,2)))

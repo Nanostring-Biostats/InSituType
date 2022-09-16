@@ -24,8 +24,6 @@ numCores <- function() {
 #'
 #' @importFrom Matrix rowSums
 #' @importFrom stats dnbinom
-#'
-#' @export
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
@@ -173,7 +171,6 @@ Estep <- function(counts, clust, neg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
-#' @export
 nbclust <- function(counts, neg, bg = NULL, 
                     fixed_profiles = NULL,
                     init_profiles = NULL, init_clust = NULL, 
