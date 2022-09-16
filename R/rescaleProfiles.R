@@ -2,13 +2,12 @@
 #' Update reference profiles
 #' 
 #' Update reference profiles using pre-specified anchor cells, or if no anchors are specified, by first choosing anchor cells
-#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
-#'  e.g. from previous scRNA-seq. 
-#' @param counts Counts matrix (or dgCMatrix), cells * genes.
+#' @param reference_profiles Matrix of reference profiles, genes * cell types
+#' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param anchors Vector giving "anchor" cells.
+#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
 #'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
 #'  for cells to be held constant throughout iterations. 
 #' @param n_anchor_cells For semi-supervised learning. Maximum number of anchor cells to use for each cell type. 
@@ -25,7 +24,7 @@ updateReferenceProfiles <- function(reference_profiles, counts, neg, bg = NULL, 
     # align genes:
     sharedgenes <- intersect(colnames(counts), rownames(reference_profiles))
     anchors <- find_anchor_cells(counts = counts[, sharedgenes], 
-                                 neg = NULL, 
+                                 neg = neg, 
                                  bg = bg, 
                                  profiles = reference_profiles[sharedgenes, ], 
                                  size = nb_size, 
@@ -86,6 +85,3 @@ updateProfilesFromAnchors <- function(counts, neg, anchors, reference_profiles, 
                             neg = neg[use])
   return(updated_profiles)
 }
-
-
-

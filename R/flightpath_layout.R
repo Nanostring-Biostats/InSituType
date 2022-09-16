@@ -134,6 +134,15 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
     ggplot2::theme(legend.position = "none",
           panel.grid = ggplot2::element_blank(),
           axis.text = ggplot2::element_blank())
+  flightpath_plot_folder <- "./NBClust-Plots" # tempdir()
+  if (!dir.exists(flightpath_plot_folder)) dir.create(flightpath_plot_folder, showWarnings = FALSE, recursive = TRUE)
+  flightpath_plot_filename <- paste(format(Sys.time(), "%Y-%m-%d_%H-%M-%S-%Z"), "flightpath_plot.png", sep="-")
+  flightpath_plot_file <- paste(flightpath_plot_folder,flightpath_plot_filename , sep="/")
+  message("Saving flightpath_plot to: ", flightpath_plot_file)
+  ggsave(filename = flightpath_plot_filename, plot = p, device = "png", path = flightpath_plot_folder,
+         width = 7,
+         height = 7,
+         units="in")
 
   return(p)
 }
