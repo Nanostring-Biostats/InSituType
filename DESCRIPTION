@@ -14,8 +14,8 @@ Imports:
   lsa,
   irlba,
   mclust,
-  rmarkdown,
   sparseMatrixStats,
+  methods,
   Rcpp (>= 1.0.9)
 License: GPL-3
 Encoding: UTF-8

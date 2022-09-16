@@ -14,6 +14,7 @@
 #' \item cellpos: A matrix of cells * x,y positions in the flightpath plot
 #' }
 #' @importFrom umap umap
+#' @importFrom stats rnorm
 #' @export
 flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, cluster_xpos = NULL, cluster_ypos = NULL) {
 
@@ -73,6 +74,7 @@ flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, clu
 #'@importFrom utils data
 #'@importFrom scales alpha
 #'@import ggplot2
+#'@importFrom grDevices colors
 #'@return a ggplot object
 #'
 #'@export
@@ -119,6 +121,7 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
     
     df_text$group <- paste0(df_text$group, "(", round(flightpath_result$meanconfidence, 2), ")")
   }
+  x=y=group=NULL # to satisfy R CMD check and remove note
   p <- ggplot2::ggplot() +
     ggplot2::geom_point(df, mapping  = ggplot2::aes(x = flightpath_result$cellpos[, 1], 
                                                     y = flightpath_result$cellpos[, 2], 

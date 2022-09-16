@@ -2,3 +2,5 @@
 ^\.Rproj\.user$
 azure-pipelines.yml
 .vscode
+reqs.md
+specs.md
