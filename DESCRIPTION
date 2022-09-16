@@ -17,7 +17,7 @@ Imports:
   sparseMatrixStats,
   methods,
   Rcpp (>= 1.0.9)
-License: GPL-3
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Suggests:
