@@ -47,7 +47,9 @@ highest cell type probability increased by min_prob_increase.}
 \item{min_prob_increase}{the threshold of probability used to determine a valid cell 
 type switchover}
 
-\item{max_iters}{Maximum number of iterations
+\item{max_iters}{Maximum number of iterations}
+
+\item{logresults}{Populate clusterlog in returned list
 
  @importFrom stats lm}
 }

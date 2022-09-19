@@ -164,6 +164,7 @@ Estep <- function(counts, clust, neg) {
 #' @param min_prob_increase the threshold of probability used to determine a valid cell 
 #'  type switchover
 #' @param max_iters Maximum number of iterations
+#' @param logresults Populate clusterlog in returned list
 #'
 #'  @importFrom stats lm
 #'
