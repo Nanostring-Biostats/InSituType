@@ -68,8 +68,11 @@ flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, clu
 
 #' Plot flightpath results
 #'
-#'@param fp The list output by the flightpath_layout function. Two elements: clustpos, cellpos and clust
+#'@param flightpath_result The list output by the flightpath_layout function. Two elements: clustpos, cellpos. Must provide either this or insitutype_result. 
+#'@param insitutype_result The list output by insitutype or insitutypeML. Must provide either this or insitutype_result. 
 #'@param col Optional, a vector of cell colors, with length equal to the number of individual cells. 
+#'@param showcluserconfidence Logical, for whether to label clusters with the average posterior probability of the cells within them. 
+#' Gives a readout of how distinct a cluster is from the others. 
 #'@importFrom utils data
 #'@importFrom scales alpha
 #'@import ggplot2

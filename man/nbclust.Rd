@@ -48,8 +48,6 @@ type switchover}
 \item{max_iters}{Maximum number of iterations
 
  @importFrom stats lm}
-
-\item{Numer}{of iterations}
 }
 \value{
 A list, with the following elements:

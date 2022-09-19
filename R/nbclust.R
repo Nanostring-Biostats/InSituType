@@ -155,7 +155,6 @@ Estep <- function(counts, clust, neg) {
 #' @param init_clust Vector of initial cluster assignments.
 #' If NULL, initial assignments will be automatically inferred.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param  Numer of iterations
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
 #'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
 #'  switchover is only applicable when a cell has changed the assigned cell type with its

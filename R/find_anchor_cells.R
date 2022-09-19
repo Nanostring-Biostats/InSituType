@@ -7,6 +7,8 @@
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
+#' @param align_genes Logical, for whether to align the columns of the counts matrix and the rows of
+#'  the profiles matrix based on their names. 
 #' @param profiles Matrix of reference profiles holding mean expression of genes x cell types. 
 #'  Input linear-scale expression, with genes in rows and cell types in columns.
 #' @param size Negative binomial size parameter to be used in likelihood calculation.

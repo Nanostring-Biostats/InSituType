@@ -8,8 +8,6 @@ prepDataForSketching(counts)
 }
 \arguments{
 \item{counts}{Counts matrix}
-
-\item{method}{What kind of data to extract.}
 }
 \value{
 A matrix of data for geoSketch, with cells in rows and features in columns
