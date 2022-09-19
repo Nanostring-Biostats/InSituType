@@ -48,6 +48,14 @@ a smaller number for a quicker, approximate clustering.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
+\item{pct_drop}{the decrease in percentage of cell types with a valid switchover to 
+another cell type compared to the last iteration. Default value: 1/10000. A valid 
+switchover is only applicable when a cell has changed the assigned cell type with its
+highest cell type probability increased by min_prob_increase.}
+
+\item{min_prob_increase}{the threshold of probability used to determine a valid cell 
+type switchover}
+
 \item{...}{Arguments passed to nbclust.}
 }
 \value{

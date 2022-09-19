@@ -15,6 +15,12 @@
 #' @param align_genes Logical, for whether to align the genes in fixed_profiles with the colnames in count
 #' @param plotresults Logical, for whether to plot the results.
 #' @param nb_size The size parameter to assume for the NB distribution.
+#' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
+#'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
+#'  switchover is only applicable when a cell has changed the assigned cell type with its
+#'  highest cell type probability increased by min_prob_increase. 
+#' @param min_prob_increase the threshold of probability used to determine a valid cell 
+#'  type switchover
 #' @param ... Arguments passed to nbclust.
 #' @export
 #'

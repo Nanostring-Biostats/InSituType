@@ -12,9 +12,14 @@ flightpath_plot(
 )
 }
 \arguments{
+\item{flightpath_result}{The list output by the flightpath_layout function. Two elements: clustpos, cellpos. Must provide either this or insitutype_result.}
+
+\item{insitutype_result}{The list output by insitutype or insitutypeML. Must provide either this or insitutype_result.}
+
 \item{col}{Optional, a vector of cell colors, with length equal to the number of individual cells.}
 
-\item{fp}{The list output by the flightpath_layout function. Two elements: clustpos, cellpos and clust}
+\item{showcluserconfidence}{Logical, for whether to label clusters with the average posterior probability of the cells within them. 
+Gives a readout of how distinct a cluster is from the others.}
 }
 \value{
 a ggplot object

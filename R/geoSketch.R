@@ -10,7 +10,6 @@
 #' 
 #' Process raw counts data for input into geoSketching. 
 #' @param counts Counts matrix
-#' @param method What kind of data to extract. 
 #' @return A matrix of data for geoSketch, with cells in rows and features in columns
 #' @importFrom irlba prcomp_irlba
 prepDataForSketching <- function(counts) {
