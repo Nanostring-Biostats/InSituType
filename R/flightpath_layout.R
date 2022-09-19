@@ -72,7 +72,7 @@ flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, clu
 #'@param flightpath_result The list output by the flightpath_layout function. Two elements: clustpos, cellpos. Must provide either this or insitutype_result. 
 #'@param insitutype_result The list output by insitutype or insitutypeML. Must provide either this or insitutype_result. 
 #'@param col Optional, a vector of cell colors, with length equal to the number of individual cells. 
-#'@param showcluserconfidence Logical, for whether to label clusters with the average posterior probability of the cells within them. 
+#'@param showclusterconfidence Logical, for whether to label clusters with the average posterior probability of the cells within them. 
 #' Gives a readout of how distinct a cluster is from the others. 
 #'@importFrom utils data
 #'@importFrom scales alpha
@@ -103,8 +103,8 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
                '#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999', 
                sample(colors()[!grepl("grey", colors())], 100))[1:length(unique(flightpath_result$clust))]
     names(scols) <- unique(flightpath_result$clust)
-    iotypespresent = intersect(names(iocolors), names(scols))
-    scols[iotypespresent] = iocolors[iotypespresent]
+    iotypespresent = intersect(names(environment()[['iocolors']]), names(scols))
+    scols[iotypespresent] = environment()[['iocolors']][iotypespresent]
     col = scols[flightpath_result$clust]
   }
 
