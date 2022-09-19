@@ -102,5 +102,4 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, reference
              logliks = round(logliks, 4),
              logliks_from_lost_celltypes = round(logliks_from_lost_celltypes, 4))
   return(out)    
-  break()
 }

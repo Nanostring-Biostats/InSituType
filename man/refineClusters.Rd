@@ -53,9 +53,9 @@ Take a user-defined list of cells types to rename/combine, then re-compute
 merges = c("macrophages" = "myeloid",  # merge 3 clusters
            "monocytes" = "myeloid", 
            "mDC" = "myeloid",        
-           "B-cells" = "lymphoid"),    # just rename 1 cluster
+           "B-cells" = "lymphoid")    # just rename 1 cluster
 # example to_delete argument:            
-to_delete = c("neutrophils"),
+to_delete = c("neutrophils")
 # example subcluster argument:
 subcluster = list("Myofibroblast" = 2:3)
 }

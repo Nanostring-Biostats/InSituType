@@ -24,13 +24,14 @@ numCores <- function() {
 #'
 #' @importFrom Matrix rowSums
 #' @importFrom stats dnbinom
+#' @importFrom methods as is
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
     mat <- as(matrix(mat, nrow = 1), "dgCMatrix")
   } else if (is.matrix(mat)){
     mat <- as(mat, "dgCMatrix")
-  } else if(class(mat)!="dgCMatrix"){
+  } else if(!is(mat, "dgCMatrix")){
     errorMessage <- sprintf( "The `type` of parameter `mat` needs to be of one of dgCMatrix, vector, matrix, array, but is found to be of type %s",class(mat))
     stop( errorMessage )
   }

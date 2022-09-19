@@ -11,7 +11,7 @@
 #' @param max_sum_rgb Don't return any colors with total rgb values above this level. (Removes excessively light colors.)
 #' @param palette One of "tableau20", "brewers" or "earthplus".
 #' @return A named color vector
-#' @importFrom grDevices col2rgb
+#' @importFrom grDevices col2rgb colors
 #' @export
 #' 
 colorCellTypes <- function(names = NULL, freqs = NULL, init_colors = NULL, max_sum_rgb = 600, 

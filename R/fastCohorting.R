@@ -15,6 +15,7 @@
 #' @importFrom mclust Mclust
 #' @importFrom mclust predict.Mclust
 #' @importFrom mclust mclustBIC
+#' @importFrom stats qnorm
 fastCohorting <- function(mat, n_cohorts = NULL, gaussian_transform = TRUE) {
   
   if (any(is.na(mat))) {

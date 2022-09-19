@@ -8,18 +8,16 @@ Description: An R package for performing cell typing in SMI and other single cel
 biocViews:
 Imports:
   Matrix,
-  RColorBrewer,
   scales,
   umap,
-  BiocManager,
   ggplot2,
   lsa,
-  SpatialDecon,
   irlba,
   mclust,
-  rmarkdown,
+  sparseMatrixStats,
+  methods,
   Rcpp (>= 1.0.9)
-License: GPL-3
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Suggests:
