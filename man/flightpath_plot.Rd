@@ -18,7 +18,7 @@ flightpath_plot(
 
 \item{col}{Optional, a vector of cell colors, with length equal to the number of individual cells.}
 
-\item{showcluserconfidence}{Logical, for whether to label clusters with the average posterior probability of the cells within them. 
+\item{showclusterconfidence}{Logical, for whether to label clusters with the average posterior probability of the cells within them. 
 Gives a readout of how distinct a cluster is from the others.}
 }
 \value{

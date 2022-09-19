@@ -149,13 +149,14 @@ Estep <- function(counts, clust, neg) {
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
+#' @param fixed_profiles Matrix of cluster profiles to hold unchanged throughout iterations.
 #' @param init_profiles Matrix of cluster profiles under which to begin iterations.
 #' If NULL, initial assignments will be automatically inferred, using init_clust 
 #' if available, and using random clusters if not. 
 #' @param init_clust Vector of initial cluster assignments.
 #' If NULL, initial assignments will be automatically inferred.
 #' @param nb_size The size parameter to assume for the NB distribution.
+#' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
 #'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
 #'  switchover is only applicable when a cell has changed the assigned cell type with its

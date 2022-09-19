@@ -26,6 +26,8 @@ nbclust(
 
 \item{bg}{Expected background}
 
+\item{fixed_profiles}{Matrix of cluster profiles to hold unchanged throughout iterations.}
+
 \item{init_profiles}{Matrix of cluster profiles under which to begin iterations.
 If NULL, initial assignments will be automatically inferred, using init_clust 
 if available, and using random clusters if not.}
