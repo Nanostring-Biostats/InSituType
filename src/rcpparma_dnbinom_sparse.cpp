@@ -21,7 +21,7 @@ using namespace arma;
 //' @param size_dnb int Dispersion parameter
 //'
 //' @return rowSums for matrix of densities
-//' @useDynLib MLEcell, .registration = TRUE
+//' @useDynLib InSituType, .registration = TRUE
 //' @importFrom Rcpp evalCpp
 //' @exportPattern "^[[:alpha:]]+" 
 //' @export

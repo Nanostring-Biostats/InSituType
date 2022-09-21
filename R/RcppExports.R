@@ -12,11 +12,11 @@
 #' @param size_dnb int Dispersion parameter
 #'
 #' @return rowSums for matrix of densities
-#' @useDynLib MLEcell, .registration = TRUE
+#' @useDynLib InSituType, .registration = TRUE
 #' @importFrom Rcpp evalCpp
 #' @exportPattern "^[[:alpha:]]+" 
 #' @export
 lls <- function(mat, s, x, bg, size_dnb) {
-    .Call(`_MLEcell_lls`, mat, s, x, bg, size_dnb)
+    .Call(`_InSituType_lls`, mat, s, x, bg, size_dnb)
 }
 

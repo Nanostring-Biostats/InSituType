@@ -1,6 +1,6 @@
 if (FALSE) {
   library(testthat)
-  library(MLEcell)
+  library(InSituType)
   library(Matrix)
 }
 
@@ -14,7 +14,7 @@ testthat::test_that("negative binomial disrtibution is same as stats package", {
   bgsub <- pmax( sweep( mat , 1 , bg , "-" ) , 0 )
   s <- Matrix::rowSums(bgsub) / sum(x)
   s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
-  result <- MLEcell::lls(as(mat, "dgCMatrix"), s, x, bg, 10)
+  result <- InSituType::lls(as(mat, "dgCMatrix"), s, x, bg, 10)
   names(result) <- rownames(mat)
   yhat <- sweep( s %*% t( x ) , 1 , bg , "+" )
   lls <- stats::dnbinom(x = as.matrix(mat), size = 10, mu = yhat, log = TRUE)

@@ -46,7 +46,7 @@ We'll analyze a subset of the CosMx NSCLC showcase dataset.
 
 First, we load the package and access the example data:
 ```{r setup}
-library(MLEcell)
+library(InSituType)
 data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")

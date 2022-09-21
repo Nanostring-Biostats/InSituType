@@ -9,10 +9,10 @@ set.seed(0)
 
 if (FALSE) {
   library(testthat)
-  library(MLEcell)
-  nbclust = MLEcell:::nbclust
-  Mstep=MLEcell:::Mstep
-  Estep=MLEcell:::Estep
+  library(InSituType)
+  nbclust = InSituType:::nbclust
+  Mstep=InSituType:::Mstep
+  Estep=InSituType:::Estep
 }
 
 # for line-by-line debugging:
