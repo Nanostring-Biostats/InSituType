@@ -21,6 +21,9 @@ get_anchor_stats(
 
 \item{bg}{Expected background}
 
+\item{align_genes}{Logical, for whether to align the columns of the counts matrix and the rows of
+the profiles matrix based on their names.}
+
 \item{profiles}{Matrix of reference profiles holding mean expression of genes x cell types. 
 Input linear-scale expression, with genes in rows and cell types in columns.}
 

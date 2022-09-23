@@ -2,6 +2,7 @@
 #'
 #' For a subset of the data, perform clustering under a range of cluster numbers.
 #'  Report on loglikelihood vs. number of clusters, and suggest a best choice.
+#' @param counts Counts matrix, cells * genes. 
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param fixed_profiles Matrix of cluster profiles to hold unchanged throughout iterations.
@@ -14,6 +15,12 @@
 #' @param align_genes Logical, for whether to align the genes in fixed_profiles with the colnames in count
 #' @param plotresults Logical, for whether to plot the results.
 #' @param nb_size The size parameter to assume for the NB distribution.
+#' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
+#'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
+#'  switchover is only applicable when a cell has changed the assigned cell type with its
+#'  highest cell type probability increased by min_prob_increase. 
+#' @param min_prob_increase the threshold of probability used to determine a valid cell 
+#'  type switchover
 #' @param ... Arguments passed to nbclust.
 #' @export
 #'
@@ -26,9 +33,22 @@
 #' \itemize{
 #'  \item
 #' }
-chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, cohort = NULL, init_clust = NULL, n_clusts = 2:12,
-                                max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, 
-                                pct_drop = 0.005, min_prob_increase = 0.05,  ...) {
+chooseClusterNumber <-
+  function(counts,
+           neg,
+           bg = NULL,
+           fixed_profiles = NULL,
+           cohort = NULL,
+           init_clust = NULL,
+           n_clusts = 2:12,
+           max_iters = 10,
+           subset_size = 1000,
+           align_genes = TRUE,
+           plotresults = FALSE,
+           nb_size = 10,
+           pct_drop = 0.005,
+           min_prob_increase = 0.05,
+           ...) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
   s <- rowSums(counts)
@@ -48,14 +68,14 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
     init_clust <- init_clust[use]
   }
 
-  if (length(n_clusts) <=0 ){
+  if (length(n_clusts) <= 0) {
     stop("n_clusts needs to be more than one value.")
-  } else if ( !all( sapply(n_clusts, function(x) x>0 && x/as.integer(x) == 1) ) ){
+  } else if (!all(sapply(n_clusts, function(x) x > 0 && x / as.integer(x) == 1))) {
     stop("n_clusts need to be a vector of positive integers.")
   }
 
   # align genes in fixed_profiles:
-  if (align_genes & !is.null(fixed_profiles)) {
+  if (align_genes && !is.null(fixed_profiles)) {
     sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
     counts <- counts[, sharedgenes]
     fixed_profiles <- fixed_profiles[sharedgenes, ]
@@ -82,13 +102,15 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
       max_iters = max_iters)  
 
     # get the loglik of the clustering result:
-    loglik_thisclust <- apply(tempclust$profiles, 2, function(ref) {
-      lldist(x = ref,
-             mat = counts,
-             bg = bg,
-             size = nb_size)
-    })
+    loglik_thisclust <- parallel::mclapply(asplit(tempclust$profiles, 2),
+                      lldist,
+                      mat = counts,
+                      bg = bg,
+                      size = nb_size,
+                      mc.cores = numCores())
+    loglik_thisclust <- do.call(cbind, loglik_thisclust)
     total_loglik_this_clust <- sum(apply(loglik_thisclust, 1, max))
+    return(total_loglik_this_clust)
   })
 
   # report goodness-of-fit
@@ -100,7 +122,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
 
   if (plotresults) {
     original_par <- par()$mfrow
-    graphics::par(mfrow = c(2,1))
+    graphics::par(mfrow = c(2, 1))
     graphics::plot(n_clusts, totallogliks, xlab = "Number of clusters", ylab = "Log-likelihood")
     graphics::lines(n_clusts, totallogliks)
     graphics::plot(n_clusts, aic, xlab = "Number of clusters", ylab = "AIC")
@@ -114,7 +136,4 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
               aic = aic,
               bic = bic)
   return(out)
-
-
 }
-

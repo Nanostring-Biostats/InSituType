@@ -1,4 +1,4 @@
-# SMI-cell-typing
+# InSituType
  An R package for performing cell typing in SMI and other single cell data
 
 
