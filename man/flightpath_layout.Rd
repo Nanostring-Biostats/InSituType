@@ -13,23 +13,26 @@ flightpath_layout(
 )
 }
 \arguments{
-\item{logliks}{Matrix of cells' log-likelihoods under each cluster. Must provide this or probs argument.}
+\item{logliks}{Matrix of cells' log-likelihoods under each cluster. Must
+provide this or probs argument.}
 
-\item{probs}{Matrix of cells' probabilities of belonging to each cluster. Must provide this or logliks argument.}
+\item{probs}{Matrix of cells' probabilities of belonging to each cluster.
+Must provide this or logliks argument.}
 
-\item{profiles}{Matrix of cell type mean expression profiles. If provided, profiles rather than probs will be used to lay out the centroids.}
+\item{profiles}{Matrix of cell type mean expression profiles. If provided,
+profiles rather than probs will be used to lay out the centroids.}
 
-\item{cluster_xpos}{Vector of cluster centroids' x positions (i.e. where you want each cell type to appear in the plot)}
+\item{cluster_xpos}{Vector of cluster centroids' x positions (i.e. where you
+want each cell type to appear in the plot)}
 
 \item{cluster_ypos}{Vector of cluster centroids' y positions}
 }
 \value{
-A list with two elements:
-\enumerate{
-\item clustpos: a matrix of cluster centroids * x,y positions in the flightpath plot
-\item cellpos: A matrix of cells * x,y positions in the flightpath plot
-}
+A list with two elements: \enumerate{ \item clustpos: a matrix of
+  cluster centroids * x,y positions in the flightpath plot \item cellpos: A
+  matrix of cells * x,y positions in the flightpath plot }
 }
 \description{
-Arrays cells in 2d space based on their probability of belonging to a given cluster.
+Arrays cells in 2d space based on their probability of belonging to a given
+cluster.
 }

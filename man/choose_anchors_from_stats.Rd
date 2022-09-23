@@ -24,23 +24,31 @@ choose_anchors_from_stats(
 
 \item{bg}{Expected background}
 
-\item{anchorstats}{Output from get_anchor_stats. Must provide either this or both cos and llr matrices.}
+\item{anchorstats}{Output from get_anchor_stats. Must provide either this or
+both cos and llr matrices.}
 
-\item{cos}{Matrix of cosine distances from reference profiles. Cells in rows, cell types in columns.}
+\item{cos}{Matrix of cosine distances from reference profiles. Cells in rows,
+cell types in columns.}
 
-\item{llr}{Matrix of log likelihood ratios from reference profiles. Cells in rows, cell types in columns.}
+\item{llr}{Matrix of log likelihood ratios from reference profiles. Cells in
+rows, cell types in columns.}
 
 \item{n_cells}{Up to this many cells will be taken as anchor points}
 
-\item{min_cosine}{Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor}
+\item{min_cosine}{Cells must have at least this much cosine similarity to a
+fixed profile to be used as an anchor}
 
-\item{min_scaled_llr}{Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor}
+\item{min_scaled_llr}{Cells must have (log-likelihood ratio / totalcounts)
+above this threshold to be used as an anchor}
 
-\item{insufficient_anchors_thresh}{Cell types that end up with fewer than this many anchors will be discarded.}
+\item{insufficient_anchors_thresh}{Cell types that end up with fewer than
+this many anchors will be discarded.}
 }
 \value{
-A vector holding anchor cell assignments (or NA) for each cell in the counts matrix
+A vector holding anchor cell assignments (or NA) for each cell in the
+  counts matrix
 }
 \description{
-Starting with cosine distances and log likelihood ratios, choose anchor cells.
+Starting with cosine distances and log likelihood ratios, choose anchor
+cells.
 }

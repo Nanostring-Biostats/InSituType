@@ -1,33 +1,39 @@
 #' Merge cell types in a clustering result
 #'
 #' Take a user-defined list of cells types to rename/combine, then re-compute
-#'  cluster assignments and probabilities under the merged cell types.
+#' cluster assignments and probabilities under the merged cell types.
 #' @param merges A named vector in which the elements give new cluster names and
-#'  the names give old cluster names. OK to omit cell types that aren't being merged.
-#' @param to_delete A vector of cluster names to delete. All cells assigned to these clusters 
-#'  will be reassigned to the next best cluster. 
-#' @param subcluster A list, where each element's name is a cell type to subcluster,
-#'   and the element itself is the cluster number(s) to use. E.g. list("macrophages" = 2, "cancer" = 2:3)
-#' @param logliks Matrix of log-likelihoods output by insitutype, cells in rows, clusters in columns
-#' @param counts Counts matrix, cells * genes. Only needed if subclustering is run.
-#' @param neg Vector of mean negprobe counts per cell. Only needed if subclustering is run.
-#' @param bg Expected background. Optional, and only used if subclustering is run. 
-#' @param cohort Vector of cells' cohort memberships. Optional, and only needed if subclustering is run.
-#' @return A list with two elements:
-#' \enumerate{
-#' \item clust: a vector of cluster assignments
-#' \item prob: Vector of posterior probabilities for each cell type
-#' \item logliks: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
-#' \item profiles: a matrix of the average background-subracted profile of each cell type after merging/deleting/subclustering
-#' }
+#'   the names give old cluster names. OK to omit cell types that aren't being
+#'   merged.
+#' @param to_delete A vector of cluster names to delete. All cells assigned to
+#'   these clusters will be reassigned to the next best cluster.
+#' @param subcluster A list, where each element's name is a cell type to
+#'   subcluster, and the element itself is the cluster number(s) to use. E.g.
+#'   list("macrophages" = 2, "cancer" = 2:3)
+#' @param logliks Matrix of log-likelihoods output by insitutype, cells in rows,
+#'   clusters in columns
+#' @param counts Counts matrix, cells * genes. Only needed if subclustering is
+#'   run.
+#' @param neg Vector of mean negprobe counts per cell. Only needed if
+#'   subclustering is run.
+#' @param bg Expected background. Optional, and only used if subclustering is
+#'   run.
+#' @param cohort Vector of cells' cohort memberships. Optional, and only needed
+#'   if subclustering is run.
+#' @return A list with two elements: \enumerate{ \item clust: a vector of
+#'   cluster assignments \item prob: Vector of posterior probabilities for each
+#'   cell type \item logliks: a matrix of probabilities of all cells (rows)
+#'   belonging to all clusters (columns) \item profiles: a matrix of the average
+#'   background-subracted profile of each cell type after
+#'   merging/deleting/subclustering }
 #' @export
 #' @examples
 #' #example merges argument:
 #' merges = c("macrophages" = "myeloid",  # merge 3 clusters
-#'            "monocytes" = "myeloid", 
-#'            "mDC" = "myeloid",        
+#'            "monocytes" = "myeloid",
+#'            "mDC" = "myeloid",
 #'            "B-cells" = "lymphoid")    # just rename 1 cluster
-#' # example to_delete argument:            
+#' # example to_delete argument:
 #' to_delete = c("neutrophils")
 #' # example subcluster argument:
 #' subcluster = list("Myofibroblast" = 2:3)
@@ -76,7 +82,7 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
                        dimnames = list(rownames(logliks), unique(merges)))
   newlogliks <- sapply(unique(merges), function(newname) {
     oldnames <- names(merges)[merges == newname]
-    newlogliks[, newname] = apply(logliks[, oldnames, drop = FALSE], 1, max, na.rm = TRUE)
+    newlogliks[, newname] <- apply(logliks[, oldnames, drop = FALSE], 1, max, na.rm = TRUE)
   })
   if (length(newlogliks) > 0) {
     newlogliks <- cbind(newlogliks, logliks[, setdiff(colnames(logliks), names(merges)), drop = FALSE])
@@ -129,7 +135,7 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
   
   # re-calculate profiles if available:
   profiles <- NULL
-  if (!is.null(counts) & !is.null(neg)) {
+  if (!is.null(counts) && !is.null(neg)) {
     profiles <- Estep(counts = counts,
                       clust = clust,
                       neg = neg)
@@ -161,12 +167,10 @@ probs2logliks <- function(probs) {
 #' @param logliks Matrix of loglikelihoods, as output by insitytupe. Cells in rows, clusters in columns.
 #' @return A matrix of probabilities, in the same dimensions as logliks. 
 logliks2probs <- function(logliks) {
-  templogliks <- sweep(logliks, 1, apply(logliks, 1, max, na.rm = TRUE), "-" )
+  templogliks <- sweep(logliks, 1, apply(logliks, 1, max, na.rm = TRUE), "-")
   # get on likelihood scale:
   liks <- exp(templogliks)
   # convert to probs
   probs <- sweep(liks, 1, rowSums(liks, na.rm = TRUE), "/")
   return(probs)
 }
-
-

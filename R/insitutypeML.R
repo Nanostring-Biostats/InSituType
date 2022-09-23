@@ -26,15 +26,15 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, reference
   }
   
   # get vector of expected background:
-  if (is.null(bg) & is.null(neg)) {
+  if (is.null(bg) && is.null(neg)) {
     stop("Must provide either bg or neg")
   }
   # infer bg from neg if needed
-  if (is.null(bg) & !is.null(neg)) {
+  if (is.null(bg) && !is.null(neg)) {
       s <- Matrix::rowMeans(counts)
       bgmod <- stats::lm(neg ~ s - 1)
       bg <- bgmod$fitted
-      names(bg) = rownames(counts)
+      names(bg) <- rownames(counts)
   }
   # accept a single value of bg if input by user:
   if (length(bg) == 1) {
@@ -52,7 +52,7 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, reference
     reference_profiles <- reference_profiles[sharedgenes, ]
     
     # warn about genes being lost:
-    if ((length(lostgenes) > 0) & length(lostgenes) < 50) {
+    if ((length(lostgenes) > 0) && length(lostgenes) < 50) {
       message(paste0("The following genes in the count data are missing from reference_profiles and will be omitted from cell typing: ",
                      paste0(lostgenes, collapse = ",")))
     }
@@ -96,7 +96,7 @@ insitutypeML <- function(counts, neg = NULL, bg = NULL, cohort = NULL, reference
   logliks <- logliks[, is.element(colnames(logliks), clust), drop = FALSE]
   profiles <- profiles[, colnames(logliks), drop = FALSE]
   
-  out = list(clust = clust,
+  out <- list(clust = clust,
              prob = prob,
              profiles = profiles,
              logliks = round(logliks, 4),

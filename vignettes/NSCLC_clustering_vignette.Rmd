@@ -108,13 +108,24 @@ a range of plausible options using the n_clusts argument.
 Note: this should take a few minutes on a standard laptop. 
 
 ```{r unsup, echo=TRUE}
-unsup <- insitutype(counts = counts,
-                    neg = negmean,
-                    cohort = cohort,
-                    bg = NULL, # Enter your own per-cell background estimates here if you have them; otherwise insitutype will use the negprobes to estimate background for you. 
-                    n_clusts = c(10, 12),  # condensed to save time. n_clusts = 5:20 would be more optimal
-                    reference_profiles = NULL, # NULL value runs unsupervised clustering; entering a matrix here would run semi-supervised clustering. 
-                    n_phase1 = 200, n_phase2 = 500, n_phase3 = 2000, n_starts = 1, max_iters = 5) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+unsup <- insitutype(
+  counts = counts,
+  neg = negmean,
+  cohort = cohort,
+  # Enter your own per-cell background estimates here if you have them;
+  # otherwise insitutype will use the negprobes to estimate background for you.
+  bg = NULL,
+  # condensed to save time. n_clusts = 5:20 would be more optimal
+  n_clusts = c(10, 12),
+  # NULL value runs unsupervised clustering; entering a matrix here would run
+  # semi-supervised clustering.
+  reference_profiles = NULL,
+  n_phase1 = 200,
+  n_phase2 = 500,
+  n_phase3 = 2000,
+  n_starts = 1,
+  max_iters = 5
+) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
 ```
 
 The function returns 4 useful outputs: a vector of cells cluster assignments, 
@@ -125,17 +136,39 @@ A fifth output, ignorable for unsupervised clustering, records log-likelihoods u
 
 ```{r unsup_results, fig.width = 8, fig.height = 5}
 str(unsup)
-round(head(unsup$prob),2)
+round(head(unsup$prob), 2)
 heatmap(sweep(unsup$profiles, 1, pmax(apply(unsup$profiles, 1, max), .2), "/"), scale = "none",
         main = "Cluster mean expression profiles")
 
 # define cluster colors:
-cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
+cols <-
+  c(
+    '#8DD3C7',
+    '#BEBADA',
+    '#FB8072',
+    '#80B1D3',
+    '#FDB462',
+    '#B3DE69',
+    '#FCCDE5',
+    '#D9D9D9',
+    '#BC80BD',
+    '#CCEBC5',
+    '#FFED6F',
+    '#E41A1C',
+    '#377EB8',
+    '#4DAF4A',
+    '#984EA3',
+    '#FF7F00',
+    '#FFFF33',
+    '#A65628',
+    '#F781BF',
+    '#999999'
+  )
 cols <- cols[seq_along(unique(unsup$clust))]
 names(cols) <- unique(unsup$clust)
 
-par(mfrow = c(1,2))
-par(mar = c(0,0,3,0))
+par(mfrow = c(1, 2))
+par(mar = c(0, 0, 3, 0))
 
 plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
           main = "cells in physical space",
@@ -154,7 +187,29 @@ This information lets us understand how clusters relate to each other.
 The flightpath_plot function arrays cells according to their cluster probabilities:
 ```{r flightpath, fig.width = 5, fig.height = 5}
 # define colors:
-cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
+cols <-
+  c(
+    '#8DD3C7',
+    '#BEBADA',
+    '#FB8072',
+    '#80B1D3',
+    '#FDB462',
+    '#B3DE69',
+    '#FCCDE5',
+    '#D9D9D9',
+    '#BC80BD',
+    '#CCEBC5',
+    '#FFED6F',
+    '#E41A1C',
+    '#377EB8',
+    '#4DAF4A',
+    '#984EA3',
+    '#FF7F00',
+    '#FFFF33',
+    '#A65628',
+    '#F781BF',
+    '#999999'
+  )
 cols <- cols[seq_along(unique(unsup$clust))]
 names(cols) <- unique(unsup$clust)
 
@@ -210,7 +265,29 @@ newclusts <- refineClusters(logliks = unsup$logliks,
 str(newclusts)
 
 # plot the updated results:
-cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
+cols <-
+  c(
+    '#8DD3C7',
+    '#BEBADA',
+    '#FB8072',
+    '#80B1D3',
+    '#FDB462',
+    '#B3DE69',
+    '#FCCDE5',
+    '#D9D9D9',
+    '#BC80BD',
+    '#CCEBC5',
+    '#FFED6F',
+    '#E41A1C',
+    '#377EB8',
+    '#4DAF4A',
+    '#984EA3',
+    '#FF7F00',
+    '#FFFF33',
+    '#A65628',
+    '#F781BF',
+    '#999999'
+  )
 cols <- cols[seq_along(unique(newclusts$clust))]
 names(cols) <- unique(newclusts$clust)
 fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = newclusts, col = cols[newclusts$clust])
@@ -230,8 +307,8 @@ Here are 3 versions:
 ```{r colorCellTypes, fig.width = 8, fig.height = 5}
 
 
-par(mfrow = c(1,3))
-par(mar = c(0,0,3,0))
+par(mfrow = c(1, 3))
+par(mar = c(0, 0, 3, 0))
 
 plot(mini_nsclc$x, mini_nsclc$y, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
           main = "brewers palette",

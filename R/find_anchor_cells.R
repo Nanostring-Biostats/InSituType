@@ -22,7 +22,7 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
                              min_cosine = 0.3) {
   
   # infer bg if not provided: assume background is proportional to the scaling factor s
-  if (is.null(bg) & is.null(neg)) {
+  if (is.null(bg) && is.null(neg)) {
     stop("Must provide either bg or neg")
   }
   if (is.null(bg)) {
@@ -36,7 +36,7 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   }
   
   ### align genes in counts and fixed_profiles
-  if (align_genes & !is.null(profiles)) {
+  if (align_genes && !is.null(profiles)) {
     sharedgenes <- intersect(rownames(profiles), colnames(counts))
     lostgenes <- setdiff(colnames(counts), rownames(profiles))
     
@@ -45,12 +45,21 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
     profiles <- profiles[sharedgenes, ]
     
     # warn about genes being lost:
-    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
-                     paste0(lostgenes, collapse = ",")))
+    if ((length(lostgenes) > 0) && length(lostgenes < 50)) {
+      message(
+        paste0(
+          "The following genes in the count data are missing from fixed_profiles and will be omitted from anchor selection: ",
+          paste0(lostgenes, collapse = ",")
+        )
+      )
     }
     if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"))
+      message(
+        paste0(
+          length(lostgenes),
+          " genes in the count data are missing from fixed_profiles and will be omitted from anchor selection"
+        )
+      )
     }
   }
   
@@ -63,7 +72,7 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   
   # stats for which cells to get loglik on: 
   # get 3rd hightest cosines of each cell:
-  cos3 <- apply(cos, 1, function(x){
+  cos3 <- apply(cos, 1, function(x) {
     return(x[order(x, decreasing = TRUE)[3]])
   })
   # get cells with sufficient cosine:
@@ -78,7 +87,7 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
                                 cohort = rep("all", length(usecells)),
                                 bg = bg[usecells], 
                                 size = size, 
-                                digits = 3, return_loglik = T) 
+                                digits = 3, return_loglik = TRUE) 
       # scale the logliks by total counts:
       templl[usecells] <- templl[usecells] / rowSums(counts[usecells, ])
     }
@@ -91,30 +100,48 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   secondbest <- apply(logliks, 1, getsecondbest)
   llr <- suppressWarnings(sweep(logliks, 1, secondbest, "-"))
   
-  out = list(cos = cos, llr = llr)
+  out <- list(cos = cos, llr = llr)
+  return(out)
 }
 
 
 #' Choose anchor cells given anchor stats
-#' 
-#' Starting with cosine distances and log likelihood ratios, choose anchor cells. 
+#'
+#' Starting with cosine distances and log likelihood ratios, choose anchor
+#' cells.
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param anchorstats Output from get_anchor_stats. Must provide either this or both cos and llr matrices.
-#' @param cos Matrix of cosine distances from reference profiles. Cells in rows, cell types in columns.
-#' @param llr Matrix of log likelihood ratios from reference profiles. Cells in rows, cell types in columns.
+#' @param anchorstats Output from get_anchor_stats. Must provide either this or
+#'   both cos and llr matrices.
+#' @param cos Matrix of cosine distances from reference profiles. Cells in rows,
+#'   cell types in columns.
+#' @param llr Matrix of log likelihood ratios from reference profiles. Cells in
+#'   rows, cell types in columns.
 #' @param n_cells Up to this many cells will be taken as anchor points
-#' @param min_cosine Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor
-#' @param min_scaled_llr Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
-#' @param insufficient_anchors_thresh Cell types that end up with fewer than this many anchors will be discarded. 
-#' @return A vector holding anchor cell assignments (or NA) for each cell in the counts matrix
+#' @param min_cosine Cells must have at least this much cosine similarity to a
+#'   fixed profile to be used as an anchor
+#' @param min_scaled_llr Cells must have (log-likelihood ratio / totalcounts)
+#'   above this threshold to be used as an anchor
+#' @param insufficient_anchors_thresh Cell types that end up with fewer than
+#'   this many anchors will be discarded.
+#' @return A vector holding anchor cell assignments (or NA) for each cell in the
+#'   counts matrix
 #' @export
-choose_anchors_from_stats <- function(counts, neg = NULL, bg, anchorstats = NULL, cos = NULL, llr = NULL, n_cells = 500, 
-                                      min_cosine = 0.3, min_scaled_llr = 0.01, 
-                                      insufficient_anchors_thresh = 20) {
+choose_anchors_from_stats <-
+  function(counts,
+           neg = NULL,
+           bg,
+           anchorstats = NULL,
+           cos = NULL,
+           llr = NULL,
+           n_cells = 500,
+           min_cosine = 0.3,
+           min_scaled_llr = 0.01,
+           insufficient_anchors_thresh = 20) {
+    
   
-  if (is.null(anchorstats) & (is.null(cos) | is.null(llr))) {
+  if (is.null(anchorstats) && (is.null(cos) || is.null(llr))) {
     stop("Must provide either anchorstats or both cos and llr matrices.")
   }
   
@@ -138,7 +165,8 @@ choose_anchors_from_stats <- function(counts, neg = NULL, bg, anchorstats = NULL
     anchors[topn] <- cell
   }
   
-  # anchor consolidation: identify and remove anchor cells that are poor fits to the mean anchor profile for the cell type:
+  # anchor consolidation: identify and remove anchor cells that are poor fits to
+  # the mean anchor profile for the cell type:
   for (cell in setdiff(unique(anchors), NA)) {
     
     use <- (anchors == cell) & !is.na(anchors)
@@ -177,22 +205,29 @@ choose_anchors_from_stats <- function(counts, neg = NULL, bg, anchorstats = NULL
 
   
 #' Choose anchor cells
-#' 
+#'
 #' Finds cells with very good fits to the reference profiles, and saves these
-#'  cells for use as "anchors" in the semi-supervised learning version of nbclust. 
+#' cells for use as "anchors" in the semi-supervised learning version of
+#' nbclust.
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param align_genes Logical, for whether to align the columns of the counts matrix and the rows of
-#'  the profiles matrix based on their names. 
-#' @param profiles Matrix of reference profiles holding mean expression of genes x cell types. 
-#'  Input linear-scale expression, with genes in rows and cell types in columns.
-#' @param size Negative binomial size parameter to be used in loglikelihood calculatoin
+#' @param align_genes Logical, for whether to align the columns of the counts
+#'   matrix and the rows of the profiles matrix based on their names.
+#' @param profiles Matrix of reference profiles holding mean expression of genes
+#'   x cell types. Input linear-scale expression, with genes in rows and cell
+#'   types in columns.
+#' @param size Negative binomial size parameter to be used in loglikelihood
+#'   calculatoin
 #' @param n_cells Up to this many cells will be taken as anchor points
-#' @param min_cosine Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor
-#' @param min_scaled_llr Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
-#' @param insufficient_anchors_thresh Cell types that end up with fewer than this many anchors will be discarded. 
-#' @return A vector holding anchor cell assignments (or NA) for each cell in the counts matrix
+#' @param min_cosine Cells must have at least this much cosine similarity to a
+#'   fixed profile to be used as an anchor
+#' @param min_scaled_llr Cells must have (log-likelihood ratio / totalcounts)
+#'   above this threshold to be used as an anchor
+#' @param insufficient_anchors_thresh Cell types that end up with fewer than
+#'   this many anchors will be discarded.
+#' @return A vector holding anchor cell assignments (or NA) for each cell in the
+#'   counts matrix
 #' @importFrom lsa cosine
 #' @export
 find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
@@ -224,4 +259,3 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   return(anchors)
   
 }
-  

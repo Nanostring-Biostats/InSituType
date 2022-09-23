@@ -2,7 +2,8 @@
 % Please edit documentation in R/rescaleProfiles.R
 \name{updateProfilesFromAnchors}
 \alias{updateProfilesFromAnchors}
-\title{Use anchor cells to update reference profiles, simply by taking the mean profile of the anchors.}
+\title{Use anchor cells to update reference profiles, simply by taking the mean
+profile of the anchors.}
 \usage{
 updateProfilesFromAnchors(
   counts,
@@ -21,24 +22,27 @@ updateProfilesFromAnchors(
 
 \item{anchors}{Vector of anchor assignments}
 
-\item{reference_profiles}{Matrix of expression profiles of pre-defined clusters,
-e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-Colnames must all be included in the init_clust variable.}
+\item{reference_profiles}{Matrix of expression profiles of pre-defined
+clusters, e.g. from previous scRNA-seq. These profiles will not be updated
+by the EM algorithm. Colnames must all be included in the init_clust
+variable.}
 
-\item{align_genes}{Logical, for whether to align the counts matrix and the reference_profiles by gene ID.}
+\item{align_genes}{Logical, for whether to align the counts matrix and the
+reference_profiles by gene ID.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
-\item{max_rescaling}{Scaling factors will be truncated above by this value and below by its inverse (at 1/value and value)}
+\item{max_rescaling}{Scaling factors will be truncated above by this value
+and below by its inverse (at 1/value and value)}
 }
 \value{
-\enumerate{
-\item profiles: A profiles matrix with the rows rescaled according to platform effects and individual elements updated further
-\item scaling_factors: A vector of genes' scaling factors (what they were multiplied by when updating the reference profiles). 
-}
+\enumerate{ \item profiles: A profiles matrix with the rows rescaled
+according to platform effects and individual elements updated further \item
+scaling_factors: A vector of genes' scaling factors (what they were
+multiplied by when updating the reference profiles). }
 }
 \description{
-Uses anchor cells to estimate platform effects / scaling factors to be applied to
- the genes/rows of the reference profile matrix. Then uses Bayesian math to
- update the individual elements on X.
+Uses anchor cells to estimate platform effects / scaling factors to be
+applied to the genes/rows of the reference profile matrix. Then uses Bayesian
+math to update the individual elements on X.
 }

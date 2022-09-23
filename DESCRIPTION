@@ -21,6 +21,7 @@ Imports:
   mclust,
   sparseMatrixStats,
   methods,
+  rlang,
   Rcpp (>= 1.0.9)
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -29,6 +30,6 @@ Suggests:
   knitr
 VignetteBuilder: knitr
 Depends:
-  R (>= 2.10)
+  R (>= 3.5.0)
 RoxygenNote: 7.2.1
 LinkingTo: Rcpp, RcppArmadillo

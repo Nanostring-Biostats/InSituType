@@ -15,17 +15,22 @@ geoSketch_get_plaid(
 )
 }
 \arguments{
-\item{X}{feature matrix with cellIDs as rows and featureIDs as columns (can be counts, normalized expression, PCA, UMAP, etc.)}
+\item{X}{feature matrix with cellIDs as rows and featureIDs as columns (can
+be counts, normalized expression, PCA, UMAP, etc.)}
 
 \item{N}{desired sample size}
 
-\item{alpha}{defines the acceptable minimum number of bins to sample from as `(1-alpha)*N`}
+\item{alpha}{defines the acceptable minimum number of bins to sample from as
+`(1-alpha)*N`}
 
-\item{max_iter}{maximum number of iterations used to achieve an acceptable minimum number of bins}
+\item{max_iter}{maximum number of iterations used to achieve an acceptable
+minimum number of bins}
 
-\item{returnBins}{determines whether or not to pass back bin labels for each cell}
+\item{returnBins}{determines whether or not to pass back bin labels for each
+cell}
 
-\item{minCellsPerBin}{the minimum number of cells required for a bin to be considered for sampling}
+\item{minCellsPerBin}{the minimum number of cells required for a bin to be
+considered for sampling}
 
 \item{seed}{set seed for random sampling}
 }
