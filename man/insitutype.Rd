@@ -39,32 +39,38 @@ insitutype(
 
 \item{bg}{Expected background}
 
-\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised clustering. 
-Vector elements will be mainly NA's (for non-anchored cells) and cell type names
-for cells to be held constant throughout iterations.}
+\item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised
+clustering. Vector elements will be mainly NA's (for non-anchored cells)
+and cell type names for cells to be held constant throughout iterations.}
 
 \item{cohort}{Vector of cells' cohort memberships}
 
-\item{n_clusts}{Number of clusters, in addition to any pre-specified cell types.
-Enter 0 to run purely supervised cell typing from fixed profiles. 
-Enter a range of integers to automatically select the optimal number of clusters.}
+\item{n_clusts}{Number of clusters, in addition to any pre-specified cell
+types. Enter 0 to run purely supervised cell typing from fixed profiles.
+Enter a range of integers to automatically select the optimal number of
+clusters.}
 
-\item{reference_profiles}{Matrix of expression profiles of pre-defined clusters,
-e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-Colnames must all be included in the init_clust variable.}
+\item{reference_profiles}{Matrix of expression profiles of pre-defined
+clusters, e.g. from previous scRNA-seq. These profiles will not be updated
+by the EM algorithm. Colnames must all be included in the init_clust
+variable.}
 
-\item{update_reference_profiles}{Logical, for whether to use the data to update the reference profiles. Default and strong recommendation is TRUE. 
-(However, if the reference profiles are from the same platform as the study, then FALSE could be better.)}
+\item{update_reference_profiles}{Logical, for whether to use the data to
+update the reference profiles. Default and strong recommendation is TRUE.
+(However, if the reference profiles are from the same platform as the
+study, then FALSE could be better.)}
 
-\item{sketchingdata}{Optional matrix of data for use in non-random sampling via "sketching".
-If not provided, then the data's first 20 PCs will be used.}
+\item{sketchingdata}{Optional matrix of data for use in non-random sampling
+via "sketching". If not provided, then the data's first 20 PCs will be
+used.}
 
-\item{align_genes}{Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.}
+\item{align_genes}{Logical, for whether to align the counts matrix and the
+fixed_profiles by gene ID.}
 
 \item{nb_size}{The size parameter to assume for the NB distribution.}
 
-\item{init_clust}{Vector of initial cluster assignments.
-If NULL, initial assignments will be automatically inferred.}
+\item{init_clust}{Vector of initial cluster assignments. If NULL, initial
+assignments will be automatically inferred.}
 
 \item{n_starts}{the number of iterations}
 
@@ -74,37 +80,45 @@ If NULL, initial assignments will be automatically inferred.}
 
 \item{n_phase2}{Subsample size for phase 2 (refining in a larger subset)}
 
-\item{n_phase3}{Subsample size for phase 3 (getting final solution in a very large subset)}
+\item{n_phase3}{Subsample size for phase 3 (getting final solution in a very
+large subset)}
 
-\item{n_chooseclusternumber}{Subsample size for choosing an optimal number of clusters}
+\item{n_chooseclusternumber}{Subsample size for choosing an optimal number of
+clusters}
 
-\item{pct_drop}{the decrease in percentage of cell types with a valid switchover to 
-another cell type compared to the last iteration. Default value: 1/10000. A valid 
-switchover is only applicable when a cell has changed the assigned cell type with its
-highest cell type probability increased by min_prob_increase.}
+\item{pct_drop}{the decrease in percentage of cell types with a valid
+switchover to another cell type compared to the last iteration. Default
+value: 1/10000. A valid switchover is only applicable when a cell has
+changed the assigned cell type with its highest cell type probability
+increased by min_prob_increase.}
 
-\item{min_prob_increase}{the threshold of probability used to determine a valid cell 
-type switchover}
+\item{min_prob_increase}{the threshold of probability used to determine a
+valid cell type switchover}
 
 \item{max_iters}{Maximum number of iterations.}
 
-\item{n_anchor_cells}{For semi-supervised learning. Maximum number of anchor cells to use for each cell type.}
+\item{n_anchor_cells}{For semi-supervised learning. Maximum number of anchor
+cells to use for each cell type.}
 
-\item{min_anchor_cosine}{For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.}
+\item{min_anchor_cosine}{For semi-supervised learning. Cells must have at
+least this much cosine similarity to a fixed profile to be used as an
+anchor.}
 
-\item{min_anchor_llr}{For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor}
+\item{min_anchor_llr}{For semi-supervised learning. Cells must have
+(log-likelihood ratio / totalcounts) above this threshold to be used as an
+anchor}
 
-\item{insufficient_anchors_thresh}{Cell types that end up with fewer than this many anchors after anchor selection will be discarded.}
+\item{insufficient_anchors_thresh}{Cell types that end up with fewer than
+this many anchors after anchor selection will be discarded.}
 }
 \value{
-A list, with the following elements:
-\enumerate{
-\item clust: a vector given cells' cluster assignments
-\item prob: a vector giving the confidence in each cell's cluster
-\item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
-\item profiles: a matrix of cluster-specific expression profiles
-\item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
-}
+A list, with the following elements: \enumerate{ \item clust: a
+  vector given cells' cluster assignments \item prob: a vector giving the
+  confidence in each cell's cluster \item logliks: Matrix of cells'
+  log-likelihoods under each cluster. Cells in rows, clusters in columns.
+  \item profiles: a matrix of cluster-specific expression profiles \item
+  anchors: from semi-supervised clustering: a vector giving the identifies
+  and cell types of anchor cells }
 }
 \description{
 A wrapper for nbclust, to manage subsampling and multiple random starts.

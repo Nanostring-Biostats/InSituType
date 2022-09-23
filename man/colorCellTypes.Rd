@@ -15,13 +15,16 @@ colorCellTypes(
 \arguments{
 \item{names}{Vector of cell type names}
 
-\item{freqs}{Optional, named vector of cell type abundance (e.g. c(T = 1000, tumor = 15000...))}
+\item{freqs}{Optional, named vector of cell type abundance (e.g. c(T = 1000,
+tumor = 15000...))}
 
 \item{init_colors}{Optional, a named vector of cell colors. This will be used
-for all cell types in the "names" vector that match names(init_colors). 
-Intended for use with the iocolors vector (found in the Ptolemy package data).}
+for all cell types in the "names" vector that match names(init_colors).
+Intended for use with the iocolors vector (found in the Ptolemy package
+data).}
 
-\item{max_sum_rgb}{Don't return any colors with total rgb values above this level. (Removes excessively light colors.)}
+\item{max_sum_rgb}{Don't return any colors with total rgb values above this
+level. (Removes excessively light colors.)}
 
 \item{palette}{One of "tableau20", "brewers" or "earthplus".}
 }
@@ -29,7 +32,7 @@ Intended for use with the iocolors vector (found in the Ptolemy package data).}
 A named color vector
 }
 \description{
-Uses Giotto::getDistinctColors to begin with. Orders colors so the most 
- common cell types get the lightest colors. 
- Removes colors that are too light (sum of rgb values > 600)
+Uses Giotto::getDistinctColors to begin with. Orders colors so the most
+common cell types get the lightest colors. Removes colors that are too light
+(sum of rgb values > 600)
 }

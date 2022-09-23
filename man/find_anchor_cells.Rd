@@ -24,26 +24,33 @@ find_anchor_cells(
 
 \item{bg}{Expected background}
 
-\item{align_genes}{Logical, for whether to align the columns of the counts matrix and the rows of
-the profiles matrix based on their names.}
+\item{align_genes}{Logical, for whether to align the columns of the counts
+matrix and the rows of the profiles matrix based on their names.}
 
-\item{profiles}{Matrix of reference profiles holding mean expression of genes x cell types. 
-Input linear-scale expression, with genes in rows and cell types in columns.}
+\item{profiles}{Matrix of reference profiles holding mean expression of genes
+x cell types. Input linear-scale expression, with genes in rows and cell
+types in columns.}
 
-\item{size}{Negative binomial size parameter to be used in loglikelihood calculatoin}
+\item{size}{Negative binomial size parameter to be used in loglikelihood
+calculatoin}
 
 \item{n_cells}{Up to this many cells will be taken as anchor points}
 
-\item{min_cosine}{Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor}
+\item{min_cosine}{Cells must have at least this much cosine similarity to a
+fixed profile to be used as an anchor}
 
-\item{min_scaled_llr}{Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor}
+\item{min_scaled_llr}{Cells must have (log-likelihood ratio / totalcounts)
+above this threshold to be used as an anchor}
 
-\item{insufficient_anchors_thresh}{Cell types that end up with fewer than this many anchors will be discarded.}
+\item{insufficient_anchors_thresh}{Cell types that end up with fewer than
+this many anchors will be discarded.}
 }
 \value{
-A vector holding anchor cell assignments (or NA) for each cell in the counts matrix
+A vector holding anchor cell assignments (or NA) for each cell in the
+  counts matrix
 }
 \description{
 Finds cells with very good fits to the reference profiles, and saves these
- cells for use as "anchors" in the semi-supervised learning version of nbclust.
+cells for use as "anchors" in the semi-supervised learning version of
+nbclust.
 }
