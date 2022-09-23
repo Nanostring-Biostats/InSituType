@@ -1,69 +1,96 @@
-#' Run insitutype. 
+#' Run insitutype.
 #'
 #' A wrapper for nbclust, to manage subsampling and multiple random starts.
 #' @param counts Counts matrix (or dgCMatrix), cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised clustering. 
-#'  Vector elements will be mainly NA's (for non-anchored cells) and cell type names
-#'  for cells to be held constant throughout iterations. 
+#' @param anchors Vector giving "anchor" cell types, for use in semi-supervised
+#'   clustering. Vector elements will be mainly NA's (for non-anchored cells)
+#'   and cell type names for cells to be held constant throughout iterations.
 #' @param cohort Vector of cells' cohort memberships
-#' @param n_clusts Number of clusters, in addition to any pre-specified cell types.
-#'  Enter 0 to run purely supervised cell typing from fixed profiles. 
-#'  Enter a range of integers to automatically select the optimal number of clusters. 
-#' @param reference_profiles Matrix of expression profiles of pre-defined clusters,
-#'  e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
-#'  Colnames must all be included in the init_clust variable.
-#' @param update_reference_profiles Logical, for whether to use the data to update the reference profiles. Default and strong recommendation is TRUE. 
-#'   (However, if the reference profiles are from the same platform as the study, then FALSE could be better.)
-#' @param sketchingdata Optional matrix of data for use in non-random sampling via "sketching".
-#'  If not provided, then the data's first 20 PCs will be used. 
-#' @param align_genes Logical, for whether to align the counts matrix and the fixed_profiles by gene ID.
+#' @param n_clusts Number of clusters, in addition to any pre-specified cell
+#'   types. Enter 0 to run purely supervised cell typing from fixed profiles.
+#'   Enter a range of integers to automatically select the optimal number of
+#'   clusters.
+#' @param reference_profiles Matrix of expression profiles of pre-defined
+#'   clusters, e.g. from previous scRNA-seq. These profiles will not be updated
+#'   by the EM algorithm. Colnames must all be included in the init_clust
+#'   variable.
+#' @param update_reference_profiles Logical, for whether to use the data to
+#'   update the reference profiles. Default and strong recommendation is TRUE.
+#'   (However, if the reference profiles are from the same platform as the
+#'   study, then FALSE could be better.)
+#' @param sketchingdata Optional matrix of data for use in non-random sampling
+#'   via "sketching". If not provided, then the data's first 20 PCs will be
+#'   used.
+#' @param align_genes Logical, for whether to align the counts matrix and the
+#'   fixed_profiles by gene ID.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param init_clust Vector of initial cluster assignments.
-#' If NULL, initial assignments will be automatically inferred.
+#' @param init_clust Vector of initial cluster assignments. If NULL, initial
+#'   assignments will be automatically inferred.
 #' @param n_starts the number of iterations
 #' @param n_benchmark_cells the number of cells for benchmarking
 #' @param n_phase1 Subsample size for phase 1 (random starts)
 #' @param n_phase2 Subsample size for phase 2 (refining in a larger subset)
-#' @param n_phase3 Subsample size for phase 3 (getting final solution in a very large subset)
-#' @param n_chooseclusternumber Subsample size for choosing an optimal number of clusters
-#' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
-#'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
-#'  switchover is only applicable when a cell has changed the assigned cell type with its
-#'  highest cell type probability increased by min_prob_increase. 
-#' @param min_prob_increase the threshold of probability used to determine a valid cell 
-#'  type switchover
+#' @param n_phase3 Subsample size for phase 3 (getting final solution in a very
+#'   large subset)
+#' @param n_chooseclusternumber Subsample size for choosing an optimal number of
+#'   clusters
+#' @param pct_drop the decrease in percentage of cell types with a valid
+#'   switchover to another cell type compared to the last iteration. Default
+#'   value: 1/10000. A valid switchover is only applicable when a cell has
+#'   changed the assigned cell type with its highest cell type probability
+#'   increased by min_prob_increase.
+#' @param min_prob_increase the threshold of probability used to determine a
+#'   valid cell type switchover
 #' @param max_iters Maximum number of iterations.
-#' @param n_anchor_cells For semi-supervised learning. Maximum number of anchor cells to use for each cell type. 
-#' @param min_anchor_cosine For semi-supervised learning. Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.
-#' @param min_anchor_llr For semi-supervised learning. Cells must have (log-likelihood ratio / totalcounts) above this threshold to be used as an anchor
-#' @param insufficient_anchors_thresh Cell types that end up with fewer than this many anchors after anchor selection will be discarded. 
+#' @param n_anchor_cells For semi-supervised learning. Maximum number of anchor
+#'   cells to use for each cell type.
+#' @param min_anchor_cosine For semi-supervised learning. Cells must have at
+#'   least this much cosine similarity to a fixed profile to be used as an
+#'   anchor.
+#' @param min_anchor_llr For semi-supervised learning. Cells must have
+#'   (log-likelihood ratio / totalcounts) above this threshold to be used as an
+#'   anchor
+#' @param insufficient_anchors_thresh Cell types that end up with fewer than
+#'   this many anchors after anchor selection will be discarded.
 #' @importFrom stats lm
 #' @importFrom Matrix rowMeans
 #' @importFrom Matrix colSums
 #' @export
-#' @return A list, with the following elements:
-#' \enumerate{
-#' \item clust: a vector given cells' cluster assignments
-#' \item prob: a vector giving the confidence in each cell's cluster
-#' \item logliks: Matrix of cells' log-likelihoods under each cluster. Cells in rows, clusters in columns.
-#' \item profiles: a matrix of cluster-specific expression profiles
-#' \item anchors: from semi-supervised clustering: a vector giving the identifies and cell types of anchor cells
-#' }
-insitutype <- function(counts, neg, bg = NULL, 
-                          anchors = NULL,
-                          cohort = NULL,
-                          n_clusts,
-                          reference_profiles = NULL, 
-                          update_reference_profiles = TRUE,
-                          sketchingdata = NULL,
-                          align_genes = TRUE, nb_size = 10, 
-                          init_clust = NULL, n_starts = 10, n_benchmark_cells = 10000,
-                          n_phase1 = 10000, n_phase2 = 20000, n_phase3 = 100000,
-                          n_chooseclusternumber = 2000,
-                          pct_drop = 1/10000, min_prob_increase = 0.05, max_iters = 40,
-                          n_anchor_cells = 2000, min_anchor_cosine = 0.3, min_anchor_llr = 0.03, insufficient_anchors_thresh = 20) {
+#' @return A list, with the following elements: \enumerate{ \item clust: a
+#'   vector given cells' cluster assignments \item prob: a vector giving the
+#'   confidence in each cell's cluster \item logliks: Matrix of cells'
+#'   log-likelihoods under each cluster. Cells in rows, clusters in columns.
+#'   \item profiles: a matrix of cluster-specific expression profiles \item
+#'   anchors: from semi-supervised clustering: a vector giving the identifies
+#'   and cell types of anchor cells }
+insitutype <- function(counts,
+                       neg,
+                       bg = NULL,
+                       anchors = NULL,
+                       cohort = NULL,
+                       n_clusts,
+                       reference_profiles = NULL,
+                       update_reference_profiles = TRUE,
+                       sketchingdata = NULL,
+                       align_genes = TRUE,
+                       nb_size = 10,
+                       init_clust = NULL,
+                       n_starts = 10,
+                       n_benchmark_cells = 10000,
+                       n_phase1 = 10000,
+                       n_phase2 = 20000,
+                       n_phase3 = 100000,
+                       n_chooseclusternumber = 2000,
+                       pct_drop = 1 / 10000,
+                       min_prob_increase = 0.05,
+                       max_iters = 40,
+                       n_anchor_cells = 2000,
+                       min_anchor_cosine = 0.3,
+                       min_anchor_llr = 0.03,
+                       insufficient_anchors_thresh = 20) {
+  
   
   #### preliminaries ---------------------------
   
@@ -88,7 +115,7 @@ insitutype <- function(counts, neg, bg = NULL,
     s <- Matrix::rowMeans(counts)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
-    names(bg) = rownames(counts)
+    names(bg) <- rownames(counts)
   }
   if (length(bg) == 1) {
     bg <- rep(bg, nrow(counts))
@@ -115,7 +142,7 @@ insitutype <- function(counts, neg, bg = NULL,
     }
   }
   # align the genes from fixed_profiles and counts
-  if (align_genes & !is.null(fixed_profiles)) {
+  if (align_genes && !is.null(fixed_profiles)) {
     sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
     lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
     
@@ -124,7 +151,7 @@ insitutype <- function(counts, neg, bg = NULL,
     fixed_profiles <- fixed_profiles[sharedgenes, ]
     
     # warn about genes being lost:
-    if ((length(lostgenes) > 0) & length(lostgenes < 50)) {
+    if ((length(lostgenes) > 0) && length(lostgenes < 50)) {
       message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from clustering: ",
                      paste0(lostgenes, collapse = ",")))
     }
@@ -147,10 +174,10 @@ insitutype <- function(counts, neg, bg = NULL,
   if (is.null(sketchingdata)) {
     sketchingdata <- prepDataForSketching(counts)
   }
-  n_phase1 = min(n_phase1, nrow(counts))
-  n_phase2 = min(n_phase2, nrow(counts))
-  n_phase3 = min(n_phase3, nrow(counts))
-  n_benchmark_cells = min(n_benchmark_cells, nrow(counts))
+  n_phase1 <- min(n_phase1, nrow(counts))
+  n_phase2 <- min(n_phase2, nrow(counts))
+  n_phase3 <- min(n_phase3, nrow(counts))
+  n_benchmark_cells <- min(n_benchmark_cells, nrow(counts))
   
   # define sketching "Plaids" (rough clusters) for subsampling:
   plaid <- geoSketch_get_plaid(X = sketchingdata, 
@@ -169,7 +196,7 @@ insitutype <- function(counts, neg, bg = NULL,
     n_clusts <- length(setdiff(unique(init_clust), colnames(fixed_profiles)))
   }
   if (is.null(n_clusts)) {
-    n_clusts <- 5:15 + 5*(is.null(fixed_profiles))
+    n_clusts <- 5:15 + 5 * (is.null(fixed_profiles))
   }
   # get optimal number of clusters
   if (length(n_clusts) > 1) {
@@ -250,7 +277,7 @@ insitutype <- function(counts, neg, bg = NULL,
                         mc.cores = numCores())
       templogliks <- do.call(cbind, templogliks)
       # take the sum of cells' best logliks:
-      benchmarking_logliks[i] = sum(apply(templogliks, 1, max))
+      benchmarking_logliks[i] <- sum(apply(templogliks, 1, max))
     }
     best_start <- which.max(benchmarking_logliks)
     tempprofiles <- profiles_from_random_starts[[best_start]]

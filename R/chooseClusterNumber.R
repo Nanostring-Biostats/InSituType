@@ -33,9 +33,22 @@
 #' \itemize{
 #'  \item
 #' }
-chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, cohort = NULL, init_clust = NULL, n_clusts = 2:12,
-                                max_iters = 10, subset_size = 1000, align_genes = TRUE, plotresults = FALSE, nb_size = 10, 
-                                pct_drop = 0.005, min_prob_increase = 0.05,  ...) {
+chooseClusterNumber <-
+  function(counts,
+           neg,
+           bg = NULL,
+           fixed_profiles = NULL,
+           cohort = NULL,
+           init_clust = NULL,
+           n_clusts = 2:12,
+           max_iters = 10,
+           subset_size = 1000,
+           align_genes = TRUE,
+           plotresults = FALSE,
+           nb_size = 10,
+           pct_drop = 0.005,
+           min_prob_increase = 0.05,
+           ...) {
 
   # infer bg if not provided: assume background is proportional to the scaling factor s
   s <- rowSums(counts)
@@ -55,14 +68,14 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
     init_clust <- init_clust[use]
   }
 
-  if (length(n_clusts) <=0 ){
+  if (length(n_clusts) <= 0) {
     stop("n_clusts needs to be more than one value.")
-  } else if ( !all( sapply(n_clusts, function(x) x>0 && x/as.integer(x) == 1) ) ){
+  } else if (!all(sapply(n_clusts, function(x) x > 0 && x / as.integer(x) == 1))) {
     stop("n_clusts need to be a vector of positive integers.")
   }
 
   # align genes in fixed_profiles:
-  if (align_genes & !is.null(fixed_profiles)) {
+  if (align_genes && !is.null(fixed_profiles)) {
     sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
     counts <- counts[, sharedgenes]
     fixed_profiles <- fixed_profiles[sharedgenes, ]
@@ -97,6 +110,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
                       mc.cores = numCores())
     loglik_thisclust <- do.call(cbind, loglik_thisclust)
     total_loglik_this_clust <- sum(apply(loglik_thisclust, 1, max))
+    return(total_loglik_this_clust)
   })
 
   # report goodness-of-fit
@@ -108,7 +122,7 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
 
   if (plotresults) {
     original_par <- par()$mfrow
-    graphics::par(mfrow = c(2,1))
+    graphics::par(mfrow = c(2, 1))
     graphics::plot(n_clusts, totallogliks, xlab = "Number of clusters", ylab = "Log-likelihood")
     graphics::lines(n_clusts, totallogliks)
     graphics::plot(n_clusts, aic, xlab = "Number of clusters", ylab = "AIC")
@@ -122,7 +136,4 @@ chooseClusterNumber <- function(counts, neg, bg = NULL, fixed_profiles = NULL, c
               aic = aic,
               bic = bic)
   return(out)
-
-
 }
-

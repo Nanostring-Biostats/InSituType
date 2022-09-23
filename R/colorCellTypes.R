@@ -1,14 +1,17 @@
 #' Function to choose colors for cell types
-#' 
-#' Uses Giotto::getDistinctColors to begin with. Orders colors so the most 
-#'  common cell types get the lightest colors. 
-#'  Removes colors that are too light (sum of rgb values > 600)
+#'
+#' Uses Giotto::getDistinctColors to begin with. Orders colors so the most
+#' common cell types get the lightest colors. Removes colors that are too light
+#' (sum of rgb values > 600)
 #' @param names Vector of cell type names
-#' @param freqs Optional, named vector of cell type abundance (e.g. c(T = 1000, tumor = 15000...))
+#' @param freqs Optional, named vector of cell type abundance (e.g. c(T = 1000,
+#'   tumor = 15000...))
 #' @param init_colors Optional, a named vector of cell colors. This will be used
-#'  for all cell types in the "names" vector that match names(init_colors). 
-#'  Intended for use with the iocolors vector (found in the Ptolemy package data).
-#' @param max_sum_rgb Don't return any colors with total rgb values above this level. (Removes excessively light colors.)
+#'   for all cell types in the "names" vector that match names(init_colors).
+#'   Intended for use with the iocolors vector (found in the Ptolemy package
+#'   data).
+#' @param max_sum_rgb Don't return any colors with total rgb values above this
+#'   level. (Removes excessively light colors.)
 #' @param palette One of "tableau20", "brewers" or "earthplus".
 #' @return A named color vector
 #' @importFrom grDevices col2rgb colors
@@ -17,11 +20,11 @@
 colorCellTypes <- function(names = NULL, freqs = NULL, init_colors = NULL, max_sum_rgb = 600, 
                            palette = "earthplus") {
   
-  if (is.null(freqs) & is.null(names)) {
+  if (is.null(freqs) && is.null(names)) {
     stop("must specify either names or freqs")
   } 
   
-  if (is.null(freqs) & palette == "earthplus") {
+  if (is.null(freqs) && palette == "earthplus") {
     warning("this palette is best used when cell frequencies are known.")
   }
   
@@ -104,7 +107,19 @@ colorCellTypes <- function(names = NULL, freqs = NULL, init_colors = NULL, max_s
   ### "earthplus" palette: earthtones for common cells, radiant colors for rare cells:
   if (palette == "earthplus") {
     # step 1: top least common cells, as long as <1% freq, get "radiant" colors:
-    radiantcolors <- c("#FF0000", "#00CCFF", "#00FF00", "#FFFF00", "#FF00CC", "#00FFFF", "#FF3300", "#CC00FF", "#CCFF00", "#66FF33")
+    radiantcolors <-
+      c(
+        "#FF0000",
+        "#00CCFF",
+        "#00FF00",
+        "#FFFF00",
+        "#FF00CC",
+        "#00FFFF",
+        "#FF3300",
+        "#CC00FF",
+        "#CCFF00",
+        "#66FF33"
+      )
     richcolors <- c("#660099", "#006600", "#000000", "#000066")
     nlow <- min(sum(freqs < 0.01), 14)
     lowcols <- c(radiantcolors, richcolors)[seq_len(nlow)]
@@ -123,8 +138,7 @@ colorCellTypes <- function(names = NULL, freqs = NULL, init_colors = NULL, max_s
     nmid <- length(freqs) - nlow - nhigh
     if (nmid < length(moderatecolors)) {
       midcols <- moderatecolors[seq_len(nmid)]
-    }
-    else {
+    } else {
       stop("too many cell types")
     }
     cols <- c(lowcols, midcols, highcols)
