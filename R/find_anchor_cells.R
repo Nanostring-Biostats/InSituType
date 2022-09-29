@@ -89,7 +89,7 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
                                 size = size, 
                                 digits = 3, return_loglik = TRUE) 
       # scale the logliks by total counts:
-      templl[usecells] <- templl[usecells] / rowSums(counts[usecells, ])
+      templl[usecells] <- templl[usecells] / rowSums(counts[usecells,, drop = FALSE])
     }
     return(templl)
   })
