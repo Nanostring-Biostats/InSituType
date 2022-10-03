@@ -6,6 +6,9 @@
 \usage{
 numCores()
 }
+\value{
+number of cores to use for mclapply
+}
 \description{
 Get number of cores for parallelized operations
 }
