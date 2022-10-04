@@ -42,6 +42,9 @@ anchor.}
 (log-likelihood ratio / totalcounts) above this threshold to be used as an
 anchor}
 }
+\value{
+updated reference profiles
+}
 \description{
 Update reference profiles using pre-specified anchor cells, or if no anchors
 are specified, by first choosing anchor cells

@@ -19,6 +19,7 @@
 #' @param min_anchor_llr For semi-supervised learning. Cells must have
 #'   (log-likelihood ratio / totalcounts) above this threshold to be used as an
 #'   anchor
+#' @return updated reference profiles
 #' @export
 updateReferenceProfiles <-
   function(reference_profiles,

@@ -1,5 +1,6 @@
 #' Get number of cores for parallelized operations
 #'
+#' @return number of cores to use for mclapply
 #' @export
 numCores <- function() {
   num_cores <- 1
@@ -25,6 +26,7 @@ numCores <- function() {
 #' @importFrom Matrix rowSums
 #' @importFrom stats dnbinom
 #' @importFrom methods as is
+#' @return likelihood for profile
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {

@@ -58,7 +58,6 @@ chooseClusterNumber <-
   } 
 
   # subset the data:
-  set.seed(0)
   use <- sample(seq_len(nrow(counts)), subset_size)
   counts <- counts[use, ]
   s <- s[use]
