@@ -1,3 +1,7 @@
+# InSituType 0.99.0
+
+* Submission to Bioconductor 3.16
+
 # InSituType 1.1.1
 
 * Updated `flightpath_layout.R` to save the plot in a temp folder in the current work directory
