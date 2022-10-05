@@ -107,7 +107,7 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
   
   # create color scheme if needed:
   if (is.null(col)) {
-    utils::data("iocolors", envir = environment())
+    utils::data("iocolors", package = "InSituType", envir = environment())
     scols <- c('#8DD3C7','#FFFFB3','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD',
                '#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A','#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999', 
                sample(colors()[!grepl("grey", colors())], 100))[seq_along(unique(flightpath_result$clust))]
