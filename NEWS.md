@@ -1,3 +1,7 @@
+# InSituType 0.99.1
+
+* Added reference to CosMx paper and dataset
+
 # InSituType 0.99.0
 
 * Submission to Bioconductor 3.16

@@ -37,10 +37,9 @@ knitr::opts_chunk$set(
 
 
 This vignette demonstrates the use of the insitutype algorithm to perform supervised cell typing 
-of CosMx data. 
+of [CosMx](https://www.nature.com/articles/s41587-022-01483-z) data. CosMx is a spatial molecular imager for sub-cellular resolution of mRNA transcripts and protein targets.
 
-We'll analyze a subset of the CosMx NSCLC showcase dataset. 
-
+We'll analyze a subset of the [CosMx NSCLC showcase dataset](https://nanostring.com/cosmx-dataset).
 
 ### Data preparation
 
