@@ -1,5 +1,6 @@
 #' Get number of cores for parallelized operations
 #'
+#' @return number of cores to use for mclapply
 #' @export
 numCores <- function() {
   num_cores <- 1
@@ -24,24 +25,26 @@ numCores <- function() {
 #'
 #' @importFrom Matrix rowSums
 #' @importFrom stats dnbinom
-#'
-#' @export
+#' @importFrom methods as is
+#' @return likelihood for profile
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
     mat <- as(matrix(mat, nrow = 1), "dgCMatrix")
-  } else if (is.matrix(mat)){
+  } else if (is.matrix(mat)) {
     mat <- as(mat, "dgCMatrix")
-  } else if(class(mat)!="dgCMatrix"){
-    errorMessage <- sprintf( "The `type` of parameter `mat` needs to be of one of dgCMatrix, vector, matrix, array, but is found to be of type %s",class(mat))
-    stop( errorMessage )
+  } else if (!is(mat, "dgCMatrix")) {
+    errorMessage <-
+      sprintf(
+        "The `type` of parameter `mat` needs to be of one of dgCMatrix, vector, matrix, array, but is found to be of type %s",
+        class(mat)
+      )
+    stop(errorMessage)
   }
   # Check dimensions on bg and stop with informative error if not
   #  conformant
-  if (is.vector(bg))
-  {
-    if (!identical(length(bg), nrow(mat)))
-    {
+  if (is.vector(bg)) {
+    if (!identical(length(bg), nrow(mat))) {
       errorMessage <- sprintf("Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d",
                               nrow(mat), length(bg))
       stop(errorMessage)
@@ -49,14 +52,11 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   }
   
   # calc scaling factor to put y on the scale of x:
-  if (is.vector(bg))
-  {
+  if (is.vector(bg)) {
     bgsub <- mat
-    bgsub@x <- bgsub@x - bg[bgsub@i+1]
+    bgsub@x <- bgsub@x - bg[bgsub@i + 1]
     bgsub@x <- pmax(bgsub@x, 0)
-  }
-  else
-  {
+  } else {
     bgsub <- pmax(mat - bg, 0)
   }
   sum_of_x <- sum(x)
@@ -108,11 +108,11 @@ Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, retur
     return(round(logliks, digits))
   } else {
     # first rescale (ie recenter on log scale) to avoid rounding errors:
-    logliks <- sweep( logliks , 1 , apply( logliks , 1 , max ) , "-" )
+    logliks <- sweep(logliks, 1, apply(logliks, 1, max), "-")
     # get on likelihood scale:
     liks <- exp(logliks)
     # convert to probs
-    probs <- sweep( liks , 1 , rowSums( liks ) , "/" )
+    probs <- sweep(liks, 1, rowSums(liks), "/")
     return(round(probs, digits))
   }
 }
@@ -150,14 +150,14 @@ Estep <- function(counts, clust, neg) {
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
+#' @param fixed_profiles Matrix of cluster profiles to hold unchanged throughout iterations.
 #' @param init_profiles Matrix of cluster profiles under which to begin iterations.
 #' If NULL, initial assignments will be automatically inferred, using init_clust 
 #' if available, and using random clusters if not. 
 #' @param init_clust Vector of initial cluster assignments.
 #' If NULL, initial assignments will be automatically inferred.
 #' @param nb_size The size parameter to assume for the NB distribution.
-#' @param  Numer of iterations
+#' @param cohort Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster. 
 #' @param pct_drop the decrease in percentage of cell types with a valid switchover to 
 #'  another cell type compared to the last iteration. Default value: 1/10000. A valid 
 #'  switchover is only applicable when a cell has changed the assigned cell type with its
@@ -165,6 +165,7 @@ Estep <- function(counts, clust, neg) {
 #' @param min_prob_increase the threshold of probability used to determine a valid cell 
 #'  type switchover
 #' @param max_iters Maximum number of iterations
+#' @param logresults Populate clusterlog in returned list
 #'
 #'  @importFrom stats lm
 #'
@@ -173,7 +174,6 @@ Estep <- function(counts, clust, neg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
-#' @export
 nbclust <- function(counts, neg, bg = NULL, 
                     fixed_profiles = NULL,
                     init_profiles = NULL, init_clust = NULL, 
@@ -190,7 +190,7 @@ nbclust <- function(counts, neg, bg = NULL,
     bg <- bgmod$fitted
   }
   if (length(bg) == 1) {
-    bg = rep(bg, nrow(counts))
+    bg <- rep(bg, nrow(counts))
   }
   if (!is.null(fixed_profiles)) {
     if (!identical(rownames(fixed_profiles), colnames(counts))) {
@@ -198,7 +198,7 @@ nbclust <- function(counts, neg, bg = NULL,
     }
   }
 
-  clusterlog = NULL
+  clusterlog <- NULL
 
   if (is.null(cohort)) {
     cohort <- rep("all", length(neg))
@@ -206,10 +206,9 @@ nbclust <- function(counts, neg, bg = NULL,
   
   #### get initial profiles: ----------------------------------
   
-  if (is.null(init_profiles) & is.null(init_clust)) {
+  if (is.null(init_profiles) && is.null(init_clust)) {
     stop("Must specify either init_clust or init_profiles")
   }
-    
 
   # if init_profiles are provided, take them:
   if (!is.null(init_profiles)) {
@@ -219,7 +218,7 @@ nbclust <- function(counts, neg, bg = NULL,
   } 
   # if no init_profiles are provided, derive them:
   if (is.null(init_profiles)) {
-    clust_old = init_clust
+    clust_old <- init_clust
     names(clust_old) <- rownames(counts)
     # derive first profiles from init_clust
     profiles <- Estep(counts = counts[!is.na(clust_old), ],
@@ -234,7 +233,7 @@ nbclust <- function(counts, neg, bg = NULL,
   clustnames <- colnames(profiles)
   
   #### run EM algorithm iterations: ----------------------------------
-  pct_changed = c()
+  pct_changed <- c()
   if (logresults) {
     clusterlog <- init_clust
   }
@@ -261,14 +260,14 @@ nbclust <- function(counts, neg, bg = NULL,
                       neg = neg)        
     
     # for any profiles that have been lost, replace them with their previous version:
-    lostprofiles = setdiff(clustnames, colnames(profiles))
+    lostprofiles <- setdiff(clustnames, colnames(profiles))
     profiles <- cbind(profiles, oldprofiles[, lostprofiles, drop = FALSE])[, clustnames]
     # keep fixed_profiles unchanged:
     profiles[, colnames(fixed_profiles)] <- as.vector(fixed_profiles)
     
     # get cluster assignment
-    clust = colnames(probs)[apply(probs, 1, which.max)]
-    if (iter == 1){
+    clust <- colnames(probs)[apply(probs, 1, which.max)]
+    if (iter == 1) {
       pct_changed <- mean(clust != clust_old)
     } else {
       index_changes <- which(clust != clust_old)
@@ -276,24 +275,23 @@ nbclust <- function(counts, neg, bg = NULL,
       index_valid_changes <- which((probs_max - probs_old_max)[index_changes] > min_prob_increase)
 
       # record number of switches
-      pct_changed = c(pct_changed, round(length(index_valid_changes)/nrow(probs), 5))
+      pct_changed <- c(pct_changed, round(length(index_valid_changes) / nrow(probs), 5))
 
-      if ( length(index_valid_changes)/nrow(probs) <= pct_drop ){
-        message(sprintf("Converged: <= %s%% of cell type assignments changed in the last iteration.", pct_drop*100))
-        message(        "==========================================================================")
+      if (length(index_valid_changes) / nrow(probs) <= pct_drop) {
+        message(sprintf("Converged: <= %s%% of cell type assignments changed in the last iteration.", pct_drop * 100))
+        message("==========================================================================")
         break
       }
     }
-    clust_old = colnames(probs)[apply(probs, 1, which.max)]
-    probs_old_max = apply(probs, 1, max)
+    clust_old <- colnames(probs)[apply(probs, 1, which.max)]
+    probs_old_max <- apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
 
-  out = list(clust = clust,
+  out <- list(clust = clust,
              probs = probs,
              profiles = sweep(profiles, 2, colSums(profiles), "/") * 1000,
              pct_changed = pct_changed,
-             #logliks = logliks,
              clusterlog = clusterlog)
   return(out)
 }
@@ -303,7 +301,7 @@ nbclust <- function(counts, neg, bg = NULL,
 #' @return a vecetor of logical values
 #'
 ismax <- function(x) {
-  return(x == max(x, na.rm = T))
+  return(x == max(x, na.rm = TRUE))
 }
 
 

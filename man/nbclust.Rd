@@ -26,6 +26,8 @@ nbclust(
 
 \item{bg}{Expected background}
 
+\item{fixed_profiles}{Matrix of cluster profiles to hold unchanged throughout iterations.}
+
 \item{init_profiles}{Matrix of cluster profiles under which to begin iterations.
 If NULL, initial assignments will be automatically inferred, using init_clust 
 if available, and using random clusters if not.}
@@ -45,11 +47,11 @@ highest cell type probability increased by min_prob_increase.}
 \item{min_prob_increase}{the threshold of probability used to determine a valid cell 
 type switchover}
 
-\item{max_iters}{Maximum number of iterations
+\item{max_iters}{Maximum number of iterations}
+
+\item{logresults}{Populate clusterlog in returned list
 
  @importFrom stats lm}
-
-\item{Numer}{of iterations}
 }
 \value{
 A list, with the following elements:

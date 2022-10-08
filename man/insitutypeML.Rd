@@ -15,7 +15,7 @@ insitutypeML(
 )
 }
 \arguments{
-\item{counts}{Counts matrix, cells * genes.}
+\item{counts}{Counts matrix (or dgCMatrix), cells * genes.}
 
 \item{neg}{Vector of mean negprobe counts per cell. Can be provided}
 

@@ -15,6 +15,7 @@
 #' @importFrom mclust Mclust
 #' @importFrom mclust predict.Mclust
 #' @importFrom mclust mclustBIC
+#' @importFrom stats qnorm
 fastCohorting <- function(mat, n_cohorts = NULL, gaussian_transform = TRUE) {
   
   if (any(is.na(mat))) {
@@ -24,17 +25,17 @@ fastCohorting <- function(mat, n_cohorts = NULL, gaussian_transform = TRUE) {
   # gaussian transform if called for:
   if (gaussian_transform) {
     for (i in seq_len(ncol(mat))) {
-      mat[, i] <- qnorm(rank(mat[,i]) / (nrow(mat)+1))
+      mat[, i] <- qnorm(rank(mat[, i]) / (nrow(mat) + 1))
     }
   }
   
   # choose number of cohorts:
   if (is.null(n_cohorts)) {
     n_cohorts <- 3
-    if (nrow(mat) > 10000) {n_cohorts <- 10} 
-    if (nrow(mat) > 50000) {n_cohorts <- 25}
-    if (nrow(mat) > 100000) {n_cohorts <- 50}
-    if (nrow(mat) > 200000) {n_cohorts <- 100}
+    if (nrow(mat) > 10000) n_cohorts <- 10
+    if (nrow(mat) > 50000) n_cohorts <- 25
+    if (nrow(mat) > 100000) n_cohorts <- 50
+    if (nrow(mat) > 200000) n_cohorts <- 100
   }
   
   # cluster in a subsample:

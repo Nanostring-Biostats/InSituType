@@ -1,5 +1,3 @@
-#devtools::test()
-
 # load data ("raw" and "cellannot"):
 data("ioprofiles")
 data("iocolors")
@@ -7,34 +5,16 @@ data("mini_nsclc")
 
 set.seed(0)
 
-if (FALSE) {
-  library(testthat)
-  library(MLEcell)
-  nbclust = MLEcell:::nbclust
-  Mstep=MLEcell:::Mstep
-  Estep=MLEcell:::Estep
-}
-
-# for line-by-line debugging:
-if (FALSE) {
-  counts = mini_nsclc$counts;neg = Matrix::rowMeans(mini_nsclc$neg);bg = NULL;anchors = NULL
-  init_clust = NULL; n_clusts = 2:3;fixed_profiles = ioprofiles[, 1:3];reference_profiles = ioprofiles[, 1:3];
-  nb_size = 10;n_starts = 2;align_genes = TRUE;n_benchmark_cells = 200;n_phase1 = 300;n_phase2 = 500;n_phase3 = 1000;
-  n_chooseclusternumber = 300;pct_drop = 1/5000;min_prob_increase = 0.05;max_iters = 4;n_anchor_cells = 20
-  min_anchor_cosine = 0.3; min_anchor_llr = 0.1;sketchingdata=NULL;anchor_replacement_thresh=0.75;insufficient_anchors_thresh = 1
-  sketchingdata = NULL; anchor_replacement_thresh = 5
-}
-
-# test nbclust smei-sup
+# test nbclust semi-sup
 sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
-nbres <- nbclust(counts = mini_nsclc$counts[, sharedgenes], 
-                 neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL, 
+nbres <- nbclust(counts = mini_nsclc$counts[, sharedgenes],
+                 neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL,
                  fixed_profiles = ioprofiles[sharedgenes, 1:3],
-                 init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(mini_nsclc$counts) / 2), 
-                 nb_size = 10, 
-                 cohort = rep("a", nrow(mini_nsclc$counts)), 
-                 pct_drop = 1/10000,    
-                 min_prob_increase = 0.05, max_iters = 3, logresults = FALSE) 
+                 init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(mini_nsclc$counts) / 2),
+                 nb_size = 10,
+                 cohort = rep("a", nrow(mini_nsclc$counts)),
+                 pct_drop = 1/10000,
+                 min_prob_increase = 0.05, max_iters = 3, logresults = FALSE)
 testthat::test_that("semi-sup nbclust preserves fixedprofiles", {
   expect_true(all(abs(diag(cor(nbres$profiles[, colnames(ioprofiles)[1:3]], ioprofiles[sharedgenes, ]))) == 1))
 })
@@ -45,25 +25,26 @@ sup <- insitutypeML(counts = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
                       bg = NULL,
                       cohort = rep(c("a", "b"), each = nrow(mini_nsclc$counts) / 2),
-                      reference_profiles = ioprofiles[,1:6],
-                      nb_size = 10, 
-                      align_genes = TRUE) 
+                      reference_profiles = ioprofiles[, 1:6],
+                      nb_size = 10,
+                      align_genes = TRUE)
   
 testthat::test_that("supervised cell typing produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.vector(sup$prob))
   expect_true(is.matrix(sup$logliks))
+  expect_true(is.matrix(sup$profiles))
 })
 
 # test semi-supervised with 0 new clusts:
 semi <- insitutype(counts = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   bg = NULL,
-                  init_clust = NULL, 
+                  init_clust = NULL,
                   n_clusts = 0,
                   anchors = NULL,
-                  reference_profiles = ioprofiles[,1:6],
+                  reference_profiles = ioprofiles[, 1:6],
                   nb_size = 10,
                   n_starts = 2,
                   align_genes = TRUE,
@@ -71,16 +52,20 @@ semi <- insitutype(counts = mini_nsclc$counts,
                   n_phase1 = 500,
                   n_phase2 = 1000,
                   n_phase3 = 2000,
-                  pct_drop = 1/10000, 
+                  pct_drop = 1/10000,
                   min_prob_increase = 0.05,
                   max_iters = 4,
-                  n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 2)   
+                  n_anchor_cells = 20,
+                  min_anchor_cosine = 0.3,
+                  min_anchor_llr = 0.01,
+                  insufficient_anchors_thresh = 2)
 
 testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
-  expect_true(all(is.element(c("clust", "prob", "logliks"), names(semi))))
+  expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
   expect_true(is.vector(semi$clust))
   expect_true(is.vector(semi$prob))
   expect_true(is.matrix(semi$logliks))
+  expect_true(is.matrix(semi$profiles))
 })
 
 
@@ -117,7 +102,7 @@ testthat::test_that("unsupervised cell typing produces correct outputs", {
 
 
 # run unsupervised clustering with init_clust specified:
-init_clust <- rep(c("name1", "xxx", "ooo"), each = nrow(mini_nsclc$counts) / 3)[1:nrow(mini_nsclc$counts)]
+init_clust <- rep(c("name1", "xxx", "ooo"), each = nrow(mini_nsclc$counts) / 3)[seq_len(nrow(mini_nsclc$counts))]
 unsup <- insitutype(counts = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = 0.03,
@@ -146,14 +131,6 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
   expect_true(all(sort(unique(unsup$clust)) == sort(unique(init_clust))))
 })
 
-# plot clusters:
-if (FALSE) {
-  scols = c(iocolors, 
-            '#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5','#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#66C2A5','#FC8D62','#8DA0CB','#E78AC3','#A6D854','#FFD92F','#E5C494','#B3B3B3')
-  scols <- scols[1:length(unique(unsup$clust))]
-  names(scols) = unique(unsup$clust)
-  plot(mini_nsclc$x, mini_nsclc$y, pch = 16, col = scols[unsup$clust])
-}
 
 # semi-supervised using the immune oncology cell profiles (in ptolemy package data):
 semi <- insitutype(counts = mini_nsclc$counts,
@@ -179,7 +156,7 @@ semi <- insitutype(counts = mini_nsclc$counts,
                    sketchingdata = NULL, insufficient_anchors_thresh = 2)   
 
 
-testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
+testthat::test_that("semi-supervised cell typing using init_clust produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
   expect_true(is.vector(semi$clust))
   expect_true(is.vector(semi$prob))
@@ -203,38 +180,6 @@ testthat::test_that("refineClusters works when merges and deletions are asked fo
   expect_equal(names(merge2$clust), names(semi$clust))
 })
 
-
-
-
-
-# semi supervised with choosing cluster number
-semi <- insitutype(counts = mini_nsclc$counts,
-                   neg = Matrix::rowMeans(mini_nsclc$neg),
-                   bg = NULL,
-                   anchors = NULL,
-                   init_clust = NULL, n_clusts = 2:3,
-                   reference_profiles = ioprofiles[, 1:3],
-                   nb_size = 10,
-                   n_starts = 2,
-                   align_genes = TRUE,
-                   n_benchmark_cells = 200,
-                   n_phase1 = 300,
-                   n_phase2 = 500,
-                   n_phase3 = 1000,
-                   n_chooseclusternumber = 300,
-                   pct_drop = 1/5000, 
-                   min_prob_increase = 0.05,
-                   max_iters = 4,
-                   n_anchor_cells = 20, min_anchor_cosine = 0.3, min_anchor_llr = 0.01, insufficient_anchors_thresh = 2)   
-
-
-testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
-  expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
-  expect_true(is.vector(semi$clust))
-  expect_true(is.vector(semi$prob))
-  expect_true(is.matrix(semi$logliks))
-  expect_true(is.matrix(semi$profiles))
-})
 
 
 # test chooseclusternumber:
@@ -327,11 +272,11 @@ testthat::test_that("find_anchor_cells produces correct outputs when none select
 })
 
 
-# test merge cells:
+# test refineClusters:
 merge1 <- refineClusters(
   merges = NULL, to_delete = NULL, subcluster = NULL, logliks = sup$logliks)
 merge2 <- refineClusters(
-  merges =  c("macrophage" = "myeloid", "mDC" = "myeloid","B-cell" = "lymphoid"), 
+  merges =  c("macrophage" = "myeloid", "mDC" = "myeloid", "B-cell" = "lymphoid"), 
   to_delete = "endothelial", 
   subcluster = list("fibroblast" = 2),
   logliks = sup$logliks,
@@ -343,22 +288,23 @@ testthat::test_that("refineClusters works when no directions are passed to it", 
 })
 testthat::test_that("refineClusters works when merges and deletions are asked for", {
   expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "myeloid", "fibroblast_1", "fibroblast_2", "mast"))))
-  expect_true(all(is.na(merge2$logliks[sup$logliks[, "endothelial"] == 1, 1])))
-  expect_equal(names(merge2$clust), names(sup$clust))
 })
 
 
-# test rescaleProfiles:
-if (FALSE) {
-  rescaled <- rescaleProfiles(counts = mini_nsclc$counts,
-                              neg = mini_nsclc$neg, 
-                              reference_profiles = ioprofiles, 
-                              max_rescaling = 5)
-  testthat::test_that("rescaleProfiles works as intended", {
-    expect_true(is.matrix(rescaled$profiles))
-    expect_true(is.vector(rescaled$scaling_factors))
-    expect_true(all(rescaled$scaling_factors >= 1/5))
-    expect_true(all(rescaled$scaling_factors <= 5))
-  })
-  
-}
+# test updateReferenceProfiles:
+rescaled <- updateReferenceProfiles(reference_profiles = ioprofiles, 
+                                   counts = mini_nsclc$counts,
+                                   neg = mini_nsclc$neg)
+testthat::test_that("rescaleProfiles works as intended", {
+  expect_true(is.matrix(rescaled$updated_profiles))
+  expect_true(is.vector(rescaled$anchors))
+})
+
+
+# test fastCohorting:
+simdat <- matrix(rnorm(10000), nrow = 1000)
+cres <- fastCohorting(simdat, n_cohorts = 10)
+testthat::test_that("fastCohorting works as intended", {
+  expect_true(is.vector(cres))
+  expect_true(length(unique(cres)) == 10)
+})

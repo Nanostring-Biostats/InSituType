@@ -1,29 +1,33 @@
-# MLEcell 1.1.1
+# InSituType 0.99.0
+
+* Submission to Bioconductor 3.16
+
+# InSituType 1.1.1
 
 * Updated `flightpath_layout.R` to save the plot in a temp folder in the current work directory
 
-# MLEcell 1.1.0
+# InSituType 1.1.0
 
 * Fix several places counts matrix was being converted to dense to calculate a statistic
   * Revert conversion to `sparse matrix` of `dense` `mu` matrix and result from `dnbinom`
 
-# MLEcell 1.0.0
+# InSituType 1.0.0
 
 * Integrated rcpp support for the package
 * Added `dnbinom` for `sparse matrices`
 * Updated the `unit tests`
 * Removed `.o` files in `src` folder
 
-# MLEcell 0.1.2
+# InSituType 0.1.2
 
 * Updated package dependencies
 
-# MLEcell 0.1.1
+# InSituType 0.1.1
 
 * Added `lsa`, `SpatialDecon`, `irlba`, `mclust`, `rmarkdown` to the `DESCRIPTION` file
 * Fixed a Roxygen example for the R function `geoSketch` where it was trying to use `Ptolemy` and `Giotto` packages that are not being used within the package
 
-# MLEcell 0.1.0
+# InSituType 0.1.0
 
 * Added a `NEWS.md` file to track changes to the package.
 * Added BioConductor package dependencies (notably SpatialDecon and lsa)
