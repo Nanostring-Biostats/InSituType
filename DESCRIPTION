@@ -1,7 +1,7 @@
 Package: InSituType
 Type: Package
 Title: An R package for performing cell typing in SMI and other single cell data
-Version: 0.99.1
+Version: 0.99.2
 Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut", "cre")),
              person("Zhi", "Yang", email = "zyang@nanostring.com", role = c("aut")),
              person("David", "Ross", email = "dross@nanostring.com", role = c("aut")))
@@ -20,6 +20,8 @@ Imports:
   irlba,
   mclust,
   sparseMatrixStats,
+  SummarizedExperiment,
+  SingleCellExperiment,
   methods,
   rlang,
   grDevices,
@@ -31,8 +33,9 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Suggests:
-  knitr,
-  testthat
+    rmarkdown,
+    knitr,
+    testthat
 VignetteBuilder: knitr
 Depends:
   R (>= 3.5.0)

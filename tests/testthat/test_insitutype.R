@@ -21,7 +21,7 @@ testthat::test_that("semi-sup nbclust preserves fixedprofiles", {
 
 
 # test supervised cell typing using direct loglik calcs:
-sup <- insitutypeML(counts = mini_nsclc$counts,
+sup <- insitutypeML(x = mini_nsclc$counts,
                       neg = Matrix::rowMeans(mini_nsclc$neg),
                       bg = NULL,
                       cohort = rep(c("a", "b"), each = nrow(mini_nsclc$counts) / 2),
@@ -38,7 +38,7 @@ testthat::test_that("supervised cell typing produces correct outputs", {
 })
 
 # test semi-supervised with 0 new clusts:
-semi <- insitutype(counts = mini_nsclc$counts,
+semi <- insitutype(x = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   bg = NULL,
                   init_clust = NULL,
@@ -70,7 +70,7 @@ testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct
 
 
 # run unsupervised clustering with several random starts:
-unsup <- insitutype(counts = mini_nsclc$counts,
+unsup <- insitutype(x = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = NULL,
                     init_clust = NULL, n_clusts = 2:5,
@@ -103,7 +103,7 @@ testthat::test_that("unsupervised cell typing produces correct outputs", {
 
 # run unsupervised clustering with init_clust specified:
 init_clust <- rep(c("name1", "xxx", "ooo"), each = nrow(mini_nsclc$counts) / 3)[seq_len(nrow(mini_nsclc$counts))]
-unsup <- insitutype(counts = mini_nsclc$counts,
+unsup <- insitutype(x = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = 0.03,
                     init_clust = init_clust, 
@@ -133,7 +133,7 @@ testthat::test_that("unsupervised cell typing using init_clust produces correct 
 
 
 # semi-supervised using the immune oncology cell profiles (in ptolemy package data):
-semi <- insitutype(counts = mini_nsclc$counts,
+semi <- insitutype(x = mini_nsclc$counts,
                    neg = Matrix::rowMeans(mini_nsclc$neg),
                    bg = NULL,
                    anchors = NULL,

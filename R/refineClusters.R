@@ -95,7 +95,7 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
     message(paste0("Subclustering ", name))
     use <- which(colnames(newlogliks)[apply(newlogliks, 1, which.max)] == name)
     # run insitutype on just the named cell type:
-    temp <- insitutype(counts = counts[use, ],
+    temp <- insitutype(x = counts[use, ],
                        neg = neg[use],
                        bg = bg[use],
                        cohort = cohort[use],

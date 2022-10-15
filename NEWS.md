@@ -1,3 +1,7 @@
+# InSituType 0.99.2
+
+* Optionally use SingleCellExperiment class
+
 # InSituType 0.99.1
 
 * Added reference to CosMx paper and dataset
