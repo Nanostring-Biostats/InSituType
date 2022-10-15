@@ -20,6 +20,7 @@ Imports:
   irlba,
   mclust,
   sparseMatrixStats,
+  SummarizedExperiment,
   SingleCellExperiment,
   methods,
   rlang,
