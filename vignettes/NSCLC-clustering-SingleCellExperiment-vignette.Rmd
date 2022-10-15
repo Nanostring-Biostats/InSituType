@@ -37,6 +37,7 @@ First, we load the package and access the example data:
 ```{r setup}
 library(InSituType)
 library(SingleCellExperiment)
+options(mc.cores = 1)
 data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
