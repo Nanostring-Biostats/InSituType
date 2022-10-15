@@ -57,6 +57,9 @@
 #'   anchor
 #' @param insufficient_anchors_thresh Cell types that end up with fewer than
 #'   this many anchors after anchor selection will be discarded.
+#' @param ... For the \linkS4class{SingleCellExperiment} method, additional
+#'   arguments to pass to the ANY method.
+#' @param assay.type A string specifying which assay values to use.
 #' @return A list, with the following elements: \enumerate{ \item clust: a
 #'   vector given cells' cluster assignments \item prob: a vector giving the
 #'   confidence in each cell's cluster \item logliks: Matrix of cells'

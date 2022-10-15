@@ -44,6 +44,9 @@ insitutype(x, ...)
   Alternatively, a \linkS4class{SingleCellExperiment} object containing such
   a matrix.}
 
+\item{...}{For the \linkS4class{SingleCellExperiment} method, additional
+arguments to pass to the ANY method.}
+
 \item{neg}{Vector of mean negprobe counts per cell}
 
 \item{bg}{Expected background}
@@ -119,6 +122,8 @@ anchor}
 
 \item{insufficient_anchors_thresh}{Cell types that end up with fewer than
 this many anchors after anchor selection will be discarded.}
+
+\item{assay.type}{A string specifying which assay values to use.}
 }
 \value{
 A list, with the following elements: \enumerate{ \item clust: a

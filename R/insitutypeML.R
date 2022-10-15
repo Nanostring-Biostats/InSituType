@@ -14,6 +14,9 @@
 #'  Colnames must all be included in the init_clust variable.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param align_genes Logical, for whether to align the counts matrix and the reference_profiles by gene ID.
+#' @param ... For the \linkS4class{SingleCellExperiment} method, additional
+#'   arguments to pass to the ANY method.
+#' @param assay.type A string specifying which assay values to use.
 #' @return A list, with the following elements:
 #' \enumerate{
 #' \item clust: a vector given cells' cluster assignments
