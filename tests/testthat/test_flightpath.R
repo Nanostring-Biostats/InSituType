@@ -6,7 +6,7 @@ data("mini_nsclc")
 
 
 # run unsupervised clustering with several random starts:
-res <- insitutype(counts = mini_nsclc$counts,
+res <- insitutype(x = mini_nsclc$counts,
                     neg = Matrix::rowMeans(mini_nsclc$neg),
                     bg = NULL,
                     init_clust = NULL, n_clusts = 2,

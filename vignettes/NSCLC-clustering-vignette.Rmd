@@ -109,7 +109,7 @@ Note: this should take a few minutes on a standard laptop.
 
 ```{r unsup, echo=TRUE}
 unsup <- insitutype(
-  counts = counts,
+  x = counts,
   neg = negmean,
   cohort = cohort,
   # Enter your own per-cell background estimates here if you have them;

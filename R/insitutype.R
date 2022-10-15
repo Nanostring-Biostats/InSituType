@@ -1,7 +1,10 @@
 #' Run insitutype.
 #'
 #' A wrapper for nbclust, to manage subsampling and multiple random starts.
-#' @param counts Counts matrix (or dgCMatrix), cells * genes.
+#' @param x Counts matrix (or dgCMatrix), cells * genes.
+#'
+#'   Alternatively, a \linkS4class{SingleCellExperiment} object containing such
+#'   a matrix.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised
@@ -54,10 +57,6 @@
 #'   anchor
 #' @param insufficient_anchors_thresh Cell types that end up with fewer than
 #'   this many anchors after anchor selection will be discarded.
-#' @importFrom stats lm
-#' @importFrom Matrix rowMeans
-#' @importFrom Matrix colSums
-#' @export
 #' @return A list, with the following elements: \enumerate{ \item clust: a
 #'   vector given cells' cluster assignments \item prob: a vector giving the
 #'   confidence in each cell's cluster \item logliks: Matrix of cells'
@@ -65,7 +64,15 @@
 #'   \item profiles: a matrix of cluster-specific expression profiles \item
 #'   anchors: from semi-supervised clustering: a vector giving the identifies
 #'   and cell types of anchor cells }
-insitutype <- function(counts,
+#'
+#' @name insitutype
+NULL
+
+#' @importFrom stats lm
+#' @importFrom Matrix rowMeans
+#' @importFrom Matrix colSums
+#' @importFrom Matrix t
+.insitutype <- function(x,
                        neg,
                        bg = NULL,
                        anchors = NULL,
@@ -94,15 +101,15 @@ insitutype <- function(counts,
   
   #### preliminaries ---------------------------
   
-  if (any(rowSums(counts) == 0)) {
+  if (any(rowSums(x) == 0)) {
     stop("Cells with 0 counts were found. Please remove.")
   }
   
   ## get neg in condition 
   if (is.null(names(neg))) {
-    names(neg) <- rownames(counts)
+    names(neg) <- rownames(x)
   }
-  if (length(neg) != nrow(counts)) {
+  if (length(neg) != nrow(x)) {
     stop("length of neg should equal nrows of counts.")
   }
   
@@ -112,14 +119,14 @@ insitutype <- function(counts,
   
   ### infer bg if not provided: assume background is proportional to the scaling factor s
   if (is.null(bg)) {
-    s <- Matrix::rowMeans(counts)
+    s <- Matrix::rowMeans(x)
     bgmod <- stats::lm(neg ~ s - 1)
     bg <- bgmod$fitted
-    names(bg) <- rownames(counts)
+    names(bg) <- rownames(x)
   }
   if (length(bg) == 1) {
-    bg <- rep(bg, nrow(counts))
-    names(bg) <- rownames(counts)
+    bg <- rep(bg, nrow(x))
+    names(bg) <- rownames(x)
   }
   
   #### update reference profiles ----------------------------------
@@ -127,7 +134,7 @@ insitutype <- function(counts,
   if (!is.null(reference_profiles)) {
     if (update_reference_profiles) {
       update_result <- updateReferenceProfiles(reference_profiles,
-                                               counts = counts, 
+                                               counts = x, 
                                                neg = neg,
                                                bg = bg,
                                                nb_size = nb_size,
@@ -143,11 +150,11 @@ insitutype <- function(counts,
   }
   # align the genes from fixed_profiles and counts
   if (align_genes && !is.null(fixed_profiles)) {
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
-    lostgenes <- setdiff(colnames(counts), rownames(fixed_profiles))
+    sharedgenes <- intersect(rownames(fixed_profiles), colnames(x))
+    lostgenes <- setdiff(colnames(x), rownames(fixed_profiles))
     
     # subset to only the shared genes:
-    counts <- counts[, sharedgenes]
+    x <- x[, sharedgenes]
     fixed_profiles <- fixed_profiles[sharedgenes, ]
     
     # warn about genes being lost:
@@ -166,18 +173,18 @@ insitutype <- function(counts,
   # (e.g., if PCA is the choice, then point to existing PCA results, and run PCA if not available
   if (!is.null(sketchingdata)) {
     # check that it's correct:
-    if (nrow(sketchingdata) != nrow(counts)) {
+    if (nrow(sketchingdata) != nrow(x)) {
       warning("counts and sketchingdata have different numbers of row. Discarding sketchingdata.")
       sketchingdata <- NULL
     }
   }
   if (is.null(sketchingdata)) {
-    sketchingdata <- prepDataForSketching(counts)
+    sketchingdata <- prepDataForSketching(x)
   }
-  n_phase1 <- min(n_phase1, nrow(counts))
-  n_phase2 <- min(n_phase2, nrow(counts))
-  n_phase3 <- min(n_phase3, nrow(counts))
-  n_benchmark_cells <- min(n_benchmark_cells, nrow(counts))
+  n_phase1 <- min(n_phase1, nrow(x))
+  n_phase2 <- min(n_phase2, nrow(x))
+  n_phase3 <- min(n_phase3, nrow(x))
+  n_benchmark_cells <- min(n_benchmark_cells, nrow(x))
   
   # define sketching "Plaids" (rough clusters) for subsampling:
   plaid <- geoSketch_get_plaid(X = sketchingdata, 
@@ -204,11 +211,11 @@ insitutype <- function(counts,
     message("Selecting optimal number of clusters from a range of ", min(n_clusts), " - ", max(n_clusts))
 
     chooseclusternumber_subset <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                               N = min(n_chooseclusternumber, nrow(counts)),
+                                                               N = min(n_chooseclusternumber, nrow(x)),
                                                                seed = NULL)
     
     n_clusts <- chooseClusterNumber(
-      counts = counts[chooseclusternumber_subset, ], 
+      counts = x[chooseclusternumber_subset, ], 
       neg = neg[chooseclusternumber_subset], 
       bg = bg[chooseclusternumber_subset], 
       fixed_profiles = reference_profiles,
@@ -224,8 +231,8 @@ insitutype <- function(counts,
   if (!is.null(init_clust)) {
     message("init_clust was provided, so phase 1 - random starts in small subsets - will be skipped.")
     
-    tempprofiles <- sapply(by(counts[!is.na(init_clust), ], init_clust[!is.na(init_clust)], colMeans), cbind)
-    rownames(tempprofiles) <- colnames(counts)
+    tempprofiles <- sapply(by(x[!is.na(init_clust), ], init_clust[!is.na(init_clust)], colMeans), cbind)
+    rownames(tempprofiles) <- colnames(x)
     
   } else {
     message(paste0("phase 1: random starts in ", n_phase1, " cell subsets"))
@@ -234,13 +241,13 @@ insitutype <- function(counts,
     random_start_subsets <- list()
     for (i in 1:n_starts) {
       random_start_subsets[[i]] <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                                 N = min(n_phase1, nrow(counts)),
+                                                                 N = min(n_phase1, nrow(x)),
                                                                  seed = NULL)
     }
     
     # get a vector of cells IDs to be used in comparing the random starts:
     benchmarking_subset <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                        N = min(n_benchmark_cells, nrow(counts)),
+                                                        N = min(n_benchmark_cells, nrow(x)),
                                                         seed = NULL)
 
     # run nbclust from each of the random subsets, and save the profiles:
@@ -252,7 +259,7 @@ insitutype <- function(counts,
         seq_along(random_start_subsets[[i]])]
      
       profiles_from_random_starts[[i]] <- nbclust(
-        counts = counts[random_start_subsets[[i]], ], 
+        counts = x[random_start_subsets[[i]], ], 
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
         fixed_profiles = fixed_profiles,
@@ -271,7 +278,7 @@ insitutype <- function(counts,
     for (i in 1:n_starts) {
       templogliks <- parallel::mclapply(asplit(profiles_from_random_starts[[i]], 2),
                         lldist,
-                        mat = counts[benchmarking_subset, ],
+                        mat = x[benchmarking_subset, ],
                         bg = bg[benchmarking_subset],
                         size = nb_size,
                         mc.cores = numCores())
@@ -289,7 +296,7 @@ insitutype <- function(counts,
   #### phase 2: -----------------------------------------------------------------
   message(paste0("phase 2: refining best random start in a ", n_phase2, " cell subset"))
   phase2_sample <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                N = min(n_phase2, nrow(counts)),
+                                                N = min(n_phase2, nrow(x)),
                                                 seed = NULL)
   
   # get initial cell type assignments:
@@ -300,7 +307,7 @@ insitutype <- function(counts,
   }
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
-  clust2 <- nbclust(counts = counts[phase2_sample, ], 
+  clust2 <- nbclust(counts = x[phase2_sample, ], 
                     neg = neg[phase2_sample], 
                     bg = bg[phase2_sample],
                     fixed_profiles = fixed_profiles,
@@ -317,11 +324,11 @@ insitutype <- function(counts,
   message(paste0("phase 3: finalizing clusters in a ", n_phase3, " cell subset"))
   
   phase3_sample <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                N = min(n_phase3, nrow(counts)),
+                                                N = min(n_phase3, nrow(x)),
                                                 seed = NULL)
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
-  clust3 <- nbclust(counts = counts[phase3_sample, ], 
+  clust3 <- nbclust(counts = x[phase3_sample, ], 
                     neg = neg[phase3_sample], 
                     bg = bg[phase3_sample],
                     fixed_profiles = fixed_profiles,
@@ -336,9 +343,9 @@ insitutype <- function(counts,
   
 
   #### phase 4: -----------------------------------------------------------------
-  message(paste0("phase 4: classifying all ", nrow(counts), " cells"))
+  message(paste0("phase 4: classifying all ", nrow(x), " cells"))
   
-  out <- insitutypeML(counts = counts, 
+  out <- insitutypeML(x = x, 
                       neg = neg, 
                       bg = bg, 
                       reference_profiles = profiles, 
@@ -349,3 +356,24 @@ insitutype <- function(counts,
   
   return(out)
 }
+
+############################
+# S4 method definitions 
+############################
+
+#' @export
+#' @rdname insitutype
+setGeneric("insitutype", function(x, ...) standardGeneric("insitutype"))
+
+#' @export
+#' @rdname insitutype
+setMethod("insitutype", "ANY", .insitutype)
+
+#' @export
+#' @rdname insitutype
+#' @importFrom SummarizedExperiment assay
+#' @importFrom SingleCellExperiment SingleCellExperiment
+setMethod("insitutype", "SingleCellExperiment", function(x, ..., assay.type="counts") {
+  .insitutype(t(assay(x, i=assay.type)), ...)
+})
+

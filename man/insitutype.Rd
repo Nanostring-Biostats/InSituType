@@ -2,10 +2,14 @@
 % Please edit documentation in R/insitutype.R
 \name{insitutype}
 \alias{insitutype}
+\alias{insitutype,ANY-method}
+\alias{insitutype,SingleCellExperiment-method}
 \title{Run insitutype.}
 \usage{
-insitutype(
-  counts,
+insitutype(x, ...)
+
+\S4method{insitutype}{ANY}(
+  x,
   neg,
   bg = NULL,
   anchors = NULL,
@@ -31,9 +35,14 @@ insitutype(
   min_anchor_llr = 0.03,
   insufficient_anchors_thresh = 20
 )
+
+\S4method{insitutype}{SingleCellExperiment}(x, ..., assay.type = "counts")
 }
 \arguments{
-\item{counts}{Counts matrix (or dgCMatrix), cells * genes.}
+\item{x}{Counts matrix (or dgCMatrix), cells * genes.
+
+  Alternatively, a \linkS4class{SingleCellExperiment} object containing such
+  a matrix.}
 
 \item{neg}{Vector of mean negprobe counts per cell}
 

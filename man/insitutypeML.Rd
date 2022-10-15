@@ -2,10 +2,14 @@
 % Please edit documentation in R/insitutypeML.R
 \name{insitutypeML}
 \alias{insitutypeML}
+\alias{insitutypeML,ANY-method}
+\alias{insitutypeML,SingleCellExperiment-method}
 \title{Classify cells based on reference profiles}
 \usage{
-insitutypeML(
-  counts,
+insitutypeML(x, ...)
+
+\S4method{insitutypeML}{ANY}(
+  x,
   neg = NULL,
   bg = NULL,
   cohort = NULL,
@@ -13,9 +17,14 @@ insitutypeML(
   nb_size = 10,
   align_genes = TRUE
 )
+
+\S4method{insitutypeML}{SingleCellExperiment}(x, ..., assay.type = "counts")
 }
 \arguments{
-\item{counts}{Counts matrix (or dgCMatrix), cells * genes.}
+\item{x}{Counts matrix (or dgCMatrix), cells * genes.
+
+  Alternatively, a \linkS4class{SingleCellExperiment} object containing such
+  a matrix.}
 
 \item{neg}{Vector of mean negprobe counts per cell. Can be provided}
 
