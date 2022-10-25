@@ -1,3 +1,7 @@
+# InSituType 0.99.3
+
+* Merge subclustering fix
+
 # InSituType 0.99.2
 
 * Optionally use SingleCellExperiment class
