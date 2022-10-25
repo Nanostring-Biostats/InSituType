@@ -89,8 +89,17 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
   } else {
     newlogliks <- logliks
   }
+  
+  # get new cluster assignments:
+  clust <- colnames(newlogliks)[apply(newlogliks, 1, which.max)]
+  names(clust) <- rownames(newlogliks)
 
-  # perform subclustering:
+  ## perform subclustering:
+  # subclustering logic:
+  # - run unsupervised clustering of the selected cell type 
+  # - record the subcluster logliks for the selected cells
+  # - for unselected cells, propagate the original supercluster loglik to the subclusters (to prevent unselected cells joining the subclusters)
+  # - unselected cells keep their cell type. selected cells go to whichever subcluster gives them the greatest loglik
   for (name in names(subcluster)) {
     message(paste0("Subclustering ", name))
     use <- which(colnames(newlogliks)[apply(newlogliks, 1, which.max)] == name)
@@ -103,7 +112,6 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
                        n_starts = 3, n_benchmark_cells = 5000,
                        n_phase1 = 2000, n_phase2 = 10000, n_phase3 = 20000,
                        n_chooseclusternumber = 2000)
- 
     
     # make logliks matrix for all cells vs. the new clusters, with cells outside 
     # the selected cell type retaining their original loglik for the cluster
@@ -123,12 +131,12 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
     # update logliks matrix:
     newlogliks <- newlogliks[, setdiff(colnames(newlogliks), name)]
     newlogliks <- cbind(newlogliks, subclustlogliks)
+    
+    # update clust for the subclustered cells:
+    clust[use] <- colnames(subclustlogliks)[apply(subclustlogliks[use, ], 1, which.max)]
   }
   
-  # get new cluster assignments:
-  clust <- colnames(newlogliks)[apply(newlogliks, 1, which.max)]
-  names(clust) <- rownames(newlogliks)
-  
+  # get new posterior probs:
   probs <- logliks2probs(newlogliks)
   prob <- apply(probs, 1, max)
   names(prob) <- names(clust)
