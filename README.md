@@ -27,5 +27,5 @@ devtools::install_github("https://github.com/Nanostring-Biostats/InSituType")
 Installation should take < 2 mins on a normal desktop computer. 
 
 
-### Organization of package:
-![image](https://user-images.githubusercontent.com/4357938/144138602-595a3686-164a-4127-a35d-eb97f4331e4b.png)
+### Function dependencies:
+![image](https://user-images.githubusercontent.com/4357938/200046292-ba3e3453-b201-4776-b5f5-6bf3dfce6ec6.png)
