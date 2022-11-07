@@ -16,7 +16,6 @@ Imports:
   scales,
   umap,
   ggplot2,
-  lsa,
   irlba,
   mclust,
   sparseMatrixStats,

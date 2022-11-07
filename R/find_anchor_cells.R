@@ -15,7 +15,6 @@
 #' @param min_cosine Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.
 #' @return A list with two elements: cos, the matrix of cosine distances;
 #'  and llr, the matrix of log likelihood ratios of each cell under each cell type vs. the 2nd best cell type.
-#' @importFrom lsa cosine
 #' @export
 get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
                              profiles, size = 10, 
@@ -64,11 +63,13 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   }
   
   # get cosine distances:
-  cos <- matrix(NA, nrow(counts), ncol(profiles),
-                dimnames = list(rownames(counts), colnames(profiles)))
-  cos <- sapply(colnames(profiles), function(cell) {
-    cos[, cell] <- apply(counts, 1, cosine, profiles[, cell])
-  })
+  cos_numerator <- counts %*% profiles
+  counts2 <- counts
+  counts2@x <- counts2@x^2
+  rs <- sqrt(Matrix::rowSums(counts2))
+  ps <- sqrt(Matrix::colSums(profiles^2))
+  cos_denominator <- (t(t(rs))) %*% ps
+  cos <- as.matrix(cos_numerator / cos_denominator)
   
   # stats for which cells to get loglik on: 
   # get 3rd hightest cosines of each cell:
