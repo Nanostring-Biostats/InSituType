@@ -37,20 +37,13 @@ prepDataForSketching <- function(counts) {
 #'   cell
 #' @param minCellsPerBin the minimum number of cells required for a bin to be
 #'   considered for sampling
-#' @param seed set seed for random sampling
 #'
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
 geoSketch_get_plaid <- function(X, N,
                                 alpha=0.1,
                                 max_iter=200,
                                 returnBins=FALSE,
-                                minCellsPerBin = 1,
-                                seed=NULL) {
-  # Define seed for sampling if given
-  if (!is.null(seed)) {
-    set.seed(seed)
-  }
-  
+                                minCellsPerBin = 1) {
   # Determine the total number of cells and compare it to the desired sample size 
   nCells <- nrow(X)
   
@@ -120,17 +113,10 @@ geoSketch_get_plaid <- function(X, N,
 #' Sample cells, trying to give each plaid equal representation
 #' @param Plaid Vector of cells' plaid IDs
 #' @param N desired sample size
-#' @param seed set seed for random sampling
 #' 
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
 #' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
-geoSketch_sample_from_plaids <- function(Plaid, N, seed=NULL) {
-  
-  # Define seed for sampling if given
-  if (!is.null(seed)){
-    set.seed(seed)
-  }
-  
+geoSketch_sample_from_plaids <- function(Plaid, N) {
   # define cells' sampling probabilities as the inverse of their plaid size:
   PlaidCounts <- table(Plaid) # Count the number of cells per bin
   prob <- 1 / PlaidCounts[Plaid]
@@ -152,7 +138,6 @@ geoSketch_sample_from_plaids <- function(Plaid, N, seed=NULL) {
 #' @param max_iter maximum number of iterations used to achieve an acceptable minimum number of bins
 #' @param returnBins determines whether or not to pass back bin labels for each cell
 #' @param minCellsPerBin the minimum number of cells required for a bin to be considered for sampling
-#' @param seed set seed for random sampling
 #' 
 #' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
@@ -160,14 +145,7 @@ geoSketch <- function(X, N,
                       alpha=0.1,
                       max_iter=200,
                       returnBins=FALSE,
-                      minCellsPerBin = 1,
-                      seed=NULL) {
-  
-  # Define seed for sampling if given
-  if (!is.null(seed)) {
-    set.seed(seed)
-  }
-  
+                      minCellsPerBin = 1) {
   # Determine the total number of cells and compare it to the desired sample size 
   nCells <- nrow(X)
   
