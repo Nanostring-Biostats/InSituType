@@ -1,7 +1,7 @@
 Package: InSituType
 Type: Package
 Title: An R package for performing cell typing in SMI and other single cell data
-Version: 0.99.3
+Version: 0.99.4
 Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut", "cre")),
              person("Zhi", "Yang", email = "zyang@nanostring.com", role = c("aut")),
              person("David", "Ross", email = "dross@nanostring.com", role = c("aut")))
@@ -10,7 +10,7 @@ Description: Insitutype is an algorithm for performing cell typing in single cel
              It can perform supervised cell typing from reference profiles, unsupervised clustering,
              or semi-supervised cell typing in which cells both reference cell types and de novo
              clusters are fit. 
-biocViews: Clustering, SingleCell
+biocViews: Clustering, SingleCell, Transcriptomics
 Imports:
   Matrix,
   scales,

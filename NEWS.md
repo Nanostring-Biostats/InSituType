@@ -1,3 +1,7 @@
+# InSituType 0.99.4
+
+* Re-submission to Bioconductor
+
 # InSituType 0.99.3
 
 * Merge subclustering fix
