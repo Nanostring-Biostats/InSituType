@@ -23,3 +23,9 @@ likelihood for profile
 \description{
 Calculate the likelihood of the vector x using the reference vector of y
 }
+\examples{
+options(mc.cores = 1)
+data("mini_nsclc")
+data("ioprofiles")
+lldist(ioprofiles[[1]], mini_nsclc$counts, bg = Matrix::rowMeans(mini_nsclc$neg))
+}

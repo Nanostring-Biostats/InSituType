@@ -63,3 +63,16 @@ A list, with the following elements:
 \description{
 Cluster single cell gene expression data using an EM algorithm.
 }
+\examples{
+data("ioprofiles")
+data("mini_nsclc")
+sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
+nbclust(counts = mini_nsclc$counts[, sharedgenes],
+       neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL,
+       fixed_profiles = ioprofiles[sharedgenes, 1:3],
+       init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(mini_nsclc$counts) / 2),
+       nb_size = 10,
+       cohort = rep("a", nrow(mini_nsclc$counts)),
+       pct_drop = 1/10000,
+       min_prob_increase = 0.05, max_iters = 3, logresults = FALSE)
+}

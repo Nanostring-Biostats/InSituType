@@ -10,8 +10,7 @@ geoSketch(
   alpha = 0.1,
   max_iter = 200,
   returnBins = FALSE,
-  minCellsPerBin = 1,
-  seed = NULL
+  minCellsPerBin = 1
 )
 }
 \arguments{
@@ -26,8 +25,6 @@ geoSketch(
 \item{returnBins}{determines whether or not to pass back bin labels for each cell}
 
 \item{minCellsPerBin}{the minimum number of cells required for a bin to be considered for sampling}
-
-\item{seed}{set seed for random sampling}
 }
 \value{
 sampledCells, a vector of cellIDs sampled using the geometric sketching method
@@ -36,4 +33,8 @@ Plaid, a named vector of binIDs where names correspond to cellIDs
 }
 \description{
 Function for creating a biased sample of a given dataset with the aim of retaining cells with unique expression vectors
+}
+\examples{
+data("mini_nsclc")
+geoSketch(mini_nsclc$counts, 200)
 }

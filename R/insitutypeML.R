@@ -26,6 +26,15 @@
 #' }
 #'
 #' @name insitutypeML
+#' @examples
+#' options(mc.cores = 1)
+#' data("mini_nsclc")
+#' data("ioprofiles")
+#' sup <- insitutypeML(
+#'  x = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  reference_profiles = ioprofiles)
+#' table(sup$clust)
 NULL
 
 .insitutypeML <- function(x, neg = NULL, bg = NULL, cohort = NULL, reference_profiles, nb_size = 10, align_genes = TRUE) {

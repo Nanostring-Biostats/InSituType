@@ -15,3 +15,6 @@ a vecetor of logical values
 \description{
 For a numeric object, return a logical object of whether each element is the max or not.
 }
+\examples{
+ismax(c(3, 5, 5, 2))
+}

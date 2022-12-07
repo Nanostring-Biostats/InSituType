@@ -25,3 +25,11 @@ Rule of thumb: include any variables that might be informative for cell typing,
  safer to exclude spatial context from the cell typing exercise (and therefore 
  from this function).
 }
+\examples{
+data("mini_nsclc")
+## simulate immunofluorescence data: 
+immunofluordata <- matrix(rpois(n = nrow(mini_nsclc$counts) * 4, lambda = 100), 
+                          nrow(mini_nsclc$counts))
+cohort <- fastCohorting(immunofluordata, gaussian_transform = TRUE)
+table(cohort)
+}

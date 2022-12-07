@@ -58,3 +58,13 @@ A list, with the following elements:
 Supervised classification of cells. Each cell is assigned to the cell type 
  under which its observed expression profile is most likely.
 }
+\examples{
+options(mc.cores = 1)
+data("mini_nsclc")
+data("ioprofiles")
+sup <- insitutypeML(
+ x = mini_nsclc$counts,
+ neg = Matrix::rowMeans(mini_nsclc$neg),
+ reference_profiles = ioprofiles)
+table(sup$clust)
+}
