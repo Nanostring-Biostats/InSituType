@@ -15,3 +15,7 @@ A matrix of data for geoSketch, with cells in rows and features in columns
 \description{
 Process raw counts data for input into geoSketching.
 }
+\examples{
+data("mini_nsclc")
+prepDataForSketching(mini_nsclc$counts)
+}

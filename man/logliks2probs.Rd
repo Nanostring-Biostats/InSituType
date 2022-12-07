@@ -15,3 +15,19 @@ A matrix of probabilities, in the same dimensions as logliks.
 \description{
 From cell x cluster log-likelihoods, calculate cell x cluster probabilities
 }
+\examples{
+options(mc.cores = 1)
+data("mini_nsclc")
+unsup <- insitutype(
+ x = mini_nsclc$counts,
+ neg = Matrix::rowMeans(mini_nsclc$neg),
+ n_clusts = 8,
+ n_phase1 = 200,
+ n_phase2 = 500,
+ n_phase3 = 2000,
+ n_starts = 1,
+ max_iters = 5
+) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+logliks2probs(unsup$logliks)
+
+}

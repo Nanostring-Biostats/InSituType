@@ -12,6 +12,9 @@
 #' @param counts Counts matrix
 #' @return A matrix of data for geoSketch, with cells in rows and features in columns
 #' @importFrom irlba prcomp_irlba
+#' @examples
+#' data("mini_nsclc")
+#' prepDataForSketching(mini_nsclc$counts)
 prepDataForSketching <- function(counts) {
   # get PCs:
   scaling_factors <- pmax(sparseMatrixStats::colQuantiles(counts, probs = 0.99), 5)
@@ -39,6 +42,9 @@ prepDataForSketching <- function(counts) {
 #'   considered for sampling
 #'
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
+#' @examples
+#' data("mini_nsclc")
+#' geoSketch_get_plaid(mini_nsclc$counts, 100)
 geoSketch_get_plaid <- function(X, N,
                                 alpha=0.1,
                                 max_iter=200,
@@ -116,6 +122,10 @@ geoSketch_get_plaid <- function(X, N,
 #' 
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
 #' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
+#' @examples
+#' data("mini_nsclc")
+#' plaids <- geoSketch_get_plaid(mini_nsclc$counts, 100)
+#' geoSketch_sample_from_plaids(plaids, 5)
 geoSketch_sample_from_plaids <- function(Plaid, N) {
   # define cells' sampling probabilities as the inverse of their plaid size:
   PlaidCounts <- table(Plaid) # Count the number of cells per bin
@@ -141,6 +151,9 @@ geoSketch_sample_from_plaids <- function(Plaid, N) {
 #' 
 #' @return sampledCells, a vector of cellIDs sampled using the geometric sketching method
 #' @return Plaid, a named vector of binIDs where names correspond to cellIDs
+#' @examples
+#' data("mini_nsclc")
+#' geoSketch(mini_nsclc$counts, 200)
 geoSketch <- function(X, N,
                       alpha=0.1,
                       max_iter=200,

@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 ```   
 
 ### Overview
-This vignette demonstrates the use of the insitutype algorithm to cluster [CosMx](https://www.nature.com/articles/s41587-022-01483-z) data. CosMx is a spatial molecular imager for sub-cellular resolution of mRNA transcripts and protein targets. We analyze a subset of the [CosMx NSCLC showcase dataset](https://nanostring.com/cosmx-dataset). 
+This vignette demonstrates the use of the InSituType algorithm to cluster [CosMx](https://www.nature.com/articles/s41587-022-01483-z) data. CosMx is a spatial molecular imager for sub-cellular resolution of mRNA transcripts and protein targets. We analyze a subset of the [CosMx NSCLC showcase dataset](https://nanostring.com/cosmx-dataset). 
 
 ### Data preparation
 First, we load the package and access the example data:
@@ -62,15 +62,15 @@ negmean <- Matrix::rowMeans(mini_nsclc$neg)
 sizeFactors(sce) <- negmean
 head(negmean)
 ```
-3. Optionally, a vector of each cell expected background counts per gene. If not provided, insitutype will estimate it from the negative controls. 
+3. Optionally, a vector of each cell expected background counts per gene. If not provided, InSituType will estimate it from the negative controls. 
 
 #### Incorporating additional data types
 Single-cell spatial transcriptomics datasets offer data types beyond simple gene expression, from single-cell images to spatial contexts. 
-Insitutype digests this information in the form of "cohorts" of cells with similar data from the alternative data types. 
-Then, when assigning cell types, Insitutype will considers the frequency of each cell type in each cohort. 
-For example, if you have a cohort of mainly CD45- cells, Insitutype will see that immune cells are 
+InSituType digests this information in the form of "cohorts" of cells with similar data from the alternative data types. 
+Then, when assigning cell types, InSituType will considers the frequency of each cell type in each cohort. 
+For example, if you have a cohort of mainly CD45- cells, InSituType will see that immune cells are 
 very uncommon within this cohort, and it will give cells in this cohort lower probabilities of 
-falling in immune cell clusters. (Insitutype doe not know about CD45 staining; it just considers the 
+falling in immune cell clusters. (InSituType doe not know about CD45 staining; it just considers the 
 frequency of each cluster in each cohort.)
 
 Cohort definition is left to the user, and many approaches are reasonable. 
@@ -87,7 +87,7 @@ Cohorting is a low-risk undertaking, so it is recommended whenever possible.
 A poorly-defined cohort will simply be uninformative; 
  it will not send the clustering algorithm astray. 
 The more cohorts you can define, and the higher-quality those cohorts, the more information
- Insitutype will be able to gleam from the alternative data types. 
+ InSituType will be able to gleam from the alternative data types. 
 
 One warning: **do not define cohorts based on variables you want to study.**
 For example, if you wish to study how cell populations shift across spatial context, 

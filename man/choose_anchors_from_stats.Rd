@@ -52,3 +52,28 @@ A vector holding anchor cell assignments (or NA) for each cell in the
 Starting with cosine distances and log likelihood ratios, choose anchor
 cells.
 }
+\examples{
+data("ioprofiles")
+data("mini_nsclc")
+counts <- mini_nsclc$counts
+astats <- get_anchor_stats(counts = counts,
+                         neg = Matrix::rowMeans(mini_nsclc$neg),
+                         profiles = ioprofiles)
+
+## estimate per-cell bg as a fraction of total counts:
+negmean.per.totcount <- mean(rowMeans(mini_nsclc$neg)) / mean(rowSums(counts))
+per.cell.bg <- rowSums(counts) * negmean.per.totcount
+
+# now choose anchors:
+choose_anchors_from_stats(counts = counts, 
+                          neg = Matrix::rowMeans(mini_nsclc$neg),
+                          bg = per.cell.bg,
+                          anchorstats = astats, 
+                          # a very low value chosen for the mini
+                          # dataset. Typically hundreds of cells
+                          # would be better.
+                          n_cells = 50, 
+                          min_cosine = 0.4, 
+                          min_scaled_llr = 0.03, 
+                          insufficient_anchors_thresh = 5)
+}

@@ -21,6 +21,38 @@
 #'   anchor
 #' @return updated reference profiles
 #' @export
+#' @examples
+#' data("mini_nsclc")
+#' data("ioprofiles")
+#' counts <- mini_nsclc$counts
+#' astats <- get_anchor_stats(counts = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  profiles = ioprofiles)
+#'
+#' # estimate per-cell bg as a fraction of total counts:
+#' negmean.per.totcount <- mean(rowMeans(mini_nsclc$neg)) / mean(rowSums(counts))
+#' per.cell.bg <- rowSums(counts) * negmean.per.totcount
+#'
+#' # now choose anchors:
+#' anchors <- choose_anchors_from_stats(counts = counts, 
+#'                                     neg = mini_nsclc$negmean, 
+#'                                     bg = per.cell.bg,
+#'                                     anchorstats = astats, 
+#'                                     # a very low value chosen for the mini
+#'                                     # dataset. Typically hundreds of cells
+#'                                     # would be better.
+#'                                     n_cells = 50, 
+#'                                     min_cosine = 0.4, 
+#'                                     min_scaled_llr = 0.03, 
+#'                                     insufficient_anchors_thresh = 5)
+#'
+#' # The next step is to use the anchors to update the reference profiles:
+#'
+#' updateReferenceProfiles(reference_profiles = ioprofiles, 
+#'                        counts = mini_nsclc$counts, 
+#'                        neg = mini_nsclc$neg, 
+#'                        bg = per.cell.bg,
+#'                        anchors = anchors) 
 updateReferenceProfiles <-
   function(reference_profiles,
            counts,
