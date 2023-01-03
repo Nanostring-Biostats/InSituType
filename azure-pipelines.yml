@@ -1,107 +1,138 @@
-trigger:
-- main
-- master
+parameters:
+- name: devEnv
+  displayName: DEV environment
+  type: boolean
+  default: true
+- name: qaEnv
+  displayName: QA environment
+  type: boolean
+  default: false
+- name: uatEnv
+  displayName: UAT environment
+  type: boolean
+  default: false
+- name: tenantEnv
+  displayName: Tenant environment
+  type: boolean
+  default: false
 
 resources:
 - repo: self
 
 variables:
- isMain: ${{eq(variables['Build.SourceBranch'], 'refs/heads/master')}}
- isDevelop:  ${{eq(variables['Build.SourceBranch'], 'refs/heads/main')}}
- isRelease: True # ${{startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')}}
+  buildDev: ${{ eq(parameters.devEnv, 'true') }}
+  buildQa: ${{ eq(parameters.qaEnv, 'true') }}
+  buildUat: ${{ eq(parameters.uatEnv, 'true') }}
+  buildTenant: ${{ eq(parameters.tenantEnv, 'true') }}
 
 stages:
-- stage: DEV
-  condition: and(or(eq(variables.isDevelop, 'True'), eq(variables.isMain, 'True')), succeeded())
-  #, ne(variables.isRelease, 'True'))
-  displayName: Pull and run image on DEV environment
+- stage: version_1_0
+  condition: or(eq(variables.buildDev, 'True'), eq(variables.buildQa, 'True'), eq(variables.buildUat, 'True'))
+  displayName: Build CellTyping for Release environment
   jobs:
-  - job: Pull_and_run_smi_nanopipeline_build_environment_image
-    displayName: Pull and run existing smi_nanopipeline_build_environment image and upload atifacts
+  - job: Build_CellTyping_for_Release
+    displayName: Build CellTyping for Release
     pool:
       vmImage: ubuntu-latest
     variables:
       - group: smida-build-pipeline-variables
     steps:
     - task: ECRPullImage@1
+      displayName: Pull NanoPipeline Build environment image from DEV ECR
       inputs:
         awsCredentials: 'dev-$(AWS_CREDENTIALS)'
         regionName: '$(AWS_REGION)'
-        repository: 'dev-$(AWS_ECR_REPOSITORY_NAME)'
-        imageTag: latest
+        repository: 'dev-smida-nanopipeline-build-environment'
+        imageSource: 'imagetag'
+        imageTag: 'latest'
     - task: Bash@3
-      displayName: Run Docker Image
+      displayName: Run smida-nanopipeline-build-environment Docker Image
       inputs:
         targetType: 'inline'
         script: |
-          docker run --rm -v "$(pwd)":"/source" dev-$(AWS_ECR_REPOSITORY_NAME):latest
+          docker run --rm -v "$(Build.SourcesDirectory)":"/source" $(DEV_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/dev-smida-nanopipeline-build-environment:latest
     - task: Bash@3
-      displayName: Upload Artifacts to S3
+      displayName: Copy .tar.gz file as latest
       inputs:
         targetType: 'inline'
         script: |
-          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
-          mv *.tar.gz smiDE_latest.tar.gz
-          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
-- stage: QA
-  condition: and(succeeded(), eq(variables.isRelease, 'True'))
-  displayName: Pull and run image to QA environment
-  jobs:
-  - job: Pull_and_run_smi_nanopipeline_build_environment_image
-    displayName: Pull and run existing smi_nanopipeline_build_environment image
-    pool:
-      vmImage: ubuntu-latest
-    variables:
-      - group: smida-build-pipeline-variables
-    steps:
-    - task: ECRPullImage@1
+          cp *.tar.gz smiCellTyping_latest.tar.gz
+    - task: S3Upload@1
+      condition: eq(variables.buildDev, 'True')
+      displayName: Upload CellTyping .tar.gz files to S3 on DEV
+      inputs:
+        awsCredentials: 'dev-$(AWS_CREDENTIALS)'
+        regionName: '$(AWS_REGION)'
+        bucketName: 'dev-$(AWS_S3_REPOSITORY)'
+        sourceFolder: '$(Build.SourcesDirectory)'
+        globExpressions: '*.tar.gz'
+        targetFolder: 'smida/nanopipeline-builds'
+    - task: S3Upload@1
+      condition: eq(variables.buildQa, 'True')
+      displayName: Upload CellTyping .tar.gz files to S3 on QA
       inputs:
         awsCredentials: 'qa-$(AWS_CREDENTIALS)'
         regionName: '$(AWS_REGION)'
-        repository: 'qa-$(AWS_ECR_REPOSITORY_NAME)'
-        imageTag: latest
-    - task: Bash@3
-      displayName: Run Docker Image
+        bucketName: 'qa-$(AWS_S3_REPOSITORY)'
+        sourceFolder: '$(Build.SourcesDirectory)'
+        globExpressions: '*.tar.gz'
+        targetFolder: 'smida/nanopipeline-builds'
+    - task: S3Upload@1
+      condition: eq(variables.buildUat, 'True')
+      displayName: Upload CellTyping .tar.gz files to S3 on UAT
       inputs:
-        targetType: 'inline'
-        script: |
-          docker run --rm -v "$(pwd)":"/source" qa-$(AWS_ECR_REPOSITORY_NAME):latest
-    - task: Bash@3
-      displayName: Upload Artifacts to S3
-      inputs:
-        targetType: 'inline'
-        script: |
-          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
-          mv *.tar.gz smiDE_latest.tar.gz
-          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
-- stage: UAT
-  condition: and(succeeded(), eq(variables.isRelease, 'True'))
-  displayName: Pull and run image to UAT environment
+        awsCredentials: 'uat-$(AWS_CREDENTIALS)'
+        regionName: '$(AWS_REGION)'
+        bucketName: 'uat-$(AWS_S3_REPOSITORY)'
+        sourceFolder: '$(Build.SourcesDirectory)'
+        globExpressions: '*.tar.gz'
+        targetFolder: 'smida/nanopipeline-builds'
+- stage: version_1_1
+  condition: eq(variables.buildTenant, 'True')
+  displayName: Build CellTyping for Tenant environment
   jobs:
-  - job: Pull_and_run_smi_nanopipeline_build_environment_image
-    displayName: Pull and run existing smi_nanopipeline_build_environment image
+  - job: Build_CellTyping_for_Tenant
+    displayName: Build CellTyping for Tenant
     pool:
       vmImage: ubuntu-latest
     variables:
       - group: smida-build-pipeline-variables
     steps:
     - task: ECRPullImage@1
+      displayName: Pull NanoPipeline Build environment image from Tenant HUB ECR
       inputs:
-        awsCredentials: 'uat-$(AWS_CREDENTIALS)'
+        awsCredentials: 'tenanthub-dev-$(TENANT_AWS_CREDENTIALS)'
         regionName: '$(AWS_REGION)'
-        repository: 'uat-$(AWS_ECR_REPOSITORY_NAME)'
-        imageTag: latest
+        repository: 'ecr-usw2-atmx-mt-cosmx_da_repo-dev-hub-smida-nanopipeline-build-environment'
+        imageSource: 'imagetag'
+        imageTag: 'latest'
     - task: Bash@3
-      displayName: Run Docker Image
+      displayName: Run smida-nanopipeline-build-environment Docker Image
       inputs:
         targetType: 'inline'
         script: |
-          docker run --rm -v "$(pwd)":"/source" uat-$(AWS_ECR_REPOSITORY_NAME):latest
+          docker run --rm -v "$(Build.SourcesDirectory)":"/source" $(TENANT_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/ecr-usw2-atmx-mt-cosmx_da_repo-dev-hub-smida-nanopipeline-build-environment:latest
     - task: Bash@3
-      displayName: Upload Artifacts to S3
+      displayName: Copy .tar.gz file as latest
       inputs:
         targetType: 'inline'
         script: |
-          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
-          mv *.tar.gz smiDE_latest.tar.gz
-          aws s3 cp *.tar.gz s3://smida-nanopipeline-builds
+          cp *.tar.gz smiCellTyping_latest.tar.gz
+    - task: S3Upload@1
+      displayName: Upload CellTyping .tar.gz files to S3 on Tenant1
+      inputs:
+        awsCredentials: 'tenant01-dev-nstg-atomx-aws-Gemini'
+        regionName: '$(AWS_REGION)'
+        bucketName: 's3-usw2-atmx-dev-ht01-datarepository-dev-t-1-t001'
+        sourceFolder: '$(Build.SourcesDirectory)'
+        globExpressions: '*.tar.gz'
+        targetFolder: 'smida/nanopipeline-builds'
+    - task: S3Upload@1
+      displayName: Upload CellTyping .tar.gz files to S3 on Tenant2
+      inputs:
+        awsCredentials: 'tenant02-dev-nstg-atomx-aws-Gemini'
+        regionName: '$(AWS_REGION)'
+        bucketName: 's3-usw2-atmx-dev-ht01-datarepository-dev-t-2-t002'
+        sourceFolder: '$(Build.SourcesDirectory)'
+        globExpressions: '*.tar.gz'
+        targetFolder: 'smida/nanopipeline-builds'
