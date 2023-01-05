@@ -119,20 +119,11 @@ stages:
         script: |
           cp *.tar.gz smiCellTyping_latest.tar.gz
     - task: S3Upload@1
-      displayName: Upload CellTyping .tar.gz files to S3 on Tenant1
+      displayName: Upload CellTyping .tar.gz files to S3 on DEV 1.1 HUB
       inputs:
-        awsCredentials: 'tenant01-dev-nstg-atomx-aws-Gemini'
+        awsCredentials: 'tenanthub-dev-$(TENANT_AWS_CREDENTIALS)'
         regionName: '$(AWS_REGION)'
-        bucketName: 's3-usw2-atmx-dev-ht01-datarepository-dev-t-1-t001'
+        bucketName: 's3-usw2-atmx-mt-smida-assets-global-bucket-dev-dev-hub-ah001'
         sourceFolder: '$(Build.SourcesDirectory)'
         globExpressions: '*.tar.gz'
-        targetFolder: 'smida/nanopipeline-builds'
-    - task: S3Upload@1
-      displayName: Upload CellTyping .tar.gz files to S3 on Tenant2
-      inputs:
-        awsCredentials: 'tenant02-dev-nstg-atomx-aws-Gemini'
-        regionName: '$(AWS_REGION)'
-        bucketName: 's3-usw2-atmx-dev-ht01-datarepository-dev-t-2-t002'
-        sourceFolder: '$(Build.SourcesDirectory)'
-        globExpressions: '*.tar.gz'
-        targetFolder: 'smida/nanopipeline-builds'
+        targetFolder: 'smida/assets/nanopipeline/test'
