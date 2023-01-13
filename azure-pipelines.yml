@@ -1,20 +1,8 @@
 parameters:
-- name: devEnv
-  displayName: DEV environment
+- name: dev1_1Env
+  displayName: DEV 1.1 environment
   type: boolean
   default: true
-- name: qaEnv
-  displayName: QA environment
-  type: boolean
-  default: false
-- name: uatEnv
-  displayName: UAT environment
-  type: boolean
-  default: false
-- name: tenantEnv
-  displayName: Tenant environment
-  type: boolean
-  default: false
 
 trigger:
 - main
@@ -23,86 +11,22 @@ resources:
 - repo: self
 
 variables:
-  buildDev: ${{ eq(parameters.devEnv, 'true') }}
-  buildQa: ${{ eq(parameters.qaEnv, 'true') }}
-  buildUat: ${{ eq(parameters.uatEnv, 'true') }}
-  buildTenant: ${{ eq(parameters.tenantEnv, 'true') }}
+  buildDev1_1: ${{ eq(parameters.dev1_1Env, 'true') }}
 
 stages:
-- stage: version_1_0
-  condition: or(eq(variables.buildDev, 'True'), eq(variables.buildQa, 'True'), eq(variables.buildUat, 'True'))
-  displayName: Build CellTyping for Release environment
-  jobs:
-  - job: Build_CellTyping_for_Release
-    displayName: Build CellTyping for Release
-    pool:
-      vmImage: ubuntu-latest
-    variables:
-      - group: smida-build-pipeline-variables
-    steps:
-    - task: ECRPullImage@1
-      displayName: Pull NanoPipeline Build environment image from DEV ECR
-      inputs:
-        awsCredentials: 'dev-$(AWS_CREDENTIALS)'
-        regionName: '$(AWS_REGION)'
-        repository: 'dev-smida-nanopipeline-build-environment'
-        imageSource: 'imagetag'
-        imageTag: 'latest'
-    - task: Bash@3
-      displayName: Run smida-nanopipeline-build-environment Docker Image
-      inputs:
-        targetType: 'inline'
-        script: |
-          docker run --rm -v "$(Build.SourcesDirectory)":"/source" $(DEV_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/dev-smida-nanopipeline-build-environment:latest
-    - task: Bash@3
-      displayName: Copy .tar.gz file as latest
-      inputs:
-        targetType: 'inline'
-        script: |
-          cp *.tar.gz smiCellTyping_latest.tar.gz
-    - task: S3Upload@1
-      condition: eq(variables.buildDev, 'True')
-      displayName: Upload CellTyping .tar.gz files to S3 on DEV
-      inputs:
-        awsCredentials: 'dev-$(AWS_CREDENTIALS)'
-        regionName: '$(AWS_REGION)'
-        bucketName: 'dev-$(AWS_S3_REPOSITORY)'
-        sourceFolder: '$(Build.SourcesDirectory)'
-        globExpressions: '*.tar.gz'
-        targetFolder: 'smida/nanopipeline-builds'
-    - task: S3Upload@1
-      condition: eq(variables.buildQa, 'True')
-      displayName: Upload CellTyping .tar.gz files to S3 on QA
-      inputs:
-        awsCredentials: 'qa-$(AWS_CREDENTIALS)'
-        regionName: '$(AWS_REGION)'
-        bucketName: 'qa-$(AWS_S3_REPOSITORY)'
-        sourceFolder: '$(Build.SourcesDirectory)'
-        globExpressions: '*.tar.gz'
-        targetFolder: 'smida/nanopipeline-builds'
-    - task: S3Upload@1
-      condition: eq(variables.buildUat, 'True')
-      displayName: Upload CellTyping .tar.gz files to S3 on UAT
-      inputs:
-        awsCredentials: 'uat-$(AWS_CREDENTIALS)'
-        regionName: '$(AWS_REGION)'
-        bucketName: 'uat-$(AWS_S3_REPOSITORY)'
-        sourceFolder: '$(Build.SourcesDirectory)'
-        globExpressions: '*.tar.gz'
-        targetFolder: 'smida/nanopipeline-builds'
 - stage: version_1_1
-  condition: eq(variables.buildTenant, 'True')
-  displayName: Build CellTyping for Tenant environment
+  condition: eq(variables.buildDev1_1, 'True')
+  displayName: Build CellTyping for DEV 1.1 environment
   jobs:
-  - job: Build_CellTyping_for_Tenant
-    displayName: Build CellTyping for Tenant
+  - job: Build_CellTyping_for_Dev_1_1
+    displayName: Build CellTyping for DEV 1.1
     pool:
       vmImage: ubuntu-latest
     variables:
       - group: smida-build-pipeline-variables
     steps:
     - task: ECRPullImage@1
-      displayName: Pull NanoPipeline Build environment image from Tenant HUB ECR
+      displayName: Pull NanoPipeline Build environment image from DEV 1.1 HUB ECR
       inputs:
         awsCredentials: 'tenanthub-dev-$(TENANT_AWS_CREDENTIALS)'
         regionName: '$(AWS_REGION)'
@@ -129,4 +53,4 @@ stages:
         bucketName: 's3-usw2-atmx-mt-smida-assets-global-bucket-dev-dev-hub-ah001'
         sourceFolder: '$(Build.SourcesDirectory)'
         globExpressions: '*.tar.gz'
-        targetFolder: 'smida/assets/nanopipeline/test'
+        targetFolder: 'smida/assets/nanopipeline'
