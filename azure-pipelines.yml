@@ -3,6 +3,10 @@ parameters:
   displayName: DEV 1.1 environment
   type: boolean
   default: true
+- name: qa1_1Env
+  displayName: QA 1.1 environment
+  type: boolean
+  default: false
 
 trigger:
 - main
@@ -12,9 +16,10 @@ resources:
 
 variables:
   buildDev1_1: ${{ eq(parameters.dev1_1Env, 'true') }}
+  buildQa1_1: ${{ eq(parameters.dev1_1Env, 'true') }}
 
 stages:
-- stage: version_1_1
+- stage: DEV_1_1
   condition: eq(variables.buildDev1_1, 'True')
   displayName: Build CellTyping for DEV 1.1 environment
   jobs:
@@ -38,7 +43,7 @@ stages:
       inputs:
         targetType: 'inline'
         script: |
-          docker run --rm -v "$(Build.SourcesDirectory)":"/source" $(TENANT_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/ecr-usw2-atmx-mt-cosmx_da_repo-dev-hub-smida-nanopipeline-build-environment:latest
+          docker run --rm -v "$(Build.SourcesDirectory)":"/source" $(DEV_HUB_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/ecr-usw2-atmx-mt-cosmx_da_repo-dev-hub-smida-nanopipeline-build-environment:latest
     - task: Bash@3
       displayName: Copy .tar.gz file as latest
       inputs:
@@ -50,7 +55,42 @@ stages:
       inputs:
         awsCredentials: 'tenanthub-dev-$(TENANT_AWS_CREDENTIALS)'
         regionName: '$(AWS_REGION)'
-        bucketName: 's3-usw2-atmx-mt-smida-assets-global-bucket-dev-dev-hub-ah001'
+        bucketName: 's3-usw2-atmx-mt-$(GLOBAL_BUCKET_NAME)-dev-dev-hub-ah001'
         sourceFolder: '$(Build.SourcesDirectory)'
-        globExpressions: '*.tar.gz'
+        globExpressions:  |
+          'smiCellTyping_*.tar.gz'
+          'InSituType_*.tar.gz'
+        targetFolder: 'smida/assets/nanopipeline'
+- stage: QA_1_1
+  condition: eq(variables.buildQa1_1, 'True')
+  displayName: Copy CellTyping from DEV 1.1 to QA 1.1 environment
+  jobs:
+  - job: Copy_CellTyping_from_Dev_1_1_to_Qa_1_1
+    displayName: Copy CellTyping from DEV 1.1 to QA 1.1
+    pool:
+      vmImage: ubuntu-latest
+    variables:
+      - group: smida-build-pipeline-variables
+    steps:
+    - task: S3Download@1
+      displayName: Download CellTyping .tar.gz files from S3 ON DEV 1.1 HUB
+      inputs:
+        awsCredentials: 'tenanthub-dev-$(TENANT_AWS_CREDENTIALS)'
+        regionName: '$(AWS_REGION)'
+        bucketName: 's3-usw2-atmx-mt-$(GLOBAL_BUCKET_NAME)-dev-dev-hub-ah001'
+        sourceFolder: 'smida/assets/nanopipeline'
+        globExpressions:  |
+          'smiCellTyping_*.tar.gz'
+          'InSituType_*.tar.gz'
+        targetFolder: '$(Build.SourcesDirectory)'
+    - task: S3Upload@1
+      displayName: Upload CellTyping .tar.gz files to S3 on QA 1.1 HUB
+      inputs:
+        awsCredentials: 'hub-qa1-$(TENANT_AWS_CREDENTIALS)'
+        regionName: '$(AWS_REGION)'
+        bucketName: 's3-usw2-qa1-1.1-$(GLOBAL_BUCKET_NAME)-qa1-qa1-hub-qa1-001'
+        sourceFolder: '$(Build.SourcesDirectory)'
+        globExpressions:  |
+          'smiCellTyping_*.tar.gz'
+          'InSituType_*.tar.gz'
         targetFolder: 'smida/assets/nanopipeline'
