@@ -89,7 +89,7 @@ stages:
         awsCredentials: 'hub-qa1-$(TENANT_AWS_CREDENTIALS)'
         regionName: '$(AWS_REGION)'
         bucketName: 's3-usw2-qa1-1.1-$(GLOBAL_BUCKET_NAME)-qa1-qa1-hub-qa1-001'
-        sourceFolder: '$(Build.SourcesDirectory)'
+        sourceFolder: '$(Build.SourcesDirectory)/smida/assets/nanopipeline'
         globExpressions:  |
           'smiCellTyping_*.tar.gz'
           'InSituType_*.tar.gz'
