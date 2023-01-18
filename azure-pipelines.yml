@@ -50,6 +50,10 @@ stages:
         targetType: 'inline'
         script: |
           cp *.tar.gz smiCellTyping_latest.tar.gz
+          echo "Current location:"
+          pwd
+          echo "Files in current location:"
+          ls
     - task: S3Upload@1
       displayName: Upload CellTyping .tar.gz files to S3 on DEV 1.1 HUB
       inputs:
