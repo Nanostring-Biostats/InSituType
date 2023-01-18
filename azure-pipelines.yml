@@ -16,7 +16,7 @@ resources:
 
 variables:
   buildDev1_1: ${{ eq(parameters.dev1_1Env, 'true') }}
-  buildQa1_1: ${{ eq(parameters.dev1_1Env, 'true') }}
+  buildQa1_1: ${{ eq(parameters.qa1_1Env, 'true') }}
 
 stages:
 - stage: DEV_1_1
