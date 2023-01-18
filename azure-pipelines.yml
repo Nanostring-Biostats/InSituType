@@ -50,10 +50,6 @@ stages:
         targetType: 'inline'
         script: |
           cp *.tar.gz smiCellTyping_latest.tar.gz
-          echo "Current location:"
-          pwd
-          echo "Files in current location:"
-          ls
     - task: S3Upload@1
       displayName: Upload CellTyping .tar.gz files to S3 on DEV 1.1 HUB
       inputs:
@@ -61,9 +57,7 @@ stages:
         regionName: '$(AWS_REGION)'
         bucketName: 's3-usw2-atmx-mt-$(GLOBAL_BUCKET_NAME)-dev-dev-hub-ah001'
         sourceFolder: '$(Build.SourcesDirectory)'
-        globExpressions:  |
-          'smiCellTyping_*.tar.gz'
-          'InSituType_*.tar.gz'
+        globExpressions: '+(smiCellTyping|InSituType)_*.tar.gz'
         targetFolder: 'smida/assets/nanopipeline'
 - stage: QA_1_1
   condition: eq(variables.buildQa1_1, 'True')
@@ -83,9 +77,7 @@ stages:
         regionName: '$(AWS_REGION)'
         bucketName: 's3-usw2-atmx-mt-$(GLOBAL_BUCKET_NAME)-dev-dev-hub-ah001'
         sourceFolder: 'smida/assets/nanopipeline'
-        globExpressions:  |
-          'smiCellTyping_*.tar.gz'
-          'InSituType_*.tar.gz'
+        globExpressions: '+(smiCellTyping|InSituType)_*.tar.gz'
         targetFolder: '$(Build.SourcesDirectory)'
     - task: S3Upload@1
       displayName: Upload CellTyping .tar.gz files to S3 on QA 1.1 HUB
@@ -94,7 +86,5 @@ stages:
         regionName: '$(AWS_REGION)'
         bucketName: 's3-usw2-qa1-1.1-$(GLOBAL_BUCKET_NAME)-qa1-qa1-hub-qa1-001'
         sourceFolder: '$(Build.SourcesDirectory)/smida/assets/nanopipeline'
-        globExpressions:  |
-          'smiCellTyping_*.tar.gz'
-          'InSituType_*.tar.gz'
+        globExpressions: '+(smiCellTyping|InSituType)_*.tar.gz'
         targetFolder: 'smida/assets/nanopipeline'
