@@ -319,7 +319,7 @@ update_logliks_with_cohort_freqs <- function(logliks, cohort, minfreq = 1e-6, nb
   baselinefreqs <- prop.table(table(clust))
   baselinefreqs[setdiff(unique(colnames(logliks)), names(baselinefreqs))] <- 0
   baselinefreqs <- baselinefreqs[colnames(logliks)]
-  
+  print(baselinefreqs)  
   for (cohortname in unique(cohort)) {
     use <- cohort == cohortname
     # get cluster frequencies in cohort:
