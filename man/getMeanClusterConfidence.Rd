@@ -15,3 +15,10 @@ a vector of mean confidences, with values of 1 corresponding to clusters with on
 \description{
 Calculate the mean confidence of the cell calls from each cluster
 }
+\examples{
+data("mini_nsclc")
+probs <- sapply(rownames(mini_nsclc$counts), function(x) {a = runif(10); a/sum(a)})
+dimnames(probs)[[1]] <- letters[1:10]
+probs <- t(probs)
+getMeanClusterConfidence(probs)
+}

@@ -15,3 +15,7 @@ log-transformed matrix
 \description{
 Get a logliks matrix from a probabilities matrix
 }
+\examples{
+a <- runif(10)
+probs2logliks(a/sum(a))
+}

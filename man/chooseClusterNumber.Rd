@@ -68,3 +68,8 @@ A list, with the following elements:
 For a subset of the data, perform clustering under a range of cluster numbers.
  Report on loglikelihood vs. number of clusters, and suggest a best choice.
 }
+\examples{
+data("mini_nsclc")
+chooseClusterNumber(mini_nsclc$counts, Matrix::rowMeans(mini_nsclc$neg),
+ n_clust = 2:5)
+}

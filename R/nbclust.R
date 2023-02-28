@@ -2,6 +2,8 @@
 #'
 #' @return number of cores to use for mclapply
 #' @export
+#' @examples 
+#' numCores()
 numCores <- function() {
   num_cores <- 1
   if (.Platform$OS.type == "unix") {
@@ -27,6 +29,11 @@ numCores <- function() {
 #' @importFrom stats dnbinom
 #' @importFrom methods as is
 #' @return likelihood for profile
+#' @examples
+#' options(mc.cores = 1)
+#' data("mini_nsclc")
+#' data("ioprofiles")
+#' lldist(ioprofiles[[1]], mini_nsclc$counts, bg = Matrix::rowMeans(mini_nsclc$neg))
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
@@ -89,6 +96,12 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
 #' @export
+#' @examples 
+#' options(mc.cores = 1)
+#' data("mini_nsclc")
+#' data("ioprofiles")
+#' sharedgenes <- intersect(rownames(ioprofiles), colnames(mini_nsclc$counts))
+#' Mstep(mini_nsclc$counts, ioprofiles[sharedgenes, ], bg = Matrix::rowMeans(mini_nsclc$neg), cohort = NULL)
 Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
   logliks <- parallel::mclapply(asplit(means, 2),
@@ -131,6 +144,20 @@ Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, retur
 #'
 #' @return A matrix of cluster profiles, genes * clusters
 #' @export
+#' @examples 
+#' options(mc.cores = 1)
+#' data("ioprofiles")
+#' unsup <- insitutype(
+#'  x = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  n_clusts = 8,
+#'  n_phase1 = 200,
+#'  n_phase2 = 500,
+#'  n_phase3 = 2000,
+#'  n_starts = 1,
+#'  max_iters = 5
+#' ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+#' Estep(counts = mini_nsclc$counts, clust = unsup$clust, neg = Matrix::rowMeans(mini_nsclc$neg))
 Estep <- function(counts, clust, neg) {
 
   # get cluster means:
@@ -174,6 +201,18 @@ Estep <- function(counts, clust, neg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
+#' @examples 
+#' data("ioprofiles")
+#' data("mini_nsclc")
+#' sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
+#' nbclust(counts = mini_nsclc$counts[, sharedgenes],
+#'        neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL,
+#'        fixed_profiles = ioprofiles[sharedgenes, 1:3],
+#'        init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(mini_nsclc$counts) / 2),
+#'        nb_size = 10,
+#'        cohort = rep("a", nrow(mini_nsclc$counts)),
+#'        pct_drop = 1/10000,
+#'        min_prob_increase = 0.05, max_iters = 3, logresults = FALSE)
 nbclust <- function(counts, neg, bg = NULL, 
                     fixed_profiles = NULL,
                     init_profiles = NULL, init_clust = NULL, 
@@ -299,7 +338,8 @@ nbclust <- function(counts, neg, bg = NULL,
 #' For a numeric object, return a logical object of whether each element is the max or not.
 #' @param x a vector of values
 #' @return a vecetor of logical values
-#'
+#' @examples
+#' ismax(c(3, 5, 5, 2))
 ismax <- function(x) {
   return(x == max(x, na.rm = TRUE))
 }
