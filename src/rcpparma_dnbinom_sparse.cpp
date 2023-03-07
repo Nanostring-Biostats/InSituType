@@ -25,6 +25,17 @@ using namespace arma;
 //' @importFrom Rcpp evalCpp
 //' @exportPattern "^[[:alpha:]]+" 
 //' @export
+//' @examples
+//' data("ioprofiles")
+//' data("mini_nsclc")
+//' bg <- Matrix::rowMeans(mini_nsclc$neg)
+//' genes <- intersect(dimnames(mini_nsclc$counts)[[2]], dimnames(ioprofiles)[[1]])
+//' mat <- mini_nsclc$counts[, genes]
+//' x <- ioprofiles[genes, 1]
+//' bgsub <- pmax(sweep(mat, 1, bg, "-"), 0)
+//' s <- Matrix::rowSums(bgsub) / sum(x)
+//' s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
+//' lls(as(mat, "dgCMatrix"), s, x, bg, 10)
 // [[Rcpp::export]]
 Rcpp::NumericVector
 lls(arma::sp_mat& mat, arma::vec& s, arma::vec& x, arma::vec& bg, int& size_dnb) {
@@ -43,3 +54,4 @@ lls(arma::sp_mat& mat, arma::vec& s, arma::vec& x, arma::vec& bg, int& size_dnb)
   }
   return res;
 }
+

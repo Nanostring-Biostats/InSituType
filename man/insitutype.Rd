@@ -2,10 +2,14 @@
 % Please edit documentation in R/insitutype.R
 \name{insitutype}
 \alias{insitutype}
+\alias{insitutype,ANY-method}
+\alias{insitutype,SingleCellExperiment-method}
 \title{Run insitutype.}
 \usage{
-insitutype(
-  counts,
+insitutype(x, ...)
+
+\S4method{insitutype}{ANY}(
+  x,
   neg,
   bg = NULL,
   anchors = NULL,
@@ -31,9 +35,17 @@ insitutype(
   min_anchor_llr = 0.03,
   insufficient_anchors_thresh = 20
 )
+
+\S4method{insitutype}{SingleCellExperiment}(x, ..., assay.type = "counts")
 }
 \arguments{
-\item{counts}{Counts matrix (or dgCMatrix), cells * genes.}
+\item{x}{Counts matrix (or dgCMatrix), cells * genes.
+
+  Alternatively, a \linkS4class{SingleCellExperiment} object containing such
+  a matrix.}
+
+\item{...}{For the \linkS4class{SingleCellExperiment} method, additional
+arguments to pass to the ANY method.}
 
 \item{neg}{Vector of mean negprobe counts per cell}
 
@@ -110,6 +122,8 @@ anchor}
 
 \item{insufficient_anchors_thresh}{Cell types that end up with fewer than
 this many anchors after anchor selection will be discarded.}
+
+\item{assay.type}{A string specifying which assay values to use.}
 }
 \value{
 A list, with the following elements: \enumerate{ \item clust: a
@@ -122,4 +136,19 @@ A list, with the following elements: \enumerate{ \item clust: a
 }
 \description{
 A wrapper for nbclust, to manage subsampling and multiple random starts.
+}
+\examples{
+options(mc.cores = 1)
+data("mini_nsclc")
+unsup <- insitutype(
+ x = mini_nsclc$counts,
+ neg = Matrix::rowMeans(mini_nsclc$neg),
+ n_clusts = 8,
+ n_phase1 = 200,
+ n_phase2 = 500,
+ n_phase3 = 2000,
+ n_starts = 1,
+ max_iters = 5
+) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+table(unsup$clust)
 }

@@ -19,6 +19,20 @@
 #' @importFrom umap umap
 #' @importFrom stats rnorm
 #' @export
+#' @examples
+#' data("mini_nsclc")
+#' options(mc.cores = 1)
+#' unsup <- insitutype(
+#'  x = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  n_clusts = 8,
+#'  n_phase1 = 200,
+#'  n_phase2 = 500,
+#'  n_phase3 = 2000,
+#'  n_starts = 1,
+#'  max_iters = 5
+#' ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+#' flightpath_layout(logliks = unsup$logliks, profiles = unsup$profiles)
 flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, cluster_xpos = NULL, cluster_ypos = NULL) {
 
   if (is.null(probs) && is.null(logliks)) {
@@ -90,7 +104,20 @@ flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, clu
 #'@return a ggplot object
 #'
 #'@export
-#'
+#'@examples 
+#' data("ioprofiles")
+#' options(mc.cores = 1)
+#' unsup <- insitutype(
+#'  x = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  n_clusts = 8,
+#'  n_phase1 = 200,
+#'  n_phase2 = 500,
+#'  n_phase3 = 2000,
+#'  n_starts = 1,
+#'  max_iters = 5
+#' ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+#' flightpath_plot(insitutype_result = unsup)
 flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, col = NULL, showclusterconfidence = TRUE){
   
   # get the flightpath results to use 
@@ -172,6 +199,12 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
 #' Calculate the mean confidence of the cell calls from each cluster
 #' @param probs Matrix of probabilities
 #' @return a vector of mean confidences, with values of 1 corresponding to clusters with only prob == 1
+#' @examples
+#' data("mini_nsclc")
+#' probs <- sapply(rownames(mini_nsclc$counts), function(x) {a = runif(10); a/sum(a)})
+#' dimnames(probs)[[1]] <- letters[1:10]
+#' probs <- t(probs)
+#' getMeanClusterConfidence(probs)
 getMeanClusterConfidence <- function(probs) {
   
   maxprobs <- apply(probs, 1, max, na.rm = TRUE)

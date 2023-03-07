@@ -54,3 +54,11 @@ Finds cells with very good fits to the reference profiles, and saves these
 cells for use as "anchors" in the semi-supervised learning version of
 nbclust.
 }
+\examples{
+data("ioprofiles")
+data("mini_nsclc")
+sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
+find_anchor_cells(counts = mini_nsclc$counts[, sharedgenes], 
+                  neg = Matrix::rowMeans(mini_nsclc$neg),
+                  profiles = ioprofiles)
+}

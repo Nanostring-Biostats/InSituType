@@ -28,12 +28,13 @@ knitr::opts_chunk$set(
 
 ```   
 ### Overview
-This vignette demonstrates the use of the insitutype algorithm to cluster CosMx data.
-We analyze a subset of the CosMx NSCLC showcase dataset. 
+This vignette demonstrates the use of the insitutype algorithm to cluster [CosMx](https://www.nature.com/articles/s41587-022-01483-z) data. CosMx is a spatial molecular imager for sub-cellular resolution of mRNA transcripts and protein targets. We analyze a subset of the [CosMx NSCLC showcase dataset](https://nanostring.com/cosmx-dataset). 
+
 ### Data preparation
 First, we load the package and access the example data:
 ```{r setup}
 library(InSituType)
+options(mc.cores = 1)
 data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
@@ -109,7 +110,7 @@ Note: this should take a few minutes on a standard laptop.
 
 ```{r unsup, echo=TRUE}
 unsup <- insitutype(
-  counts = counts,
+  x = counts,
   neg = negmean,
   cohort = cohort,
   # Enter your own per-cell background estimates here if you have them;
