@@ -22,7 +22,6 @@ Given cell assignments (or posterior probabilities), estimate the mean
  profile of each cluster.
 }
 \examples{
-options(mc.cores = 1)
 data("ioprofiles")
 unsup <- insitutype(
  x = mini_nsclc$counts,

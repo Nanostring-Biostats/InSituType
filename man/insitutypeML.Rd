@@ -59,7 +59,6 @@ Supervised classification of cells. Each cell is assigned to the cell type
  under which its observed expression profile is most likely.
 }
 \examples{
-options(mc.cores = 1)
 data("mini_nsclc")
 data("ioprofiles")
 sup <- insitutypeML(

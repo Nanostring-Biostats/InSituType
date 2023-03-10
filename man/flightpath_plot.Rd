@@ -34,7 +34,6 @@ Plot flightpath results
 }
 \examples{
 data("ioprofiles")
-options(mc.cores = 1)
 unsup <- insitutype(
  x = mini_nsclc$counts,
  neg = Matrix::rowMeans(mini_nsclc$neg),

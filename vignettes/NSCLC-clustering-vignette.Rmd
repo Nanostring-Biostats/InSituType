@@ -34,7 +34,6 @@ This vignette demonstrates the use of the insitutype algorithm to cluster [CosMx
 First, we load the package and access the example data:
 ```{r setup}
 library(InSituType)
-options(mc.cores = 1)
 data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")

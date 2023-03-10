@@ -70,7 +70,6 @@
 #'
 #' @name insitutype
 #' @examples 
-#' options(mc.cores = 1)
 #' data("mini_nsclc")
 #' unsup <- insitutype(
 #'  x = mini_nsclc$counts,
@@ -289,13 +288,10 @@ NULL
     # find which profile matrix does best in the benchmarking subset:
     benchmarking_logliks <- c()
     for (i in 1:n_starts) {
-      templogliks <- parallel::mclapply(asplit(profiles_from_random_starts[[i]], 2),
-                        lldist,
-                        mat = x[benchmarking_subset, ],
-                        bg = bg[benchmarking_subset],
-                        size = nb_size,
-                        mc.cores = numCores())
-      templogliks <- do.call(cbind, templogliks)
+      templogliks <- lldist(x = profiles_from_random_starts[[i]],
+                            mat = x[benchmarking_subset, ],
+                            bg = bg[benchmarking_subset],
+                            size = nb_size)
       # take the sum of cells' best logliks:
       benchmarking_logliks[i] <- sum(apply(templogliks, 1, max))
     }

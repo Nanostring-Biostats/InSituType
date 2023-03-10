@@ -178,7 +178,6 @@ probs2logliks <- function(probs) {
 #' @param logliks Matrix of loglikelihoods, as output by insitytupe. Cells in rows, clusters in columns.
 #' @return A matrix of probabilities, in the same dimensions as logliks. 
 #' @examples 
-#' options(mc.cores = 1)
 #' data("mini_nsclc")
 #' unsup <- insitutype(
 #'  x = mini_nsclc$counts,

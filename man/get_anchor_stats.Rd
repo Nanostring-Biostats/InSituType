@@ -44,7 +44,6 @@ happen once.
 \examples{
 data("ioprofiles")
 data("mini_nsclc")
-options(mc.cores = 1)
 get_anchor_stats(counts = mini_nsclc$counts,
                  neg = Matrix::rowMeans(mini_nsclc$neg),
                  profiles = ioprofiles)
