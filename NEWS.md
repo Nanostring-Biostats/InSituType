@@ -1,3 +1,8 @@
+# InSituType 1.0.0
+
+* License updated
+* lldist parallelized with OpenMP
+
 # InSituType 0.99.3
 
 * Merge subclustering fix
