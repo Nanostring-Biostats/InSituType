@@ -2,7 +2,7 @@ Package: InSituType
 Type: Package
 Title: An R package for performing cell typing in SMI and other single cell data
 Version: 1.0.0
-Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut", "cre")),
+Authors@R: c(person("Patrick", "Danaher", email = "pdanaher@nanostring.com", role = c("aut")),
              person("Zhi", "Yang", email = "zyang@nanostring.com", role = c("aut")),
              person("David", "Ross", email = "dross@nanostring.com", role = c("aut", "cre")))
 Description: Insitutype is an algorithm for performing cell typing in single cell 
