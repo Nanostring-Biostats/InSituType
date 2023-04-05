@@ -6,8 +6,8 @@
 #' Probability density function of the negative binomial distribution (written in C++)
 #'
 #' @param mat dgCMatrix expression counts
-#' @param s numeric scaling factor
-#' @param x numeric expression for reference profile
+#' @param bgsub vector of background expression per cell
+#' @param x numeric expression for reference profiles
 #' @param bg numeric background level
 #' @param size_dnb int Dispersion parameter
 #'
@@ -16,7 +16,7 @@
 #' @importFrom Rcpp evalCpp
 #' @exportPattern "^[[:alpha:]]+" 
 #' @export
-lls <- function(mat, s, x, bg, size_dnb) {
-    .Call(`_InSituType_lls`, mat, s, x, bg, size_dnb)
+fast_lldist <- function(mat, bgsub, x, bg, size_dnb) {
+    .Call(`_InSituType_fast_lldist`, mat, bgsub, x, bg, size_dnb)
 }
 

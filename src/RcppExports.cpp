@@ -11,24 +11,24 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// lls
-Rcpp::NumericVector lls(arma::sp_mat& mat, arma::vec& s, arma::vec& x, arma::vec& bg, int& size_dnb);
-RcppExport SEXP _InSituType_lls(SEXP matSEXP, SEXP sSEXP, SEXP xSEXP, SEXP bgSEXP, SEXP size_dnbSEXP) {
+// fast_lldist
+Rcpp::NumericMatrix fast_lldist(arma::sp_mat& mat, arma::vec& bgsub, arma::mat& x, arma::vec& bg, int& size_dnb);
+RcppExport SEXP _InSituType_fast_lldist(SEXP matSEXP, SEXP bgsubSEXP, SEXP xSEXP, SEXP bgSEXP, SEXP size_dnbSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::sp_mat& >::type mat(matSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type s(sSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type bgsub(bgsubSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type x(xSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type bg(bgSEXP);
     Rcpp::traits::input_parameter< int& >::type size_dnb(size_dnbSEXP);
-    rcpp_result_gen = Rcpp::wrap(lls(mat, s, x, bg, size_dnb));
+    rcpp_result_gen = Rcpp::wrap(fast_lldist(mat, bgsub, x, bg, size_dnb));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_InSituType_lls", (DL_FUNC) &_InSituType_lls, 5},
+    {"_InSituType_fast_lldist", (DL_FUNC) &_InSituType_fast_lldist, 5},
     {NULL, NULL, 0}
 };
 

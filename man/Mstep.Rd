@@ -38,7 +38,6 @@ Matrix of probabilities of each cell belonging to each cluster
 Compute probability that each cell belongs to a given cluster
 }
 \examples{
-options(mc.cores = 1)
 data("mini_nsclc")
 data("ioprofiles")
 sharedgenes <- intersect(rownames(ioprofiles), colnames(mini_nsclc$counts))

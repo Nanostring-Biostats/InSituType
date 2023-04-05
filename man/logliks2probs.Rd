@@ -16,7 +16,6 @@ A matrix of probabilities, in the same dimensions as logliks.
 From cell x cluster log-likelihoods, calculate cell x cluster probabilities
 }
 \examples{
-options(mc.cores = 1)
 data("mini_nsclc")
 unsup <- insitutype(
  x = mini_nsclc$counts,

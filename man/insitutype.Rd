@@ -138,7 +138,6 @@ A list, with the following elements: \enumerate{ \item clust: a
 A wrapper for nbclust, to manage subsampling and multiple random starts.
 }
 \examples{
-options(mc.cores = 1)
 data("mini_nsclc")
 unsup <- insitutype(
  x = mini_nsclc$counts,

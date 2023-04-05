@@ -47,7 +47,6 @@ We'll analyze a subset of the [CosMx NSCLC showcase dataset](https://nanostring.
 First, we load the package and access the example data:
 ```{r setup}
 library(InSituType)
-options(mc.cores = 1)
 data("ioprofiles")
 data("iocolors")
 data("mini_nsclc")
