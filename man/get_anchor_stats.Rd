@@ -41,3 +41,10 @@ Often the anchor cell selection process will involve some trial-and-error.
 This function performs the computationally-expensive steps that only need to 
 happen once.
 }
+\examples{
+data("ioprofiles")
+data("mini_nsclc")
+get_anchor_stats(counts = mini_nsclc$counts,
+                 neg = Matrix::rowMeans(mini_nsclc$neg),
+                 profiles = ioprofiles)
+}

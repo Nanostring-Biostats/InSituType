@@ -16,6 +16,13 @@
 #' @importFrom mclust predict.Mclust
 #' @importFrom mclust mclustBIC
 #' @importFrom stats qnorm
+#' @examples 
+#' data("mini_nsclc")
+#' ## simulate immunofluorescence data: 
+#' immunofluordata <- matrix(rpois(n = nrow(mini_nsclc$counts) * 4, lambda = 100), 
+#'                           nrow(mini_nsclc$counts))
+#' cohort <- fastCohorting(immunofluordata, gaussian_transform = TRUE)
+#' table(cohort)
 fastCohorting <- function(mat, n_cohorts = NULL, gaussian_transform = TRUE) {
   
   if (any(is.na(mat))) {

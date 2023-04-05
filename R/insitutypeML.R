@@ -26,6 +26,14 @@
 #' }
 #'
 #' @name insitutypeML
+#' @examples
+#' data("mini_nsclc")
+#' data("ioprofiles")
+#' sup <- insitutypeML(
+#'  x = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  reference_profiles = ioprofiles)
+#' table(sup$clust)
 NULL
 
 .insitutypeML <- function(x, neg = NULL, bg = NULL, cohort = NULL, reference_profiles, nb_size = 10, align_genes = TRUE) {
@@ -76,13 +84,10 @@ NULL
   }
   
   # get logliks
-  logliks <- parallel::mclapply(asplit(reference_profiles, 2),
-                    lldist,
+  logliks <- lldist(x = reference_profiles,
                     mat = x,
                     bg = bg,
-                    size = nb_size,
-                    mc.cores = numCores())
-  logliks <- do.call(cbind, logliks)
+                    size = nb_size)
   
   # update logliks based on frequencies within cohorts:
   logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 

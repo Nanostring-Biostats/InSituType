@@ -2,24 +2,36 @@
 % Please edit documentation in R/nbclust.R
 \name{lldist}
 \alias{lldist}
-\title{Calculate the likelihood of the vector x using the reference vector of y}
+\title{Calculate the likelihood of the expression mat
+  using the reference profiles of x}
 \usage{
 lldist(x, mat, bg = 0.01, size = 10, digits = 2)
 }
 \arguments{
-\item{x}{a vector of a reference cell type}
+\item{x}{matrix of reference cell types, genes x profiles}
 
-\item{mat}{a matrix of expression levels in all cells}
+\item{mat}{a matrix of expression levels in all cells, cells x genes}
 
-\item{bg}{background level (default: 0.01)}
+\item{bg}{background level (default: 0.01), usually vector length equal to
+number of cells}
 
 \item{size}{the parameters for dnbinom function (default: 10)}
 
 \item{digits}{the number of digits for rounding}
 }
 \value{
-likelihood for profile
+cells x profiles matrix of log likelihoods
 }
 \description{
-Calculate the likelihood of the vector x using the reference vector of y
+Calculate the likelihood of the expression mat
+  using the reference profiles of x
+}
+\examples{
+data("mini_nsclc")
+data("ioprofiles")
+bg <- Matrix::rowMeans(mini_nsclc$neg)
+genes <- intersect(dimnames(mini_nsclc$counts)[[2]], dimnames(ioprofiles)[[1]])
+mat <- mini_nsclc$counts[, genes]
+x <- ioprofiles[genes, ]
+lldist(x = x, mat = mini_nsclc$counts, bg = Matrix::rowMeans(mini_nsclc$neg))
 }

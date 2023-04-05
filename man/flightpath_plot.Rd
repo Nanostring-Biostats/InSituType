@@ -32,3 +32,17 @@ a ggplot object
 \description{
 Plot flightpath results
 }
+\examples{
+data("ioprofiles")
+unsup <- insitutype(
+ x = mini_nsclc$counts,
+ neg = Matrix::rowMeans(mini_nsclc$neg),
+ n_clusts = 8,
+ n_phase1 = 200,
+ n_phase2 = 500,
+ n_phase3 = 2000,
+ n_starts = 1,
+ max_iters = 5
+) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+flightpath_plot(insitutype_result = unsup)
+}

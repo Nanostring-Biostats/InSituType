@@ -1,32 +1,25 @@
-#' Get number of cores for parallelized operations
+#' Calculate the likelihood of the expression mat
+#'   using the reference profiles of x
 #'
-#' @return number of cores to use for mclapply
-#' @export
-numCores <- function() {
-  num_cores <- 1
-  if (.Platform$OS.type == "unix") {
-    if (is.null(getOption("mc.cores"))) {
-      num_cores <- parallel::detectCores() - 2
-    } else {
-      num_cores <- getOption("mc.cores")
-    }
-    
-  }
-  return(num_cores)
-}
-
-#' Calculate the likelihood of the vector x using the reference vector of y
-#'
-#' @param x a vector of a reference cell type
-#' @param mat a matrix of expression levels in all cells
-#' @param bg background level (default: 0.01)
+#' @param x matrix of reference cell types, genes x profiles
+#' @param mat a matrix of expression levels in all cells, cells x genes
+#' @param bg background level (default: 0.01), usually vector length equal to
+#'   number of cells
 #' @param size the parameters for dnbinom function (default: 10)
 #' @param digits the number of digits for rounding
 #'
 #' @importFrom Matrix rowSums
 #' @importFrom stats dnbinom
 #' @importFrom methods as is
-#' @return likelihood for profile
+#' @return cells x profiles matrix of log likelihoods
+#' @examples
+#' data("mini_nsclc")
+#' data("ioprofiles")
+#' bg <- Matrix::rowMeans(mini_nsclc$neg)
+#' genes <- intersect(dimnames(mini_nsclc$counts)[[2]], dimnames(ioprofiles)[[1]])
+#' mat <- mini_nsclc$counts[, genes]
+#' x <- ioprofiles[genes, ]
+#' lldist(x = x, mat = mini_nsclc$counts, bg = Matrix::rowMeans(mini_nsclc$neg))
 lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
   # convert to matrix form if only a vector was input:
   if (is.vector(mat)) {
@@ -41,37 +34,34 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
       )
     stop(errorMessage)
   }
-  # Check dimensions on bg and stop with informative error if not
-  #  conformant
   if (is.vector(bg)) {
+    # Check dimensions on bg and stop with informative error if not
+    #  conformant
     if (!identical(length(bg), nrow(mat))) {
       errorMessage <- sprintf("Dimensions of count matrix and background are not conformant.\nCount matrix rows: %d, length of bg: %d",
                               nrow(mat), length(bg))
       stop(errorMessage)
     }
-  }
-  
-  # calc scaling factor to put y on the scale of x:
-  if (is.vector(bg)) {
     bgsub <- mat
     bgsub@x <- bgsub@x - bg[bgsub@i + 1]
     bgsub@x <- pmax(bgsub@x, 0)
-  } else {
-    bgsub <- pmax(mat - bg, 0)
-  }
-  sum_of_x <- sum(x)
-  s <- Matrix::rowSums(bgsub) / sum_of_x
-  # override it if s is negative:
-  s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
-  
-  if (is.vector(bg)) {
-    res <- lls(mat, s, x, bg, size)
+    bgsub <- Matrix::rowSums(bgsub)
+    res <- fast_lldist(mat, bgsub, x, bg, size)
   } else {
     # non-optimized code used if bg is cell x gene matrix
-    yhat <- s %*% t(x) + bg
-    res <- stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE)
+    bgsub <- pmax(mat - bg, 0)
+    res <- apply(x, 2, function(profile) {
+      sum_of_x <- sum(profile)
+      s <- Matrix::rowSums(bgsub) / sum_of_x
+      # override it if s is negative:
+      s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum_of_x
+      yhat <- s %*% t(profile) + bg
+      rowSums(stats::dnbinom(x = as.matrix(mat), size = size, mu = yhat, log = TRUE))
+    })
   }
-  names(res) <- rownames(mat)
+
+  rownames(res) <- rownames(mat)
+  colnames(res) <- colnames(x)
   return(round(res, digits))
 }
 
@@ -89,15 +79,18 @@ lldist <- function(x, mat, bg = 0.01, size = 10, digits = 2) {
 #' @param return_loglik If TRUE, logliks will be returned. If FALSE, probabilities will be returned. 
 #' @return Matrix of probabilities of each cell belonging to each cluster
 #' @export
+#' @examples 
+#' data("mini_nsclc")
+#' data("ioprofiles")
+#' sharedgenes <- intersect(rownames(ioprofiles), colnames(mini_nsclc$counts))
+#' Mstep(mini_nsclc$counts, ioprofiles[sharedgenes, ], bg = Matrix::rowMeans(mini_nsclc$neg), cohort = NULL)
 Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, return_loglik = FALSE) {
   # get logliks of cells * clusters
-  logliks <- parallel::mclapply(asplit(means, 2),
-                    lldist,
+  logliks <- lldist(x = means,
                     mat = counts,
                     bg = bg,
                     size = size,
-                    mc.cores = numCores())
-  logliks <- do.call(cbind, logliks)
+                    digits = digits)
   
   # adjust by cohort frequency:
   logliks <- update_logliks_with_cohort_freqs(logliks = logliks, 
@@ -131,6 +124,19 @@ Mstep <- function(counts, means, cohort, bg = 0.01, size = 10, digits = 2, retur
 #'
 #' @return A matrix of cluster profiles, genes * clusters
 #' @export
+#' @examples 
+#' data("ioprofiles")
+#' unsup <- insitutype(
+#'  x = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  n_clusts = 8,
+#'  n_phase1 = 200,
+#'  n_phase2 = 500,
+#'  n_phase3 = 2000,
+#'  n_starts = 1,
+#'  max_iters = 5
+#' ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+#' Estep(counts = mini_nsclc$counts, clust = unsup$clust, neg = Matrix::rowMeans(mini_nsclc$neg))
 Estep <- function(counts, clust, neg) {
 
   # get cluster means:
@@ -174,6 +180,18 @@ Estep <- function(counts, clust, neg) {
 #' \item probs: a matrix of probabilities of all cells (rows) belonging to all clusters (columns)
 #' \item profiles: a matrix of cluster-specific expression profiles
 #' }
+#' @examples 
+#' data("ioprofiles")
+#' data("mini_nsclc")
+#' sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
+#' nbclust(counts = mini_nsclc$counts[, sharedgenes],
+#'        neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL,
+#'        fixed_profiles = ioprofiles[sharedgenes, 1:3],
+#'        init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(mini_nsclc$counts) / 2),
+#'        nb_size = 10,
+#'        cohort = rep("a", nrow(mini_nsclc$counts)),
+#'        pct_drop = 1/10000,
+#'        min_prob_increase = 0.05, max_iters = 3, logresults = FALSE)
 nbclust <- function(counts, neg, bg = NULL, 
                     fixed_profiles = NULL,
                     init_profiles = NULL, init_clust = NULL, 
@@ -299,7 +317,8 @@ nbclust <- function(counts, neg, bg = NULL,
 #' For a numeric object, return a logical object of whether each element is the max or not.
 #' @param x a vector of values
 #' @return a vecetor of logical values
-#'
+#' @examples
+#' ismax(c(3, 5, 5, 2))
 ismax <- function(x) {
   return(x == max(x, na.rm = TRUE))
 }

@@ -164,6 +164,9 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
 #' @param probs probability matrix
 #'
 #' @return log-transformed matrix
+#' @examples 
+#' a <- runif(10)
+#' probs2logliks(a/sum(a))
 probs2logliks <- function(probs) {
   return(log(probs))
 }
@@ -174,6 +177,20 @@ probs2logliks <- function(probs) {
 #' From cell x cluster log-likelihoods, calculate cell x cluster probabilities
 #' @param logliks Matrix of loglikelihoods, as output by insitytupe. Cells in rows, clusters in columns.
 #' @return A matrix of probabilities, in the same dimensions as logliks. 
+#' @examples 
+#' data("mini_nsclc")
+#' unsup <- insitutype(
+#'  x = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  n_clusts = 8,
+#'  n_phase1 = 200,
+#'  n_phase2 = 500,
+#'  n_phase3 = 2000,
+#'  n_starts = 1,
+#'  max_iters = 5
+#' ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+#' logliks2probs(unsup$logliks)
+#' 
 logliks2probs <- function(logliks) {
   templogliks <- sweep(logliks, 1, apply(logliks, 1, max, na.rm = TRUE), "-")
   # get on likelihood scale:

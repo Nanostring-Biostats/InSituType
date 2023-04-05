@@ -101,6 +101,19 @@
 #'   and cell types of anchor cells }
 #'
 #' @name insitutype
+#' @examples 
+#' data("mini_nsclc")
+#' unsup <- insitutype(
+#'  x = mini_nsclc$counts,
+#'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  n_clusts = 8,
+#'  n_phase1 = 200,
+#'  n_phase2 = 500,
+#'  n_phase3 = 2000,
+#'  n_starts = 1,
+#'  max_iters = 5
+#' ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+#' table(unsup$clust)
 NULL
 
 #' @importFrom stats lm
@@ -227,8 +240,7 @@ NULL
                                 alpha=0.1,
                                 max_iter=200,
                                 returnBins=FALSE,
-                                minCellsPerBin = 1,
-                                seed=NULL)
+                                minCellsPerBin = 1)
   
   #### choose cluster number: -----------------------------
   if (!is.null(init_clust)) {
@@ -246,8 +258,7 @@ NULL
     message("Selecting optimal number of clusters from a range of ", min(n_clusts), " - ", max(n_clusts))
 
     chooseclusternumber_subset <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                               N = min(n_chooseclusternumber, nrow(x)),
-                                                               seed = NULL)
+                                                               N = min(n_chooseclusternumber, nrow(x)))
     
     n_clusts <- chooseClusterNumber(
       counts = x[chooseclusternumber_subset, ], 
@@ -276,14 +287,12 @@ NULL
     random_start_subsets <- list()
     for (i in 1:n_starts) {
       random_start_subsets[[i]] <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                                 N = min(n_phase1, nrow(x)),
-                                                                 seed = NULL)
+                                                                 N = min(n_phase1, nrow(x)))
     }
     
     # get a vector of cells IDs to be used in comparing the random starts:
     benchmarking_subset <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                        N = min(n_benchmark_cells, nrow(x)),
-                                                        seed = NULL)
+                                                        N = min(n_benchmark_cells, nrow(x)))
 
     # run nbclust from each of the random subsets, and save the profiles:
     profiles_from_random_starts <- list()
@@ -311,13 +320,10 @@ NULL
     # find which profile matrix does best in the benchmarking subset:
     benchmarking_logliks <- c()
     for (i in 1:n_starts) {
-      templogliks <- parallel::mclapply(asplit(profiles_from_random_starts[[i]], 2),
-                        lldist,
-                        mat = x[benchmarking_subset, ],
-                        bg = bg[benchmarking_subset],
-                        size = nb_size,
-                        mc.cores = numCores())
-      templogliks <- do.call(cbind, templogliks)
+      templogliks <- lldist(x = profiles_from_random_starts[[i]],
+                            mat = x[benchmarking_subset, ],
+                            bg = bg[benchmarking_subset],
+                            size = nb_size)
       # take the sum of cells' best logliks:
       benchmarking_logliks[i] <- sum(apply(templogliks, 1, max))
     }
@@ -331,8 +337,7 @@ NULL
   #### phase 2: -----------------------------------------------------------------
   message(paste0("phase 2: refining best random start in a ", n_phase2, " cell subset"))
   phase2_sample <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                N = min(n_phase2, nrow(x)),
-                                                seed = NULL)
+                                                N = min(n_phase2, nrow(x)))
   
   # get initial cell type assignments:
   temp_init_clust <- NULL
@@ -359,8 +364,7 @@ NULL
   message(paste0("phase 3: finalizing clusters in a ", n_phase3, " cell subset"))
   
   phase3_sample <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                N = min(n_phase3, nrow(x)),
-                                                seed = NULL)
+                                                N = min(n_phase3, nrow(x)))
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
   clust3 <- nbclust(counts = x[phase3_sample, ], 
