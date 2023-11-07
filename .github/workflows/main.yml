@@ -1,0 +1,14 @@
+on:
+  issues:
+    types: [opened]
+
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: EddieHubCommunity/gh-action-community/src/welcome@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: "Thanks for your interest in our tools! Our customer support team will be able to help you with this. Please email support@nanostring.com with your issue."
+          footer: "Thanks, NanoString Dev Team"
