@@ -17,6 +17,9 @@ See the "vignettes" folder. Vignettes should run in <5 minutes.
 ### Instructions for use
 Run "insitutype" for unsupervised or semi-supervised clustering. Run "insitutypeML" for supervised cell typing. See the vignettes for example workflows. 
 
+### FAQs and tips:
+https://github.com/Nanostring-Biostats/InSituType/FAQs.md
+
 ### Reproduction instructions
 The full results of the Insitutype manuscript can be reproduced with the code in this repo: https://github.com/Nanostring-Biostats/InSituType-manuscript-analyses
 
