@@ -25,10 +25,11 @@ Final note: Insitutype splits big clusters with higher counts more aggressively 
 
 Cell typing's biggest challenge is using a reference dataset from a different platform. Platform effects between single cell and spatial platforms can be profound. 
 Insitutype has 3 treatments for reference profiles:
-1. Use as-is
+1. Use the reference profile matrix as-is
 2. Choose anchor cells, then rescale genes based on estimated platform effects. (Less aggressive, only fits gene-level effects.)
 3. Choose anchor cells, then refit the reference profiles entirely. (Most aggressive, fits a new value for every gene x cell type.)
 
+We suggest using the below flowchart to choose from among these options:
 
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/e58f8196-f226-4641-8dfa-bafd9b3dbfae)
 
@@ -46,6 +47,33 @@ In our new 6000-plex data, it's worth considering using Insitutype on a well-cho
 For typical 6000plex experiments, we speculate that cell typing using somewhere between 3000-5000 genes would be optimal. 
 
 
-### Choosing nclust
+### Interpreting clustering results
+
+Once Insitutype has run, take time to scrutinize the results. You'll need to:
+1. Confirm cell types from the reference profiles are correct
+2. Interpret new clusters
+
+First, we recommend the following QC plots:
+
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/aa2c47ba-8c4e-412d-b790-5205ae9739fc)
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/f1f1694c-c0df-41fe-a823-ca34a16d553b)
+
+Example code for generating the above profiles heatmap:
+```
+pdf("<writehere.pdf>", height = 20, width = 6)
+mat <- res$profiles  # ("res" is the insitutype output)
+mat <- sweep(mat, 1, pmax(apply(mat, 1 ,max), 0.1), "/")
+pheatmap(mat, col = colorRampPalette(c("white", "darkblue"))(100),
+         fontsize_row = 5)
+dev.off()
+```
+
+We have found the below workflows to be effective and efficent:
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/2f7774db-7437-447b-a0e1-f32acb3eafcb)
+
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/8cc7f603-d8e9-4a83-9479-ebb7d528edd8)
+
+
+
 
 
