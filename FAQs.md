@@ -34,9 +34,6 @@ We suggest using the below flowchart to choose from among these options:
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/e58f8196-f226-4641-8dfa-bafd9b3dbfae)
 
 
-### Targeted subclustering
-
-
 ### Which genes to use
 
 Insitutype was designed using 1000-plex CosMx data, where we found it most powerful to use all genes in the panel. 
@@ -73,6 +70,12 @@ We have found the below workflows to be effective and efficent:
 
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/8cc7f603-d8e9-4a83-9479-ebb7d528edd8)
 
+
+
+### Targeted subclustering
+
+This is an advanced method. Sometimes it can be hard to subcluster a cell type if manyu of its genes are impacted by contamination from segmentation errors. Immune cells in the context of tumors are a good example.
+To subcluster say T-cells in a tumor, you might initially call a single T-cell cluster. Then, considering just these cells and just the genes unlikely to be contaminated in T-cells (genes with high T-cell expression or with low expression in surrounding cell types), run unsupervised Insitutype. 
 
 
 
