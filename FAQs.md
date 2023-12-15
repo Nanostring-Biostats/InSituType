@@ -1,27 +1,27 @@
-### FAQs and advanced methods
+# FAQs and advanced methods
 
 #### Topics
-[Choosing the n_clust argument](#choosing-nclust)
-[Updating reference profiles](#updating-reference-profiles)
 
+- [Workflow overview](#workflow-overview)
+- [Choosing the n_clust argument](#choosing-nclust)
+- [Updating reference profiles](#updating-reference-profiles)
+- [Which genes to use](#which-genes-to-use)
+- [Interpreting clustering results](#interpreting-clustering-results)
+- [Targeted subclustering](#targeted-subclustering)
 
-
-### Workflow overview
+## Workflow overview
 The broad Insitutype workflow is as follows:
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/bda58044-0904-4b90-8ffe-b40abdb8e222)
 
 
-### Choosing nclust
+## Choosing nclust
 We recommend choosing a slightly generous value of nclust, then using refineClusters to condense the resulting clusters. For example, if you're running semi-supervised cell typing and you expect to find 5 new clusters, set nclust = 8. Or for unsupervised clustering with an expectation of 12 cell types, set nclust = 16. 
 It's generally easy to tell when two clusters come from the same cell type: they'll be adjacent in UMAP space, and the flightpath plot will show them frequently confused with each other. 
 
 Final note: Insitutype splits big clusters with higher counts more aggressively than other clusters. For example, in a tumor study, it will subcluster tumor cells many times before it subclusters e.g. fibroblasts. The simplest solution is to increase nclust as needed, then condense the over-clustered cell type as desired. 
 
-### Anchor cell considerations
 
-
-
-### Updating reference profiles
+## Updating reference profiles
 
 Cell typing's biggest challenge is using a reference dataset from a different platform. Platform effects between single cell and spatial platforms can be profound. 
 Insitutype has 3 treatments for reference profiles:
@@ -34,7 +34,7 @@ We suggest using the below flowchart to choose from among these options:
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/e58f8196-f226-4641-8dfa-bafd9b3dbfae)
 
 
-### Which genes to use
+## Which genes to use
 
 Insitutype was designed using 1000-plex CosMx data, where we found it most powerful to use all genes in the panel. 
 In our new 6000-plex data, it's worth considering using Insitutype on a well-chosen subset of genes. As a rule of thumb, genes should be retained if either of the following applies: 
@@ -44,7 +44,7 @@ In our new 6000-plex data, it's worth considering using Insitutype on a well-cho
 For typical 6000plex experiments, we speculate that cell typing using somewhere between 3000-5000 genes would be optimal. 
 
 
-### Interpreting clustering results
+## Interpreting clustering results
 
 Once Insitutype has run, take time to scrutinize the results. You'll need to:
 1. Confirm cell types from the reference profiles are correct
@@ -68,11 +68,11 @@ dev.off()
 We have found the below workflows to be effective and efficent:
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/2f7774db-7437-447b-a0e1-f32acb3eafcb)
 
-![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/8cc7f603-d8e9-4a83-9479-ebb7d528edd8)
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/24a28e1b-e1bf-4be1-bf38-0c4ebeb574d4)
 
 
 
-### Targeted subclustering
+## Targeted subclustering
 
 This is an advanced method. Sometimes it can be hard to subcluster a cell type if manyu of its genes are impacted by contamination from segmentation errors. Immune cells in the context of tumors are a good example.
 To subcluster say T-cells in a tumor, you might initially call a single T-cell cluster. Then, considering just these cells and just the genes unlikely to be contaminated in T-cells (genes with high T-cell expression or with low expression in surrounding cell types), run unsupervised Insitutype. 
