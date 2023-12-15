@@ -11,7 +11,7 @@
 
 ## Workflow overview
 The broad Insitutype workflow is as follows:
-![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/bda58044-0904-4b90-8ffe-b40abdb8e222)
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/45d89004-dc46-40a1-bde8-33d204e0f0b8)
 
 
 ## Choosing nclust
