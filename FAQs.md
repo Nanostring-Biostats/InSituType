@@ -43,7 +43,7 @@ Here's an image from the preprint demonstrating this phenomenon:
 So 100% confident probabilties appear to be accurate, but lower probabilities are overconfident. 
 Also, remember that these probabilities are based on all the information available to the model. They don't consider that the model might be missing cell types, or that the reference profiles could be incorrect. 
 
-In short, the posterior probabilities are useful for differentiating strong from weak cell typing calls, but you should be conservative when choosing a threshold. 
+In short, the posterior probabilities are useful for differentiating strong from weak cell typing calls, but you should be conservative when choosing a threshold. We often use a threshold of 80%, calling cells below that confidence as "unclassified". 
 
 ## Which genes to use
 
