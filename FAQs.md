@@ -5,6 +5,7 @@
 - [Workflow overview](#workflow-overview)
 - [Choosing the n_clust argument](#choosing-nclust)
 - [Updating reference profiles](#updating-reference-profiles)
+- [On confidence scores](#confidence-scores)
 - [Which genes to use](#which-genes-to-use)
 - [Interpreting clustering results](#interpreting-clustering-results)
 - [Targeted subclustering](#targeted-subclustering)
@@ -23,7 +24,7 @@ Final note: Insitutype splits big clusters with higher counts more aggressively 
 
 ## Updating reference profiles
 
-Cell typing's biggest challenge is using a reference dataset from a different platform. Platform effects between single cell and spatial platforms can be profound. 
+Cell typing's biggest challenge is using a reference dataset from a different platform. Platform effects between scRNA-seq and spatial platforms can be profound. 
 Insitutype has 3 treatments for reference profiles:
 1. Use the reference profile matrix as-is
 2. Choose anchor cells, then rescale genes based on estimated platform effects. (Less aggressive, only fits gene-level effects.)
@@ -33,6 +34,16 @@ We suggest using the below flowchart to choose from among these options:
 
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/e58f8196-f226-4641-8dfa-bafd9b3dbfae)
 
+## Confidence Scores
+Insitutype returns a posterior probability for each cell type call. In practice, we have found these probabilities to be overconfident. 
+Here's an image from the preprint demonstrating this phenomenon:
+
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/f02df11d-405b-411d-8049-4ab3d021d0a4)
+
+So 100% confident probabilties appear to be accurate, but lower probabilities are overconfident. 
+Also, remember that these probabilities are based on all the information available to the model. They don't consider that the model might be missing cell types, or that the reference profiles could be incorrect. 
+
+In short, the posterior probabilities are useful for differentiating strong from weak cell typing calls, but you should be conservative when choosing a threshold. 
 
 ## Which genes to use
 
