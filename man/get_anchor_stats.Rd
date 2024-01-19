@@ -10,7 +10,9 @@ get_anchor_stats(
   bg = NULL,
   align_genes = TRUE,
   profiles,
+  sds,
   size = 10,
+  assay_type,
   min_cosine = 0.3
 )
 }
@@ -27,7 +29,12 @@ the profiles matrix based on their names.}
 \item{profiles}{Matrix of reference profiles holding mean expression of genes x cell types. 
 Input linear-scale expression, with genes in rows and cell types in columns.}
 
+\item{sds}{Matrix of reference profiles holding SDs expression of genes x cell types. 
+Input linear-scale expression, with genes in rows and cell types in columns. Only for assay_type of protein}
+
 \item{size}{Negative binomial size parameter to be used in likelihood calculation.}
+
+\item{assay_type}{Assay type of RNA, protein}
 
 \item{min_cosine}{Cells must have at least this much cosine similarity to a fixed profile to be used as an anchor.}
 }
@@ -46,5 +53,7 @@ data("ioprofiles")
 data("mini_nsclc")
 get_anchor_stats(counts = mini_nsclc$counts,
                  neg = Matrix::rowMeans(mini_nsclc$neg),
-                 profiles = ioprofiles)
+                 profiles = ioprofiles,
+                 sds=NULL, 
+                 assay_type = "RNA")
 }

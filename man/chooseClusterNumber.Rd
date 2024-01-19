@@ -9,6 +9,7 @@ chooseClusterNumber(
   neg,
   bg = NULL,
   fixed_profiles = NULL,
+  fixed_sds = NULL,
   cohort = NULL,
   init_clust = NULL,
   n_clusts = 2:12,
@@ -17,6 +18,7 @@ chooseClusterNumber(
   align_genes = TRUE,
   plotresults = FALSE,
   nb_size = 10,
+  assay_type,
   pct_drop = 0.005,
   min_prob_increase = 0.05,
   ...
@@ -70,6 +72,6 @@ For a subset of the data, perform clustering under a range of cluster numbers.
 }
 \examples{
 data("mini_nsclc")
-chooseClusterNumber(mini_nsclc$counts, Matrix::rowMeans(mini_nsclc$neg),
+chooseClusterNumber(mini_nsclc$counts, Matrix::rowMeans(mini_nsclc$neg), assay_type="RNA",
  n_clust = 2:5)
 }

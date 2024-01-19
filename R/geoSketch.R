@@ -9,17 +9,27 @@
 #' Prepare data for geoSketch 
 #' 
 #' Process raw counts data for input into geoSketching. 
-#' @param counts Counts matrix
+#' @param counts Counts matrix: cells x genes 
+#' @param assay_type Assay type of RNA, protein 
+#' 
 #' @return A matrix of data for geoSketch, with cells in rows and features in columns
 #' @importFrom irlba prcomp_irlba
 #' @examples
 #' data("mini_nsclc")
-#' prepDataForSketching(mini_nsclc$counts)
-prepDataForSketching <- function(counts) {
+#' prepDataForSketching(counts=mini_nsclc$counts, assay_type="RNA")
+prepDataForSketching <- function(counts, assay_type) {
   # get PCs:
-  scaling_factors <- pmax(sparseMatrixStats::colQuantiles(counts, probs = 0.99), 5)
-  x <- Matrix::t(Matrix::t(counts) / scaling_factors)
-  pcres <- irlba::prcomp_irlba(x = x, n = min(20, ncol(counts) - 5), retx = TRUE, center = TRUE, scale. = FALSE)$x
+  if(assay_type %in% c("RNA", "rna", "Rna")){
+    scaling_factors <- pmax(sparseMatrixStats::colQuantiles(counts, probs = 0.99), 5)
+    x <- Matrix::t(Matrix::t(counts) / scaling_factors)
+    pcres <- irlba::prcomp_irlba(x = x, n = min(20, ncol(counts) - 5), retx = TRUE, center = TRUE, scale. = FALSE)$x
+  }
+  if(assay_type %in% c("Protein", "protein")){
+    
+    ## when the data is protein data 
+    pcres <- irlba::prcomp_irlba(x = counts, n = min(20, ncol(counts) - 5), retx = TRUE, center = TRUE, scale. = TRUE)$x
+    
+  }
   rownames(pcres) <- rownames(counts)
   return(pcres)
 }
@@ -50,6 +60,7 @@ geoSketch_get_plaid <- function(X, N,
                                 max_iter=200,
                                 returnBins=FALSE,
                                 minCellsPerBin = 1) {
+  
   # Determine the total number of cells and compare it to the desired sample size 
   nCells <- nrow(X)
   
@@ -127,6 +138,7 @@ geoSketch_get_plaid <- function(X, N,
 #' plaids <- geoSketch_get_plaid(mini_nsclc$counts, 100)
 #' geoSketch_sample_from_plaids(plaids, 5)
 geoSketch_sample_from_plaids <- function(Plaid, N) {
+
   # define cells' sampling probabilities as the inverse of their plaid size:
   PlaidCounts <- table(Plaid) # Count the number of cells per bin
   prob <- 1 / PlaidCounts[Plaid]
@@ -159,6 +171,7 @@ geoSketch <- function(X, N,
                       max_iter=200,
                       returnBins=FALSE,
                       minCellsPerBin = 1) {
+
   # Determine the total number of cells and compare it to the desired sample size 
   nCells <- nrow(X)
   

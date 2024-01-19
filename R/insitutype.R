@@ -39,6 +39,7 @@
 #'   a matrix.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
+#' @param assay_type Assay type of RNA, protein 
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised
 #'   clustering. Vector elements will be mainly NA's (for non-anchored cells)
 #'   and cell type names for cells to be held constant throughout iterations.
@@ -47,10 +48,14 @@
 #'   types. Enter 0 to run purely supervised cell typing from fixed profiles.
 #'   Enter a range of integers to automatically select the optimal number of
 #'   clusters.
-#' @param reference_profiles Matrix of expression profiles of pre-defined
+#' @param reference_profiles Matrix of mean expression profiles of pre-defined
 #'   clusters, e.g. from previous scRNA-seq. These profiles will not be updated
-#'   by the EM algorithm. Colnames must all be included in the init_clust
+#'   by the EM algorithm. Columns must all be included in the init_clust
 #'   variable.
+#' @param reference_sds Matrix of standard deviation profiles of pre-defined
+#'   clusters. These SD profiles also will not be updated by the EM algorithm. 
+#'   Columns must all be included in the init_clust variable. This parameter should
+#'   be defined if assay_type is protein. Default is NULL. 
 #' @param update_reference_profiles Logical, for whether to use the data to
 #'   update the reference profiles. Default and strong recommendation is TRUE.
 #'   (However, if the reference profiles are from the same platform as the
@@ -60,7 +65,8 @@
 #'   used.
 #' @param align_genes Logical, for whether to align the counts matrix and the
 #'   fixed_profiles by gene ID.
-#' @param nb_size The size parameter to assume for the NB distribution.
+#' @param nb_size The size parameter to assume for the NB distribution. This 
+#'    parameter is only for RNA.
 #' @param init_clust Vector of initial cluster assignments. If NULL, initial
 #'   assignments will be automatically inferred.
 #' @param n_starts the number of iterations
@@ -89,9 +95,16 @@
 #'   anchor
 #' @param insufficient_anchors_thresh Cell types that end up with fewer than
 #'   this many anchors after anchor selection will be discarded.
+#' @param refinement Logical, flag for further anchor refinement, used when update_reference_profiles = TRUE (default = FALSE)
+#' @param rescale Logical, flag for platform effect correction, used when update_reference_profiles = TRUE (default = FALSE)
+#' @param refit Logical, flag for fitting reference profiles to anchors, used when update_reference_profiles = TRUE (default = TRUE)
 #' @param ... For the \linkS4class{SingleCellExperiment} method, additional
 #'   arguments to pass to the ANY method.
 #' @param assay.type A string specifying which assay values to use.
+#' @importFrom stats lm
+#' @importFrom Matrix rowMeans
+#' @importFrom Matrix colSums
+#' @export
 #' @return A list, with the following elements: \enumerate{ \item clust: a
 #'   vector given cells' cluster assignments \item prob: a vector giving the
 #'   confidence in each cell's cluster \item logliks: Matrix of cells'
@@ -106,6 +119,7 @@
 #' unsup <- insitutype(
 #'  x = mini_nsclc$counts,
 #'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  assay_type = "RNA",
 #'  n_clusts = 8,
 #'  n_phase1 = 200,
 #'  n_phase2 = 500,
@@ -121,97 +135,97 @@ NULL
 #' @importFrom Matrix colSums
 #' @importFrom Matrix t
 .insitutype <- function(x,
-                       neg,
-                       bg = NULL,
-                       anchors = NULL,
-                       cohort = NULL,
-                       n_clusts,
-                       reference_profiles = NULL,
-                       update_reference_profiles = TRUE,
-                       sketchingdata = NULL,
-                       align_genes = TRUE,
-                       nb_size = 10,
-                       init_clust = NULL,
-                       n_starts = 10,
-                       n_benchmark_cells = 10000,
-                       n_phase1 = 10000,
-                       n_phase2 = 20000,
-                       n_phase3 = 100000,
-                       n_chooseclusternumber = 2000,
-                       pct_drop = 1 / 10000,
-                       min_prob_increase = 0.05,
-                       max_iters = 40,
-                       n_anchor_cells = 2000,
-                       min_anchor_cosine = 0.3,
-                       min_anchor_llr = 0.03,
-                       insufficient_anchors_thresh = 20) {
+                        neg,
+                        assay_type,
+                        bg = NULL,
+                        anchors = NULL,
+                        cohort = NULL,
+                        n_clusts,
+                        reference_profiles = NULL,
+                        reference_sds = NULL,
+                        update_reference_profiles = TRUE,
+                        sketchingdata = NULL,
+                        align_genes = TRUE,
+                        nb_size = 10,
+                        init_clust = NULL,
+                        n_starts = 10,
+                        n_benchmark_cells = 10000,
+                        n_phase1 = 10000,
+                        n_phase2 = 20000,
+                        n_phase3 = 100000,
+                        n_chooseclusternumber = 2000,
+                        pct_drop = 1 / 10000,
+                        min_prob_increase = 0.05,
+                        max_iters = 40,
+                        n_anchor_cells = 2000,
+                        min_anchor_cosine = 0.3,
+                        min_anchor_llr = 0.03,
+                        insufficient_anchors_thresh = 20,
+                        refinement = FALSE, 
+                        rescale = FALSE, 
+                        refit = TRUE) {
   
   
   #### preliminaries ---------------------------
-  
+
   if (any(rowSums(x) == 0)) {
     stop("Cells with 0 counts were found. Please remove.")
   }
   
-  ## get neg in condition 
-  if (is.null(names(neg))) {
-    names(neg) <- rownames(x)
-  }
-  if (length(neg) != nrow(x)) {
-    stop("length of neg should equal nrows of counts.")
-  }
+  # get vector of expected background:
+  bg <- estimateBackground(counts = x, neg = neg, bg = bg)
   
   if (is.null(cohort)) {
-    cohort <- rep("all", length(neg))
+    cohort <- rep("all", length(bg))
   }
   
-  ### infer bg if not provided: assume background is proportional to the scaling factor s
-  if (is.null(bg)) {
-    s <- Matrix::rowMeans(x)
-    bgmod <- stats::lm(neg ~ s - 1)
-    bg <- bgmod$fitted
-    names(bg) <- rownames(x)
-  }
-  if (length(bg) == 1) {
-    bg <- rep(bg, nrow(x))
-    names(bg) <- rownames(x)
-  }
   
-  #### update reference profiles ----------------------------------
+  #### update reference profiles only for Supervised or Semi-Supervised clustering ----------------------------------
   fixed_profiles <- NULL
-  if (!is.null(reference_profiles)) {
+  fixed_sds <- NULL
+  
+  if (!is.null(reference_profiles)) { ## This is more for Supervised or Semi-Supervised case 
+    if(is.null(reference_sds) && assay_type %in% c("Protein", "protein")){
+      stop("For protein data type, the reference SD profile should be provided!")
+    }
+    ## Update the profile matrix only for Semi-supervised or Supervised cases ##
     if (update_reference_profiles) {
-      update_result <- updateReferenceProfiles(reference_profiles,
+      update_result <- updateReferenceProfiles(reference_profiles=reference_profiles,
+                                               reference_sds=reference_sds,
                                                counts = x, 
+                                               assay_type = assay_type,
                                                neg = neg,
                                                bg = bg,
                                                nb_size = nb_size,
                                                anchors = anchors,
                                                n_anchor_cells = n_anchor_cells, 
                                                min_anchor_cosine = min_anchor_cosine, 
-                                               min_anchor_llr = min_anchor_llr)
+                                               min_anchor_llr = min_anchor_llr,
+                                               insufficient_anchors_thresh = insufficient_anchors_thresh, 
+                                               refinement = refinement, 
+                                               rescale = rescale, 
+                                               refit = refit)
       fixed_profiles <- update_result$updated_profiles
       anchors <- update_result$anchors
-    } else {
+      
+      ## If assay_type==RNA, this updated SDs are NULL
+      fixed_sds <- update_result$updated_sds
+      
+    }else{
       fixed_profiles <- reference_profiles
+      fixed_sds <- reference_sds
     }
   }
+  
   # align the genes from fixed_profiles and counts
   if (align_genes && !is.null(fixed_profiles)) {
-    sharedgenes <- intersect(rownames(fixed_profiles), colnames(x))
-    lostgenes <- setdiff(colnames(x), rownames(fixed_profiles))
-    
-    # subset to only the shared genes:
-    x <- x[, sharedgenes]
-    fixed_profiles <- fixed_profiles[sharedgenes, ]
-    
-    # warn about genes being lost:
-    if ((length(lostgenes) > 0) && length(lostgenes < 50)) {
-      message(paste0("The following genes in the count data are missing from fixed_profiles and will be omitted from clustering: ",
-                     paste0(lostgenes, collapse = ",")))
+    x <- alignGenes(counts = x, profiles = fixed_profiles)
+    fixed_profiles <- fixed_profiles[colnames(x), ]
+    if(assay_type %in% c("Protein", "protein")){
+      fixed_sds <- fixed_sds[colnames(x), ]
     }
-    if (length(lostgenes) > 50) {
-      message(paste0(length(lostgenes), " genes in the count data are missing from fixed_profiles and will be omitted from clustering"))
+    if(assay_type %in% c("RNA", "Rna", "rna")){
+      fixed_sds <- NULL
     }
   }
 
@@ -227,7 +241,7 @@ NULL
     }
   }
   if (is.null(sketchingdata)) {
-    sketchingdata <- prepDataForSketching(x)
+    sketchingdata <- prepDataForSketching(x, assay_type=assay_type)
   }
   n_phase1 <- min(n_phase1, nrow(x))
   n_phase2 <- min(n_phase2, nrow(x))
@@ -236,11 +250,11 @@ NULL
   
   # define sketching "Plaids" (rough clusters) for subsampling:
   plaid <- geoSketch_get_plaid(X = sketchingdata, 
-                                N = min(n_phase1, n_phase2, n_phase3, n_benchmark_cells),
-                                alpha=0.1,
-                                max_iter=200,
-                                returnBins=FALSE,
-                                minCellsPerBin = 1)
+                               N = min(n_phase1, n_phase2, n_phase3, n_benchmark_cells),
+                               alpha=0.1,
+                               max_iter=200,
+                               returnBins=FALSE,
+                               minCellsPerBin = 1)
   
   #### choose cluster number: -----------------------------
   if (!is.null(init_clust)) {
@@ -250,7 +264,7 @@ NULL
     n_clusts <- length(setdiff(unique(init_clust), colnames(fixed_profiles)))
   }
   if (is.null(n_clusts)) {
-    n_clusts <- 5:15 + 5 * (is.null(fixed_profiles))
+    n_clusts <- 10:15 + 5 * (is.null(fixed_profiles))
   }
   # get optimal number of clusters
   if (length(n_clusts) > 1) {
@@ -259,26 +273,72 @@ NULL
 
     chooseclusternumber_subset <- geoSketch_sample_from_plaids(Plaid = plaid, 
                                                                N = min(n_chooseclusternumber, nrow(x)))
-    
     n_clusts <- chooseClusterNumber(
       counts = x[chooseclusternumber_subset, ], 
       neg = neg[chooseclusternumber_subset], 
       bg = bg[chooseclusternumber_subset], 
       fixed_profiles = reference_profiles,
+      fixed_sds = reference_sds,
       init_clust = NULL, 
       n_clusts = n_clusts,
       max_iters = max(max_iters, 20),
       subset_size = length(chooseclusternumber_subset), 
-      align_genes = TRUE, plotresults = FALSE, nb_size = nb_size)$best_clust_number 
+      align_genes = TRUE, 
+      plotresults = FALSE, 
+      nb_size = nb_size, 
+      assay_type=assay_type)$best_clust_number 
+  }
+  
+  # This is for supervised case with or without reference profile update
+  if(n_clusts==0){
+    if(update_reference_profiles){
+      profiles <- fixed_profiles
+      sds <- fixed_sds
+    }else{
+      profiles <- reference_profiles
+      sds <- reference_sds
+    }
+    
+    if(is.null(reference_profiles)){
+      
+      stop("Reference profile should be provided for Supervised running.")
+      
+    }else{
+      message(paste0("Supervised Case: Classifying all ", nrow(x), " cells with the user-defined reference profiles. "))
+      
+      out <- insitutypeML(x = x, 
+                          neg = neg, 
+                          bg = bg, 
+                          reference_profiles = profiles, 
+                          reference_sds = sds, 
+                          cohort = cohort,
+                          nb_size = nb_size,
+                          assay_type=assay_type,
+                          align_genes = TRUE) 
+      
+      ## Replace the cell types of anchor cells with the originally assigned anchor cells' cell types
+      if(!is.null(anchors)){
+        out$clust[!is.na(anchors)] <- anchors[names(out$clust[!is.na(anchors)])]
+      }
+      
+      out$anchors <- anchors
+      return(out)
+      break
+    }
   }
   
   #### phase 1: many random starts in small subsets -----------------------------
-  
   if (!is.null(init_clust)) {
     message("init_clust was provided, so phase 1 - random starts in small subsets - will be skipped.")
     
     tempprofiles <- sapply(by(x[!is.na(init_clust), ], init_clust[!is.na(init_clust)], colMeans), cbind)
     rownames(tempprofiles) <- colnames(x)
+
+    tempsds <- lapply(unique(init_clust[!is.na(init_clust)]), function(y){
+      return(apply(x[!is.na(init_clust), ][init_clust[!is.na(init_clust)]==y,], 2, sd))
+    })
+    names(tempsds) <- unique(init_clust[!is.na(init_clust)])
+    tempsds <- do.call("cbind", tempsds)
     
   } else {
     message(paste0("phase 1: random starts in ", n_phase1, " cell subsets"))
@@ -287,50 +347,68 @@ NULL
     random_start_subsets <- list()
     for (i in 1:n_starts) {
       random_start_subsets[[i]] <- geoSketch_sample_from_plaids(Plaid = plaid, 
-                                                                 N = min(n_phase1, nrow(x)))
+                                                                N = min(n_phase1, nrow(x)))
     }
     
     # get a vector of cells IDs to be used in comparing the random starts:
     benchmarking_subset <- geoSketch_sample_from_plaids(Plaid = plaid, 
                                                         N = min(n_benchmark_cells, nrow(x)))
-
+    
     # run nbclust from each of the random subsets, and save the profiles:
     profiles_from_random_starts <- list()
+    sds_from_random_starts <- list()
     for (i in 1:n_starts) {
-
+      
       cluster_name_pool <- c(letters, paste0(rep(letters, each = 26), rep(letters, 26)))
       tempinit <- rep(cluster_name_pool[seq_len(n_clusts)], each = ceiling(length(random_start_subsets[[i]]) / n_clusts))[
         seq_along(random_start_subsets[[i]])]
-     
-      profiles_from_random_starts[[i]] <- nbclust(
+
+      tempNBclust <- nbclust(
         counts = x[random_start_subsets[[i]], ], 
         neg = neg[random_start_subsets[[i]]], 
         bg = bg[random_start_subsets[[i]]],
         fixed_profiles = fixed_profiles,
+        fixed_sds = fixed_sds,
         cohort = cohort[random_start_subsets[[i]]],
         init_profiles = NULL,
+        init_sds = NULL,
         init_clust = tempinit, 
         nb_size = nb_size,
+        assay_type=assay_type,
         pct_drop = 1/500,
         min_prob_increase = min_prob_increase,
         max_iters = max(max_iters, 20),
-      )$profiles
+      )
+      profiles_from_random_starts[[i]] <- tempNBclust$profiles
+      sds_from_random_starts[[i]] <- tempNBclust$sds
     }
     
     # find which profile matrix does best in the benchmarking subset:
     benchmarking_logliks <- c()
     for (i in 1:n_starts) {
       templogliks <- lldist(x = profiles_from_random_starts[[i]],
+                            xsd = sds_from_random_starts[[i]],
                             mat = x[benchmarking_subset, ],
                             bg = bg[benchmarking_subset],
-                            size = nb_size)
+                            size = nb_size,
+                            assay_type=assay_type)
+      
       # take the sum of cells' best logliks:
       benchmarking_logliks[i] <- sum(apply(templogliks, 1, max))
     }
     best_start <- which.max(benchmarking_logliks)
     tempprofiles <- profiles_from_random_starts[[best_start]]
     
+    if(assay_type %in% c("Protein", "protein", "PROTEIN")){
+      tempsds <- sds_from_random_starts[[best_start]]
+    }
+    
+    if(assay_type %in% c("RNA", "Rna", "rna")){
+      tempsds <- NULL
+    }
+
     rm(profiles_from_random_starts)
+    rm(sds_from_random_starts)
     rm(templogliks)
   }
   
@@ -344,6 +422,7 @@ NULL
   if (!is.null(init_clust)) {
     temp_init_clust <- init_clust[phase2_sample]
     tempprofiles <- NULL
+    tempsds <- NULL
   }
   
   # run nbclust, initialized with the cell type assignments derived from the previous phase's profiles
@@ -351,15 +430,19 @@ NULL
                     neg = neg[phase2_sample], 
                     bg = bg[phase2_sample],
                     fixed_profiles = fixed_profiles,
+                    fixed_sds = fixed_sds,
                     cohort = cohort[phase2_sample],
                     init_profiles = tempprofiles, 
+                    init_sds = tempsds, 
                     init_clust = temp_init_clust, 
                     nb_size = nb_size,
+                    assay_type=assay_type,
                     pct_drop = 1/1000,
                     min_prob_increase = min_prob_increase,
                     max_iters = max_iters)
   tempprofiles <- clust2$profiles
- 
+  tempsds <- clust2$sds
+  
   #### phase 3: -----------------------------------------------------------------
   message(paste0("phase 3: finalizing clusters in a ", n_phase3, " cell subset"))
   
@@ -371,16 +454,20 @@ NULL
                     neg = neg[phase3_sample], 
                     bg = bg[phase3_sample],
                     fixed_profiles = fixed_profiles,
+                    fixed_sds = fixed_sds,
                     cohort = cohort[phase3_sample],
                     init_profiles = tempprofiles, 
+                    init_sds = tempsds,
                     init_clust = NULL,  
                     nb_size = nb_size,
+                    assay_type=assay_type,
                     pct_drop = pct_drop,
                     min_prob_increase = min_prob_increase,
                     max_iters = max_iters)
   profiles <- clust3$profiles
+  sds <- clust3$sds
   
-
+  
   #### phase 4: -----------------------------------------------------------------
   message(paste0("phase 4: classifying all ", nrow(x), " cells"))
   
@@ -388,9 +475,15 @@ NULL
                       neg = neg, 
                       bg = bg, 
                       reference_profiles = profiles, 
+                      reference_sds = sds,
                       cohort = cohort,
                       nb_size = nb_size, 
+                      assay_type=assay_type,
                       align_genes = TRUE) 
+  ## Replace the cell types of anchor cells with the originally assigned anchor cells' cell types
+  if(!is.null(anchors)){
+    out$clust[!is.na(anchors)] <- anchors[names(out$clust[!is.na(anchors)])]
+  }
   out$anchors <- anchors
   
   return(out)
@@ -415,4 +508,3 @@ setMethod("insitutype", "ANY", .insitutype)
 setMethod("insitutype", "SingleCellExperiment", function(x, ..., assay.type="counts") {
   .insitutype(t(assay(x, i=assay.type)), ...)
 })
-

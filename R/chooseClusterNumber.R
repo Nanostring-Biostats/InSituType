@@ -35,13 +35,15 @@
 #' }
 #' @examples
 #' data("mini_nsclc")
-#' chooseClusterNumber(mini_nsclc$counts, Matrix::rowMeans(mini_nsclc$neg),
+#' chooseClusterNumber(mini_nsclc$counts, Matrix::rowMeans(mini_nsclc$neg), assay_type="RNA",
 #'  n_clust = 2:5)
+
 chooseClusterNumber <-
   function(counts,
            neg,
            bg = NULL,
            fixed_profiles = NULL,
+           fixed_sds = NULL,
            cohort = NULL,
            init_clust = NULL,
            n_clusts = 2:12,
@@ -50,6 +52,7 @@ chooseClusterNumber <-
            align_genes = TRUE,
            plotresults = FALSE,
            nb_size = 10,
+           assay_type,
            pct_drop = 0.005,
            min_prob_increase = 0.05,
            ...) {
@@ -82,6 +85,7 @@ chooseClusterNumber <-
     sharedgenes <- intersect(rownames(fixed_profiles), colnames(counts))
     counts <- counts[, sharedgenes]
     fixed_profiles <- fixed_profiles[sharedgenes, ]
+    fixed_sds <- fixed_sds[sharedgenes, ]
   }  
   # cluster under each value of n_clusts, and save loglik:
   totallogliks <- sapply(n_clusts, function(x) {
@@ -97,9 +101,11 @@ chooseClusterNumber <-
       neg = neg, 
       bg = bg, 
       fixed_profiles = fixed_profiles,
+      fixed_sds = fixed_sds, 
       cohort = cohort,
       init_clust = tempinit,
       nb_size = nb_size,
+      assay_type=assay_type,
       pct_drop = pct_drop,
       min_prob_increase = min_prob_increase,
       max_iters = max_iters)  
@@ -107,8 +113,11 @@ chooseClusterNumber <-
     # get the loglik of the clustering result:
     loglik_thisclust <- lldist(x = tempclust$profiles,
                                mat = counts,
+                               xsd = tempclust$sds,
                                bg = bg,
-                               size = nb_size)
+                               size = nb_size,
+                               assay_type = assay_type)
+
     total_loglik_this_clust <- sum(apply(loglik_thisclust, 1, max))
     return(total_loglik_this_clust)
   })

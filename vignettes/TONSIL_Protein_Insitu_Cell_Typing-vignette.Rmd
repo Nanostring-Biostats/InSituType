@@ -1,0 +1,436 @@
+---
+title: "Clustering a small CosMx Protein dataset with Insitutype"
+output: 
+  rmarkdown::html_vignette: 
+    toc: true
+fig_width: 10 
+fig_height: 6 
+vignette: >
+  %\VignetteIndexEntry{Clustering a small CosMx dataset with Insitutype}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+<style>
+p.caption {
+  font-size: 1.5em;
+}
+</style>
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+### Installation
+```{r installation, eval=FALSE}
+
+# Install remotes package if necessary
+if (!require("remotes")) {
+  install.packages("remotes")
+}
+
+remotes::install_github("Nanostring-Biostats/InSituType")
+
+```   
+### Overview
+This vignette demonstrates the use of the insitutype algorithm to cluster CosMx protein data. We conduct cell typing a subset of the CosMx protien tonsil data set with InsituType package. 
+
+### Data preparation
+First, we load the package and access the example data. The tonsil protein data R object is a list including protein expression (`counts`), negative IgG expression (`neg`) in `tonsil_protein` R data file. The `tonsil_reference_profile` list object includes anchors(`anchors`) as a vector, mean reference profile(`mean.ref.profile`) and standard deviation reference profile (`SDs.ref.profile`) as matrices. 
+```{r setup}
+library(InSituType)
+data("tonsil_reference_profile")
+data("iocolors")
+data("tonsil_protein")
+data("tonsil_annotation")
+
+set.seed(0)
+```
+
+#### Necessary inputs
+First, let us look at the data we need.  
+1. A matrix of protein expression data, cells are in rows and proteins are in columns. Different from RNA data set, protein data set is a dense matrix with real values. Hence, in Insitu cell typing method, InGaussian distribution is used to estimate log-likelihood values. 
+```{r strcounts}
+counts <- tonsil_protein$counts
+str(counts)
+counts[25:30, 9:14]
+
+```
+
+2. A vector giving each cell mean negative control value. The example data includes `tonsil_protein$neg` which is a data frame. Hence, we need to estimate average values of IgGs.  
+```{r strnegmean}
+negmean <- Matrix::rowMeans(tonsil_protein$neg)
+head(negmean)
+```
+
+3. Optionally, a vector of each cell expected background counts per gene. If not provided, Insitutype will estimate it from the negative controls.
+
+4. For the supervised clustering or semi-supervised clustering, a `reference profile mean matrix` giving the expected expression profile of each cell type having proteins in rows and cell types in columns. The reference matrix must be in linear-scale, not log-scale. Insitutype can handle aligning its proteins (rows) to your protein expression matrix. 
+
+5. For the supervised clustering or semi-supervised clustering, a `reference profile standard deviation matrix` giving the expected standard deviation profile of each cell type having proteins in rows and cell types in columns.
+
+For supervised cell typing, reference matrices should contain every cell type present in the tissue. If you suspect the tissue has cell types outside your reference matrix, use insitutype's semi-supervised clustering capability. 
+
+
+#### Incorporating additional data types
+Single-cell spatial transcriptomics datasets offer data types beyond simple gene expression, from single-cell images to spatial contexts. Insitutype digests this information in the form of "cohorts" of cells with similar data from the alternative data types. Then, when assigning cell types, Insitutype will considers the frequency of each cell type in each cohort. 
+
+For example, if you have a cohort of mainly CD45- cells, Insitutype will see that immune cells are very uncommon within this cohort, and it will give cells in this cohort lower probabilities of falling in immune cell clusters. (Insitutype doe not know about CD45 staining; it just considers the 
+frequency of each cluster in each cohort.)
+
+Cohort definition is left to the user, and many approaches are reasonable. 
+For example, you might:
+
+* Define cohort by gating cells immunofluorescence stains, e.g. PanCK+/- or CD45+/-
+* Cluster cells on their continuous immunofluorescence values
+* Use an auto encoder to extract features from cells images, then cluster on those features. 
+* Use the results of spatial clustering / "niches" to define cohorts
+* Cluster on information from multiple data types together, such as the average expression profile of cell neighbors AND immunofluorescence. 
+
+Cohorting is a low-risk undertaking, so it is recommended whenever possible. A poorly-defined cohort will simply be uninformative; it will not send the clustering algorithm astray. The more cohorts you can define, and the higher-quality those cohorts, the more information Insitutype will be able to gleam from the alternative data types. 
+
+One warning: **do not define cohorts based on variables you want to study.**
+For example, if you wish to study how cell populations shift across spatial context, then spatial context must not be allowed to inform cell typing. To do so would introduce circularity. 
+
+In the below example, we will define cohorts using the "fastCohorting" function. This function is provided as a convenient way to derive cohorts from diverse data types; it makes no claim to being optimal. 
+
+```{r cohorting, echo = TRUE}
+# simulate immunofluorescence data: 
+immunofluordata <- matrix(rpois(n = nrow(counts) * 4, lambda = 100), nrow(counts))
+# perform automatic cohorting:
+cohort <- fastCohorting(immunofluordata, gaussian_transform = TRUE) 
+# ("Gaussian_transform = TRUE" maps variables to Gaussians in order to 
+#  place dramatically different variables on the same scale.)
+table(cohort)
+```
+
+### Unsupervised clustering:
+
+The below command performs unsupervised clustering. We will let the algorithm try to select the optimal number of clusters from a range of plausible options using the `n_clusts` argument and set `reference_profiles` and `reference_sds` as NULL. Assay type should be defined in the algorithm. 
+
+```{r unsup, echo=TRUE}
+unsup <- insitutype(
+  x = counts,
+  neg = negmean,
+  assay_type = "protein", 
+  reference_profiles = NULL,
+  reference_sds = NULL, 
+  cohort = cohort,
+  # Enter your own per-cell background estimates here if you have them;
+  # otherwise insitutype will use the negprobes to estimate background for you.
+  bg = NULL,
+  # condensed to save time. n_clusts = 5:20 would be more optimal
+  n_clusts = 10,
+  # NULL value runs unsupervised clustering; entering a matrix here would run
+  # semi-supervised clustering.
+  n_phase1 = 200,
+  n_phase2 = 500,
+  n_phase3 = 2000,
+  n_starts = 1,
+  max_iters = 5
+) 
+# choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+```
+
+### Supervised clustering:
+
+The below command performs supervised clustering. The user needs to provide `reference_profiles` and `reference_sd` and must set `n_clusts=0`, which means that cell typing is only within the known cell types included in the reference profiles. For the supervised clustering, there is no need to update the reference profiles. Hence, the algorithm does not go through sub-sampling step to update the reference profile, instead is designed to estimate log-likelihood of all cells using ML algorithm.  
+
+```{r sup, echo=TRUE}
+sup <- insitutype(
+  x = counts,
+  neg = negmean,
+  assay_type = "protein", 
+  n_clusts=0, 
+  anchors = NULL, 
+  reference_profiles = tonsil_reference_profile$mean.ref.profile, #[names(sig_mat)[-c(1:2)],],
+  reference_sds = tonsil_reference_profile$SDs.ref.profile, #[names(sig_mat)[-c(1:2)],],
+  cohort = cohort,
+  # Enter your own per-cell background estimates here if you have them;
+  # otherwise insitutype will use the negprobes to estimate background for you.
+  bg = NULL,
+  # condensed to save time. n_clusts = 5:20 would be more optimal
+  # NULL value runs unsupervised clustering; entering a matrix here would run
+  # semi-supervised clustering.
+  update_reference_profiles = TRUE,
+  n_phase2 = 500,
+  n_phase3 = 2000,
+  n_starts = 1,
+  max_iters = 5
+) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+```
+
+### Semi-supervised clustering:
+
+The below command performs semi-supervised clustering. The anchor cells can be provided by the user, but if it can be automatically chosen with the best fits to the user-defined profile. For semi-supervised clustering, `n_clusts`, the expected number of clusters unknown in the data, in adidtion to the mean reference profile and the standard deviation reference profile, should be provided. 
+
+```{r semisup, echo=TRUE}
+semi_sup <- insitutype(
+  x = counts,
+  neg = negmean,
+  assay_type = "protein", 
+  n_clusts=5, 
+  anchors = NULL, 
+  reference_profiles = tonsil_reference_profile$mean.ref.profile, #[names(sig_mat)[-c(1:2)],],
+  reference_sds = tonsil_reference_profile$SDs.ref.profile, #[names(sig_mat)[-c(1:2)],],
+  cohort = cohort,
+  # Enter your own per-cell background estimates here if you have them;
+  # otherwise insitutype will use the negprobes to estimate background for you.
+  bg = NULL,
+  # condensed to save time. n_clusts = 5:20 would be more optimal
+  # NULL value runs unsupervised clustering; entering a matrix here would run
+  # semi-supervised clustering.
+  update_reference_profiles = TRUE,
+  n_phase2 = 500,
+  n_phase3 = 2000,
+  n_starts = 1,
+  max_iters = 5
+) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
+```
+
+The function returns 4 useful outputs: a vector of cells cluster assignments, 
+* a vector of the posterior probability for each cell typing call,
+* a matrix of cells log-likelihoods under each cluster, 
+* a matrix of the mean background-subtracted expression profile of each cluster. 
+
+
+```{r unsup_results, fig.width = 8, fig.height = 5}
+str(unsup)
+round(head(unsup$prob), 2)
+heatmap(sweep(unsup$profiles, 1, pmax(apply(unsup$profiles, 1, max), .2), "/"), scale = "none",
+        main = "Cluster mean expression profiles (Unsupervised)")
+
+# define cluster colors:
+cols <-
+  c('#8DD3C7',
+    '#BEBADA',
+    '#FB8072',
+    '#80B1D3',
+    '#FDB462',
+    '#B3DE69',
+    '#FCCDE5',
+    '#D9D9D9',
+    '#BC80BD',
+    '#CCEBC5',
+    '#FFED6F',
+    '#E41A1C',
+    '#377EB8',
+    '#4DAF4A',
+    '#984EA3',
+    '#FF7F00',
+    '#FFFF33',
+    '#A65628',
+    '#F781BF',
+    '#999999'
+  )
+cols <- cols[seq_along(unique(unsup$clust))]
+names(cols) <- unique(unsup$clust)
+
+par(mfrow = c(1, 2))
+par(mar = c(0, 0, 3, 0))
+
+plot(tonsil_protein$xy_coord, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+          main = "Cells in physical space",
+     col = cols[unsup$clust], xlab = "X", ylab = "Y", xaxt = "n", yaxt = "n")
+
+plot(tonsil_protein$UMAP, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+     main = "Cells in UMAP space",     
+     col = cols[unsup$clust], xlab = "UMAP1", ylab = "UMAP2", xaxt = "n", yaxt = "n")
+legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.7)
+
+
+```
+
+### Visualizing clustering results
+Insitutype calculates the probability of each cell belonging to each cluster. 
+This information lets us understand how clusters relate to each other. 
+The flightpath_plot function arrays cells according to their cluster probabilities:
+```{r flightpath, fig.width = 5, fig.height = 5}
+# define colors:
+cols <-
+  c(
+    '#8DD3C7',
+    '#BEBADA',
+    '#FB8072',
+    '#80B1D3',
+    '#FDB462',
+    '#B3DE69',
+    '#FCCDE5',
+    '#D9D9D9',
+    '#BC80BD',
+    '#CCEBC5',
+    '#FFED6F',
+    '#E41A1C',
+    '#377EB8',
+    '#4DAF4A',
+    '#984EA3',
+    '#FF7F00',
+    '#FFFF33',
+    '#A65628',
+    '#F781BF',
+    '#999999'
+  )
+cols <- cols[seq_along(unique(unsup$clust))]
+names(cols) <- unique(unsup$clust)
+
+# make the flightpath plot
+fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = unsup, col = cols[unsup$clust])
+class(fp)
+print(fp)
+
+
+```
+<br>
+
+In the above plot, a cell atop a cluster centroid is near-certain, while cells halfway between two centroids have 50% posterior probability of belonging to each of those two clusters. The number by each centroid gives the average posterior probability of cells in the cluster. 
+
+Expect to see this value above 0.9 for clustering major cell type, and above 0.75 when clustering apart closely-related cell types. 
+Clusters with average posterior probabilities are unreliable. You can either interpret them with caution,
+ or you can dissolve them and reassign their cells to other clusters. (The next section covers this operation.)
+
+Here we can see that clusters f is sometimes confused with clusters g and e (though at a very low rate).
+
+You can also extract the flightpath layout for plotting on your own:
+
+```{r fp_layout}
+# compute the flightpath layout:
+fp_layout <- flightpath_layout(logliks = unsup$logliks, profiles = unsup$profiles)
+str(fp_layout)
+
+# par(mar = c(0,0,0,0))
+# plot(fp_layout$cellpos, pch = 16, cex = 0.5, col = cols[unsup$clust], xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+# text(fp_layout$clustpos, rownames(fp_layout$clustpos), cex = 0.5)
+
+```
+
+
+
+
+
+
+
+#### Updating clustering results 
+
+After close review, you might want to update your clustering results. 
+
+The function refineCells can modify your results in the following ways:
+
+* merge closely-related or frequently-confused clusters 
+* delete clusters (Sometimes a "catch-all" cluster arises that is frequently confused wiht multiple other clusters. It is best to delete these clusters and let their cells get reassigned to meaningful clusters.)
+* sub-cluster large clusters
+
+Here we use the refineClusters function to perform all these operations. 
+We also use its "merges" argument to rename cluster c. 
+
+```{r refineClusters, fig.width = 5, fig.height = 5}
+# refine the clusters:
+newclusts <- refineClusters(logliks = unsup$logliks, 
+                            assay_type="protein",
+                            merges = c("a" = "newcluster", "j" = "newcluster", "c" = "c_renamed"), 
+                            to_delete = "h",
+                            subcluster = c("i"=2),
+                            counts = counts,
+                            neg = negmean) 
+str(newclusts)
+
+# plot the updated results:
+cols <-
+  c(
+    '#8DD3C7',
+    '#BEBADA',
+    '#FB8072',
+    '#80B1D3',
+    '#FDB462',
+    '#B3DE69',
+    '#FCCDE5',
+    '#D9D9D9',
+    '#BC80BD',
+    '#CCEBC5',
+    '#FFED6F',
+    '#E41A1C',
+    '#377EB8',
+    '#4DAF4A',
+    '#984EA3',
+    '#FF7F00',
+    '#FFFF33',
+    '#A65628',
+    '#F781BF',
+    '#999999'
+  )
+cols <- cols[seq_along(unique(newclusts$clust))]
+names(cols) <- unique(newclusts$clust)
+fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = newclusts, col = cols[newclusts$clust])
+class(fp)
+print(fp)
+
+
+```
+
+
+### Coloring cell types
+
+The colorCellTypes function attempts to choose good colors for your cell types. 
+Some of its options use the frequency of cell types in this decision. 
+Here are 3 versions:
+
+```{r colorCellTypes, fig.width = 8, fig.height = 5}
+
+
+par(mfrow = c(1, 3))
+par(mar = c(0, 0, 3, 0))
+
+plot(tonsil_protein$xy_coord, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+          main = "brewers palette",
+     col = colorCellTypes(freqs = table(unsup$clust), palette = "brewers")[unsup$clust], 
+     xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+plot(tonsil_protein$xy_coord, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+          main = "tableau20 palette",
+     col = colorCellTypes(freqs = table(unsup$clust), palette = "tableau20")[unsup$clust], 
+     xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+plot(tonsil_protein$xy_coord, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+          main = "earthplus palette",
+     col = colorCellTypes(freqs = table(unsup$clust), palette = "earthplus")[unsup$clust], 
+     xlab = "", ylab = "", xaxt = "n", yaxt = "n")
+
+```
+
+### Generating mean and SD reference profiles
+
+For semi-supervised or supervised case, the user needs to provide mean and SD reference profiles for protein data type. Because it is not easy to find an external reference profile for protein data set, we generate the reference profiles using its own study data set. To do that, anchor cells should be identified and their expression matrix is used to estimate a mean and SD for each cell type and each protein. 
+
+There are two ways of identifying anchor cells and the following shows how to create the reference profiles with the identified anchor cells. 
+
+* manually chosen anchor cells: the user can identify anchor cells showing strong morphogogy marker signal using a visualization tool such as Napari or XY plots of expression data. 
+
+* signature matrix based anchor cells: signature matrix is an indicator of protein marker for each cell type. CELESTA cell typing tool already includes this signature matrix. If the user do not have its own signature matrix, the user can modify or utilize this default signature matrix from InsituType package. Anchor cells are selected among different level of cell types in a nested way. For example, anchor cells for immune cell type are selected with 90%tile of CD45 expression level. And then B-cells or T-cells are selected based on CD19/CD20 or CD4/CD8. If some of chosen immune cells are overlapped with B-cells, these are excluded from immune cell type. 
+
+Once anchor cells are selected or pre-defined by the user, protein expression matrix of those anchor cells each cell type is used to calculate its mean and SD. We repeat this practice across all cell types and the final outcome is matrices of mean expression profile and SD reference profile. These matrices includes cell types in columns and proteins in rows. 
+
+## 1. Generate reference profiles with manually annotation
+
+```{r reference profile generation with manual annotation}
+data(tonsil_annotation)
+
+tonsil_reference_profile <- gen_profiles_protein_annotation(exp.mat = tonsil_protein$counts, anno = tonsil_annotation)
+```
+
+## 2. Generate reference profiles based on its data set
+
+```{r reference profile from its own data set}
+data("human_signature")
+data("mouse_signature")
+sig_mat = InSituType::human_signature
+sig_mat_sub <- sig_mat[, c("celltype", "Lineage_level", "CD45", "CD20", "FN1", "CD31", "CD56", "CD11c", "CD8")]
+names(sig_mat_sub)[4] <- "CD19"
+sig_mat_sub <- sig_mat_sub[rowSums(sig_mat_sub[, -c(1:2)])!=0,]
+  
+tonsil_reference_profile <- gen_profiles_protein_expression(exp.mat=tonsil_protein$counts, sig_mat = sig_mat_sub)
+
+```
+### Session Info
+
+```{r sessioninfo}
+sessionInfo()
+```

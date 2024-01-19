@@ -41,6 +41,7 @@ data("mini_nsclc")
 unsup <- insitutype(
  x = mini_nsclc$counts,
  neg = Matrix::rowMeans(mini_nsclc$neg),
+ assay_type = "RNA",
  n_clusts = 8,
  n_phase1 = 200,
  n_phase2 = 500,

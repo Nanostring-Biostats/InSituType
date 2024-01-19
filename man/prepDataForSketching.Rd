@@ -4,10 +4,12 @@
 \alias{prepDataForSketching}
 \title{Prepare data for geoSketch}
 \usage{
-prepDataForSketching(counts)
+prepDataForSketching(counts, assay_type)
 }
 \arguments{
-\item{counts}{Counts matrix}
+\item{counts}{Counts matrix: cells x genes}
+
+\item{assay_type}{Assay type of RNA, protein}
 }
 \value{
 A matrix of data for geoSketch, with cells in rows and features in columns
@@ -17,5 +19,5 @@ Process raw counts data for input into geoSketching.
 }
 \examples{
 data("mini_nsclc")
-prepDataForSketching(mini_nsclc$counts)
+prepDataForSketching(counts=mini_nsclc$counts, assay_type="RNA")
 }

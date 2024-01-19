@@ -46,8 +46,8 @@ unsup <- insitutype(
  n_phase2 = 500,
  n_phase3 = 2000,
  n_starts = 1,
- max_iters = 5
+ max_iters = 5,
+ assay_type="RNA"
 ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
 colorCellTypes(freqs = table(unsup$clust), palette = "brewers")
-
 }

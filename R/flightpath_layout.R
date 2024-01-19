@@ -24,6 +24,7 @@
 #' unsup <- insitutype(
 #'  x = mini_nsclc$counts,
 #'  neg = Matrix::rowMeans(mini_nsclc$neg),
+#'  assay_type = "RNA",
 #'  n_clusts = 8,
 #'  n_phase1 = 200,
 #'  n_phase2 = 500,
@@ -50,9 +51,9 @@ flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, clu
     conf$spread <- conf$min_dist * 1.1
     conf$n_neighbors <- ncol(probs)
     if (!is.null(profiles)) {
-      clustum <- umap(t(sqrt(profiles)), config = conf)$layout
+      clustum <- umap::umap(t(sqrt(profiles)), config = conf)$layout
     } else {
-      clustum <- umap(t(probs), config = conf)$layout
+      clustum <- umap::umap(t(probs), config = conf)$layout
     }
     
     cluster_xpos <- clustum[, 1]
@@ -113,9 +114,11 @@ flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, clu
 #'  n_phase2 = 500,
 #'  n_phase3 = 2000,
 #'  n_starts = 1,
-#'  max_iters = 5
+#'  max_iters = 5,
+#'  assay_type="RNA"
 #' ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
 #' flightpath_plot(insitutype_result = unsup)
+
 flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, col = NULL, showclusterconfidence = TRUE){
   
   # get the flightpath results to use 
@@ -178,6 +181,15 @@ flightpath_plot <- function(flightpath_result = NULL, insitutype_result = NULL, 
     ggplot2::theme(legend.position = "none",
           panel.grid = ggplot2::element_blank(),
           axis.text = ggplot2::element_blank())
+  flightpath_plot_folder <- "./NBClust-Plots" # tempdir()
+  if (!dir.exists(flightpath_plot_folder)) dir.create(flightpath_plot_folder, showWarnings = FALSE, recursive = TRUE)
+  flightpath_plot_filename <- paste(format(Sys.time(), "%Y-%m-%d_%H-%M-%S-%Z"), "flightpath_plot.png", sep="-")
+  flightpath_plot_file <- paste(flightpath_plot_folder,flightpath_plot_filename , sep="/")
+  message("Saving flightpath_plot to: ", flightpath_plot_file)
+  ggsave(filename = flightpath_plot_filename, plot = p, device = "png", path = flightpath_plot_folder,
+         width = 7,
+         height = 7,
+         units="in")
 
   return(p)
 }

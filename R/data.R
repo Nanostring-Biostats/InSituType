@@ -29,3 +29,40 @@
 #'
 #' @format A named vector
 "iocolors"
+
+
+#' Small example SMI protein data from a tonsil tissue
+#'
+#' A 21844-cells excerpt from a 68-plex SMI study of a tonsil tissue. 
+#'
+#' @format A list with the following elements:
+#'  \itemize{
+#'  \item counts A matrix of raw counts, with cells in rows and proteins in columns
+#'  \item negs A matrix of IgG counts, with cells in rows and IgGs in columns
+#'  \item xy_coord x and y positions
+#'  \item UMAP umap projection
+#'  }
+"tonsil_protein"
+
+
+
+#' Reference profile examples from a tonsil tissue
+#'#'
+#' @format A list with the following elements:
+#'  \itemize{
+#'  \item tonsil_reference_profile A matrix of raw counts, with cells in rows and proteins in columns
+#'  \item counts A matrix of IgG counts, with cells in rows and IgGs in columns
+#'  \item xy_coord x and y positions
+#'  \item UMAP umap projection
+#'  }
+"tonsil_reference_profile"
+
+
+#' Matrix of anchor cells' annotation file
+#'  A matrix including cell_ID and cellType for anchors cells
+#' 
+#'  matrix.
+#'
+#' @format A matrix of 11844 cells and 2 columns
+"tonsil_annotation"
+

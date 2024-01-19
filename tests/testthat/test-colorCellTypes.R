@@ -50,3 +50,4 @@ testthat::test_that("all 3 paletted work", {
   expect_error(plot(seq_along(tab), col = cols_brew), NA) # "NA" means expecting no error
   expect_error(plot(seq_along(tab), col = cols_earth), NA) # "NA" means expecting no error
 })
+
