@@ -15,7 +15,7 @@ cols_freqs <- colorCellTypes(names = NULL, freqs = tab, init_colors = NULL, max_
 # test that pre-specified colors are used
 cols_init <- colorCellTypes(names = NULL, freqs = tab, init_colors = iocolors, max_sum_rgb = 600) 
 
-testthat::test_that("pre-specified colors are used", {
+test_that("pre-specified colors are used", {
   sharedcells <- intersect(names(tab), names(iocolors))
   expect_true(all.equal(cols_init[sharedcells], iocolors[sharedcells]))
 })
@@ -23,7 +23,7 @@ testthat::test_that("pre-specified colors are used", {
 
 
 # test that legal colors are returned in all cases, with names matching the cell names:
-testthat::test_that("test that results returned by flagLowGenes have the right formats", {
+test_that("test that results returned by flagLowGenes have the right formats", {
   expect_error(plot(seq_along(tab), col = cols_names), NA) # "NA" means expecting no error
   expect_error(plot(seq_along(tab), col = cols_freqs), NA) # "NA" means expecting no error
   expect_error(plot(seq_along(tab), col = cols_init), NA) # "NA" means expecting no error
@@ -34,7 +34,7 @@ testthat::test_that("test that results returned by flagLowGenes have the right f
 })
 
 # test that it works if prespecified colors have no overlap:
-testthat::test_that("correct results even if prespecified colors have no overlap", {
+test_that("correct results even if prespecified colors have no overlap", {
   cols_bad_init <- colorCellTypes(names = NULL, freqs = tab, init_colors = c(no = "red", nope = "blue"), max_sum_rgb = 600) 
   expect_error(plot(seq_along(tab), col = cols_bad_init), NA) # "NA" means expecting no error
   expect_equal(length(intersect(names(cols_bad_init), names(tab))), length(names(tab)))
@@ -42,7 +42,7 @@ testthat::test_that("correct results even if prespecified colors have no overlap
 
 
 # test that all 3 paletted work:
-testthat::test_that("all 3 paletted work", {
+test_that("all 3 paletted work", {
   cols_tab20 <- colorCellTypes(names = NULL, freqs = tab, init_colors = NULL, max_sum_rgb = 600, palette = "tableau20")
   cols_brew <- colorCellTypes(names = NULL, freqs = tab, init_colors = NULL, max_sum_rgb = 600, palette = "brewers") 
   cols_earth <- colorCellTypes(names = NULL, freqs = tab, init_colors = NULL, max_sum_rgb = 600, palette = "earthplus") 
