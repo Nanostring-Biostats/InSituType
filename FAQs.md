@@ -85,7 +85,7 @@ We have found the below workflows to be effective and efficent:
 
 ## Targeted subclustering
 
-This is an advanced method. Sometimes it can be hard to subcluster a cell type if manyu of its genes are impacted by contamination from segmentation errors. Immune cells in the context of tumors are a good example.
+This is an advanced method. Sometimes it can be hard to subcluster a cell type if many of its genes are impacted by contamination from segmentation errors. Immune cells in the context of tumors are a good example.
 To subcluster say T-cells in a tumor, you might initially call a single T-cell cluster. Then, considering just these cells and just the genes unlikely to be contaminated in T-cells (genes with high T-cell expression or with low expression in surrounding cell types), run unsupervised Insitutype. 
 
 
