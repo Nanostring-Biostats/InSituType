@@ -61,8 +61,8 @@ flightpath_layout <- function(logliks = NULL, probs = NULL, profiles = NULL, clu
   }
 
   # get cell xy positions as a weighted average of the umap positions
-  ux <- probs %*% clustum[, 1]
-  uy <- probs %*% clustum[, 2]
+  ux <- probs %*% cluster_xpos
+  uy <- probs %*% cluster_ypos
   
   # jitter the xy positions, jittering widely for prob = 1 cells and minimally for prob < 0.5 cells:
   jitterrange <- 0.01 * c(0.0005, 0.9) * max(diff(range(ux)), diff(range(uy))) 
