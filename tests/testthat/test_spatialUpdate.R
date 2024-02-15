@@ -12,5 +12,8 @@ updatedclust <- spatialUpdate(celltype = initclust,
                               xy = cbind(mini_nsclc$x, mini_nsclc$y), 
                               tissue = NULL,
                               nb_size = 10, assay_type = "rna")
+test_that("spatialUpdate worked", {
+  expect_true(all(is.element(c( "clust","prob","profiles","sds","logliks","logliks_from_lost_celltypes"), names(updatedclust))))
+})
 
 

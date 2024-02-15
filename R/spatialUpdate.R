@@ -29,7 +29,6 @@
 #' @param tissue Vector giving cells' tissue IDs. Used to separate tissue with overlapping xy coordinates.
 #' @param nb_size The size parameter to assume for the NB distribution.
 #' @param assay.type A string specifying which assay values to use.
-#' @importFrom InSituType Estep insitutype fastCohorting
 #' @importFrom irlba irlba
 #' @export
 spatialUpdate <- function(celltype, counts, neg, 
@@ -66,13 +65,13 @@ spatialUpdate <- function(celltype, counts, neg,
                     assay_type = assay_type)
   
   ## Run supervised cell typing with InSituType
-  res <- InSituType::insitutype(x = counts, 
-                                neg = neg, 
-                                reference_profiles = profiles$profiles,
-                                reference_sds = profiles$sds,
-                                n_clusts = 0,
-                                update_reference_profiles = FALSE,
-                                assay_type = assay_type)
+  res <- insitutype(x = counts, 
+                    neg = neg, 
+                    reference_profiles = profiles$profiles,
+                    reference_sds = profiles$sds,
+                    n_clusts = 0,
+                    update_reference_profiles = FALSE,
+                    assay_type = assay_type)
   
   return(res)
 }
