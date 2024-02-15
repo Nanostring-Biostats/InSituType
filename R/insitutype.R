@@ -39,7 +39,7 @@
 #'   a matrix.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
-#' @param assay_type Assay type of RNA, protein 
+#' @param assay_type Assay type. Either "RNA" or "protein"
 #' @param anchors Vector giving "anchor" cell types, for use in semi-supervised
 #'   clustering. Vector elements will be mainly NA's (for non-anchored cells)
 #'   and cell type names for cells to be held constant throughout iterations.
@@ -136,7 +136,7 @@ NULL
 #' @importFrom Matrix t
 .insitutype <- function(x,
                         neg,
-                        assay_type,
+                        assay_type = "RNA",
                         bg = NULL,
                         anchors = NULL,
                         cohort = NULL,
@@ -168,6 +168,10 @@ NULL
   
   #### preliminaries ---------------------------
 
+  if ((assay_type == "RNA") & any(abs(x - round(x)) > 1e-4)) {
+    warning("Non-integer elements of x input, and assay_type is set to RNA. RNA Insitutype should use raw (i.e. integer) counts.")
+  }
+  
   if (any(rowSums(x) == 0)) {
     stop("Cells with 0 counts were found. Please remove.")
   }

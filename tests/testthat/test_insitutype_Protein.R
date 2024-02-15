@@ -21,7 +21,7 @@ nbres <- nbclust(counts = tonsil_protein$counts[, sharedgenes],
                  min_prob_increase = 0.05, 
                  max_iters = 3, 
                  logresults = FALSE)
-testthat::test_that("semi-sup nbclust preserves fixedprofiles", {
+test_that("semi-sup nbclust preserves fixedprofiles", {
   expect_true(all(abs(diag(cor(nbres$profiles[, colnames(tonsil_reference_profile$mean.ref.profile)[1:3]], tonsil_reference_profile$mean.ref.profile[sharedgenes, ]))) == 1))
 })
 
@@ -37,7 +37,7 @@ sup <- insitutypeML(x = tonsil_protein$counts,
                     nb_size = 10,
                     align_genes = TRUE)
   
-testthat::test_that("supervised cell typing produces correct outputs", {
+test_that("supervised cell typing produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.vector(sup$prob))
@@ -73,7 +73,7 @@ semi <- insitutype(x = tonsil_protein$counts,
                   rescale = FALSE, 
                   refit = TRUE)
 
-testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
+test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
   expect_true(is.vector(semi$clust))
   expect_true(is.vector(semi$prob))
@@ -109,7 +109,7 @@ unsup <- insitutype(x = tonsil_protein$counts,
                     rescale = FALSE, 
                     refit = TRUE)   
 
-testthat::test_that("unsupervised cell typing produces correct outputs", {
+test_that("unsupervised cell typing produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(unsup))))
   expect_true(is.vector(unsup$clust))
   expect_true(is.vector(unsup$prob))
@@ -149,7 +149,7 @@ unsup <- insitutype(x = tonsil_protein$counts,
                     refit = TRUE)   
 
 
-testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
+test_that("unsupervised cell typing using init_clust produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(unsup))))
   expect_true(is.vector(unsup$clust))
   expect_true(is.vector(unsup$prob))
@@ -190,7 +190,7 @@ semi <- insitutype(x = tonsil_protein$counts,
                    refit = TRUE)   
 
 
-testthat::test_that("semi-supervised cell typing using init_clust produces correct outputs", {
+test_that("semi-supervised cell typing using init_clust produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
   expect_true(is.vector(semi$clust))
   expect_true(is.vector(semi$prob))
@@ -219,7 +219,7 @@ res <- chooseClusterNumber(counts = tonsil_protein$counts,
                            pct_drop = 0.005, 
                            min_prob_increase = 0.05) 
 
-testthat::test_that("chooseClusterNumber produces correct outputs", {
+test_that("chooseClusterNumber produces correct outputs", {
   expect_true(all(is.element(c("best_clust_number", "n_clusts", "loglik", "aic", "bic"), names(res))))
   expect_true(length(res$best_clust_number) == 1)
   expect_true(length(res$n_clusts) == 2)
@@ -239,7 +239,7 @@ astats <- get_anchor_stats(counts = tonsil_protein$counts,
                            size = 10, 
                            min_cosine = 0.3) 
 
-testthat::test_that("get_anchor_stats produces correct outputs", {
+test_that("get_anchor_stats produces correct outputs", {
   expect_true(all(dim(astats$cos) == c(nrow(tonsil_protein$counts), 3)))
   expect_true(all(dim(astats$llr) == c(nrow(tonsil_protein$counts), 3)))
 })
@@ -257,7 +257,7 @@ anchors <- choose_anchors_from_stats(counts = tonsil_protein$counts,
                                      min_scaled_llr = 0.01, 
                                      insufficient_anchors_thresh = 2) 
 
-testthat::test_that("choose_anchors_from_stats produces correct outputs", {
+test_that("choose_anchors_from_stats produces correct outputs", {
   expect_true(all(is.element(anchors, c(NA, colnames(astats[[2]])))))
   expect_true(max(table(anchors)) <= 500)
   expect_equal(names(anchors), rownames(tonsil_protein$counts))
@@ -277,7 +277,7 @@ anchors <- find_anchor_cells(counts = tonsil_protein$counts,
                              min_scaled_llr = 0.01, 
                              insufficient_anchors_thresh = 2) 
 
-testthat::test_that("find_anchor_cells produces correct outputs", {
+test_that("find_anchor_cells produces correct outputs", {
   expect_true(all(is.element(anchors, c(NA, colnames(astats[[2]])))))
   expect_true(max(table(anchors)) <= 500)
   expect_equal(names(anchors), rownames(tonsil_protein$counts))
@@ -296,7 +296,7 @@ anchors <- suppressWarnings(find_anchor_cells(counts = tonsil_protein$counts,
                              min_cosine = 0.99, 
                              min_scaled_llr = 0.1, 
                              insufficient_anchors_thresh = 2))
-testthat::test_that("find_anchor_cells produces correct outputs when none selected", {
+test_that("find_anchor_cells produces correct outputs when none selected", {
   expect_null(anchors)
 })
 
@@ -309,7 +309,7 @@ rescaled <- updateReferenceProfiles(reference_profiles = tonsil_reference_profil
                                     assay_type = "Protein",
                                    counts = tonsil_protein$counts,
                                    neg = Matrix::rowMeans(tonsil_protein$neg))
-testthat::test_that("rescaleProfiles works as intended", {
+test_that("rescaleProfiles works as intended", {
   expect_true(is.matrix(rescaled$updated_profiles))
   expect_true(is.vector(rescaled$anchors))
 })
@@ -318,7 +318,7 @@ testthat::test_that("rescaleProfiles works as intended", {
 # test fastCohorting:
 simdat <- matrix(rnorm(10000), nrow = 1000)
 cres <- fastCohorting(simdat, n_cohorts = 10)
-testthat::test_that("fastCohorting works as intended", {
+test_that("fastCohorting works as intended", {
   expect_true(is.vector(cres))
   expect_true(length(unique(cres)) == 10)
 })
@@ -326,7 +326,7 @@ testthat::test_that("fastCohorting works as intended", {
 # test refineClusters:
 merge1 <- refineClusters(assay_type = "protein",
   merges = NULL, to_delete = NULL, subcluster = NULL, logliks = sup$logliks)
-testthat::test_that("refineClusters works when no directions are passed to it", {
+test_that("refineClusters works when no directions are passed to it", {
   expect_equal(sup$logliks, merge1$logliks, tolerance = 1e-2)
   expect_equal(sup$clust, merge1$clust)
 })
@@ -338,7 +338,7 @@ merge2 <- refineClusters(assay_type = "protein",
   logliks = sup$logliks,
   counts = tonsil_protein$counts,
   neg = Matrix::rowMeans(tonsil_protein$neg))
-testthat::test_that("refineClusters works when merges and deletions are asked for", {
+test_that("refineClusters works when merges and deletions are asked for", {
   expect_true(all(is.element(colnames(merge2$logliks), c("immune", "cd8 t cell_1", "cd8 t cell_2", "dendritic", "fibroblast"))))
 })
 
@@ -354,7 +354,7 @@ merge2 <- refineClusters(assay_type = "protein",
   neg = Matrix::rowMeans(tonsil_protein$neg),
   bg = NULL, 
   cohort = NULL)
-testthat::test_that("refineClusters works when merges and deletions are asked for", {
+test_that("refineClusters works when merges and deletions are asked for", {
   expect_true(all(is.element(colnames(merge2$logliks), c("b_1", "b_2", "dendritic", "t cell"))))
   expect_equal(names(merge2$clust), names(semi$clust))
 })

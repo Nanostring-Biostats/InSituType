@@ -5,6 +5,23 @@ data("mini_nsclc")
 
 set.seed(0)
 
+
+# test V1.0 syntax still works for back-compatibility:
+test_that("old syntax semi-sup still runs", {
+  sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
+  semisup <- insitutype(
+    x = mini_nsclc$counts[, sharedgenes],
+    neg = Matrix::rowMeans(mini_nsclc$neg),
+    n_clusts = c(5, 6),
+    reference_profiles = ioprofiles[sharedgenes, 1:3],
+    update_reference_profiles = FALSE,
+    max_iters = 3
+  ) 
+  
+  expect_true(all(is.element(c("clust","prob","profiles","logliks","logliks_from_lost_celltypes"), names(semisup))))
+})
+
+
 # test nbclust semi-sup
 sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
 nbres <- nbclust(counts = mini_nsclc$counts[, sharedgenes],
@@ -20,7 +37,7 @@ nbres <- nbclust(counts = mini_nsclc$counts[, sharedgenes],
                  min_prob_increase = 0.05, 
                  max_iters = 3, 
                  logresults = FALSE)
-testthat::test_that("semi-sup nbclust preserves fixedprofiles", {
+test_that("semi-sup nbclust preserves fixedprofiles", {
   expect_true(all(abs(diag(cor(nbres$profiles[, colnames(ioprofiles)[1:3]], ioprofiles[sharedgenes, ]))) == 1))
 })
 
@@ -35,7 +52,7 @@ sup <- insitutypeML(x = mini_nsclc$counts,
                     nb_size = 10,
                     align_genes = TRUE)
   
-testthat::test_that("supervised cell typing produces correct outputs", {
+test_that("supervised cell typing produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(sup))))
   expect_true(is.vector(sup$clust))
   expect_true(is.vector(sup$prob))
@@ -70,7 +87,7 @@ semi <- insitutype(x = mini_nsclc$counts,
                   rescale = FALSE, 
                   refit = TRUE)
 
-testthat::test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
+test_that("semiservised cell typing with n_clusts = 0 produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
   expect_true(is.vector(semi$clust))
   expect_true(is.vector(semi$prob))
@@ -106,7 +123,7 @@ unsup <- insitutype(x = mini_nsclc$counts,
                     rescale = FALSE, 
                     refit = TRUE)   
 
-testthat::test_that("unsupervised cell typing produces correct outputs", {
+test_that("unsupervised cell typing produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(unsup))))
   expect_true(is.vector(unsup$clust))
   expect_true(is.vector(unsup$prob))
@@ -142,7 +159,7 @@ unsup <- insitutype(x = mini_nsclc$counts,
                     refit = TRUE)   
 
 
-testthat::test_that("unsupervised cell typing using init_clust produces correct outputs", {
+test_that("unsupervised cell typing using init_clust produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(unsup))))
   expect_true(is.vector(unsup$clust))
   expect_true(is.vector(unsup$prob))
@@ -181,7 +198,7 @@ semi <- insitutype(x = mini_nsclc$counts,
                    refit = TRUE)   
 
 
-testthat::test_that("semi-supervised cell typing using init_clust produces correct outputs", {
+test_that("semi-supervised cell typing using init_clust produces correct outputs", {
   expect_true(all(is.element(c("clust", "prob", "logliks", "profiles"), names(semi))))
   expect_true(is.vector(semi$clust))
   expect_true(is.vector(semi$prob))
@@ -200,7 +217,7 @@ merge2 <- refineClusters(
   neg = Matrix::rowMeans(mini_nsclc$neg),
   bg = NULL, 
   cohort = NULL)
-testthat::test_that("refineClusters works when merges and deletions are asked for", {
+test_that("refineClusters works when merges and deletions are asked for", {
   expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "cancer", "fibroblast_1", "fibroblast_2"))))
   expect_equal(names(merge2$clust), names(semi$clust))
 })
@@ -223,7 +240,7 @@ res <- chooseClusterNumber(counts = mini_nsclc$counts,
                            pct_drop = 0.005, 
                            min_prob_increase = 0.05) 
 
-testthat::test_that("chooseClusterNumber produces correct outputs", {
+test_that("chooseClusterNumber produces correct outputs", {
   expect_true(all(is.element(c("best_clust_number", "n_clusts", "loglik", "aic", "bic"), names(res))))
   expect_true(length(res$best_clust_number) == 1)
   expect_true(length(res$n_clusts) == 2)
@@ -243,7 +260,7 @@ astats <- get_anchor_stats(counts = mini_nsclc$counts,
                            size = 10, 
                            min_cosine = 0.3) 
 
-testthat::test_that("get_anchor_stats produces correct outputs", {
+test_that("get_anchor_stats produces correct outputs", {
   expect_true(all(dim(astats$cos) == c(nrow(mini_nsclc$counts), 3)))
   expect_true(all(dim(astats$llr) == c(nrow(mini_nsclc$counts), 3)))
 })
@@ -261,7 +278,7 @@ anchors <- choose_anchors_from_stats(counts = mini_nsclc$counts,
                                      min_scaled_llr = 0.01, 
                                      insufficient_anchors_thresh = 2) 
 
-testthat::test_that("choose_anchors_from_stats produces correct outputs", {
+test_that("choose_anchors_from_stats produces correct outputs", {
   expect_true(all(is.element(anchors, c(NA, colnames(astats[[2]])))))
   expect_true(max(table(anchors)) <= 500)
   expect_equal(names(anchors), rownames(mini_nsclc$counts))
@@ -281,7 +298,7 @@ anchors <- find_anchor_cells(counts = mini_nsclc$counts,
                              min_scaled_llr = 0.01, 
                              insufficient_anchors_thresh = 2) 
 
-testthat::test_that("find_anchor_cells produces correct outputs", {
+test_that("find_anchor_cells produces correct outputs", {
   expect_true(all(is.element(anchors, c(NA, colnames(astats[[2]])))))
   expect_true(max(table(anchors)) <= 500)
   expect_equal(names(anchors), rownames(mini_nsclc$counts))
@@ -300,7 +317,7 @@ anchors <- suppressWarnings(find_anchor_cells(counts = mini_nsclc$counts,
                              min_cosine = 0.8, 
                              min_scaled_llr = 0.01, 
                              insufficient_anchors_thresh = 2))
-testthat::test_that("find_anchor_cells produces correct outputs when none selected", {
+test_that("find_anchor_cells produces correct outputs when none selected", {
   expect_null(anchors)
 })
 
@@ -308,7 +325,7 @@ testthat::test_that("find_anchor_cells produces correct outputs when none select
 # test refineClusters:
 merge1 <- refineClusters(
   merges = NULL, to_delete = NULL, subcluster = NULL, logliks = sup$logliks)
-testthat::test_that("refineClusters works when no directions are passed to it", {
+test_that("refineClusters works when no directions are passed to it", {
   expect_equal(sup$logliks, merge1$logliks, tolerance = 1e-2)
   expect_equal(sup$clust, merge1$clust)
 })
@@ -320,7 +337,7 @@ merge2 <- refineClusters(
   logliks = sup$logliks,
   counts = mini_nsclc$counts,
   neg = Matrix::rowMeans(mini_nsclc$neg))
-testthat::test_that("refineClusters works when merges and deletions are asked for", {
+test_that("refineClusters works when merges and deletions are asked for", {
   expect_true(all(is.element(colnames(merge2$logliks), c("lymphoid", "myeloid", "fibroblast_1", "fibroblast_2", "mast"))))
 })
 
@@ -332,7 +349,7 @@ rescaled <- updateReferenceProfiles(reference_profiles = ioprofiles,
                                     counts = mini_nsclc$counts,
                                     neg = Matrix::rowMeans(mini_nsclc$neg))
 
-testthat::test_that("rescaleProfiles works as intended", {
+test_that("rescaleProfiles works as intended", {
   expect_true(is.matrix(rescaled$updated_profiles))
   expect_true(is.vector(rescaled$anchors))
 })
@@ -341,7 +358,7 @@ testthat::test_that("rescaleProfiles works as intended", {
 # test fastCohorting:
 simdat <- matrix(rnorm(10000), nrow = 1000)
 cres <- fastCohorting(simdat, n_cohorts = 10)
-testthat::test_that("fastCohorting works as intended", {
+test_that("fastCohorting works as intended", {
   expect_true(is.vector(cres))
   expect_true(length(unique(cres)) == 10)
 })
