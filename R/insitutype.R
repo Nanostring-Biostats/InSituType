@@ -176,6 +176,13 @@ NULL
     stop("Cells with 0 counts were found. Please remove.")
   }
   
+  if (is.data.frame(reference_profiles)) {
+    reference_profiles <- as.matrix(reference_profiles)
+  }
+  if (is.data.frame(reference_sds)) {
+    reference_sds <- as.matrix(reference_sds)
+  }
+  
   # get vector of expected background:
   bg <- estimateBackground(counts = x, neg = neg, bg = bg)
   
