@@ -200,6 +200,7 @@ Estep <- function(counts, clust, neg, assay_type) {
     }
     return(sds)
   })
+  rownames(sds) <- rownames(means)
   
   return(list(profiles=means, sds=sds))
 }
