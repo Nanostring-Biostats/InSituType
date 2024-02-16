@@ -29,9 +29,12 @@
 #'                  sds=NULL, 
 #'                  assay_type = "RNA")
 get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
-                             profiles, sds, size = 10, assay_type, 
+                             profiles, sds = NULL, size = 10, assay_type = 'rna', 
                              min_cosine = 0.3) {
   
+  if(is.null(sds) && assay_type %in% c("Protein", "protein")){
+     stop("sds must be entered for protein mode") 
+  }
   # get vector of expected background:
   bg <- estimateBackground(counts = counts, neg = neg, bg = bg)
   
@@ -148,11 +151,11 @@ choose_anchors_from_stats <-
            anchorstats = NULL,
            cos = NULL,
            llr = NULL,
+           assay_type = "rna",
            n_cells = 500,
            min_cosine = 0.3,
            min_scaled_llr = 0.01,
-           insufficient_anchors_thresh = 20,
-           assay_type) {
+           insufficient_anchors_thresh = 20) {
     
     
     if (is.null(anchorstats) && (is.null(cos) || is.null(llr))) {
@@ -259,7 +262,7 @@ choose_anchors_from_stats <-
 #'                   neg = Matrix::rowMeans(mini_nsclc$neg),
 #'                   profiles = ioprofiles)
 find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
-                              profiles, sds, size = 10, assay_type,  n_cells = 500, 
+                              profiles, sds = NULL, size = 10, assay_type = "rna",  n_cells = 500, 
                               min_cosine = 0.3, min_scaled_llr = 0.01, 
                               insufficient_anchors_thresh = 20,
                               refinement = FALSE) {
