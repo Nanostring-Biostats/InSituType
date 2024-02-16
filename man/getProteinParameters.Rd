@@ -4,13 +4,13 @@
 \alias{getProteinParameters}
 \title{Extract mean background-subtracted profiles of RNA data}
 \usage{
-getProteinParameters(counts, clust)
+getProteinParameters(x, clust)
 }
 \arguments{
+\item{x}{Expression matrix, cells * proteins.}
+
 \item{clust}{Vector of cluster assignments, or a matrix of probabilities
 of cells (rows) belonging to clusters (columns).}
-
-\item{x}{Expression matrix, cells * proteins.}
 
 \item{neg}{Vector of mean background counts}
 }
