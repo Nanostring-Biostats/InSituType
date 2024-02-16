@@ -49,7 +49,8 @@ spatialUpdate <- function(celltype, counts, neg,
       neighbors <- nearestNeighborGraph(x = xy[, 1], y = xy[, 2], N = 50, subset = tissue) 
       neighborexpression <- get_neighborhood_expression(counts = counts, neighbors = neighbors) 
       # save top 20 PCs:
-      temp <- irlba::irlba(neighborexpression, nv = 20)
+      #temp <- irlba::irlba(neighborexpression, nv = 20)   # fails if Matrix version > 1.6.1, decomissioning for now
+      temp <- fastApproxPCA(neighborexpression, ncomp = 20, nsub = 5000)
       altdata <- temp$u %*% diag(temp$d)
     }
     # cluster altdata to get cohort:

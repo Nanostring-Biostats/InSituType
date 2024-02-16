@@ -32,15 +32,15 @@ if (FALSE) {
   for (i in 1:20){
     mat = rbind(mat, mini_nsclc$counts)
   }
-  
-  tic()
-  r1 = fastApproxPCA(mat, ncomp = 20, nsub = 5000) 
-  toc()
-  
-  tic()
-  r2 = irlba::prcomp_irlba(mat, n = 20) 
-  toc()
-  
-  diag(cor(r1, r2$x))
+    
+    tic()
+    r1 = fastApproxPCA(mat, ncomp = 20, nsub = 5000) 
+    toc()
+    
+    tic()
+    r2 = irlba::prcomp_irlba(mat, n = 20) 
+    toc()
+    
+    diag(cor(r1, r2$x))
   
 }

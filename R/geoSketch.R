@@ -22,13 +22,14 @@ prepDataForSketching <- function(counts, assay_type) {
   if(assay_type %in% c("RNA", "rna", "Rna")){
     scaling_factors <- pmax(sparseMatrixStats::colQuantiles(counts, probs = 0.99), 5)
     x <- Matrix::t(Matrix::t(counts) / scaling_factors)
-    pcres <- irlba::prcomp_irlba(x = x, n = min(20, ncol(counts) - 5), retx = TRUE, center = TRUE, scale. = FALSE)$x
+    #pcres <- irlba::prcomp_irlba(x = x, n = min(20, ncol(counts) - 5), retx = TRUE, center = TRUE, scale. = FALSE)$x  # fails if Matrix version > 1.6.1, decomissioning for now
+    pcres <- fastApproxPCA(x, n = min(20, ncol(counts) - 5), nsub = 5000)
   }
   if(assay_type %in% c("Protein", "protein")){
     
     ## when the data is protein data 
-    pcres <- irlba::prcomp_irlba(x = counts, n = min(20, ncol(counts) - 5), retx = TRUE, center = TRUE, scale. = TRUE)$x
-    
+    #pcres <- irlba::prcomp_irlba(x = counts, n = min(20, ncol(counts) - 5), retx = TRUE, center = TRUE, scale. = TRUE)$x # fails if Matrix version > 1.6.1, decomissioning for now
+    pcres <- fastApproxPCA(counts, n = min(20, ncol(counts) - 5), nsub = 5000)
   }
   rownames(pcres) <- rownames(counts)
   return(pcres)
