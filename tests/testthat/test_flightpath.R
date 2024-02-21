@@ -9,7 +9,7 @@ data("mini_nsclc")
 res <- insitutype(x = mini_nsclc$counts,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   bg = NULL,
-                  init_clust = NULL, n_clusts = 2,
+                  init_clust = NULL, n_clusts = 6,
                   anchors = NULL,
                   nb_size = 10,
                   n_starts = 2,
@@ -30,7 +30,7 @@ res <- insitutype(x = mini_nsclc$counts,
 fp <- flightpath_layout(probs = NULL, logliks = res$logliks, profiles = res$profiles)
 
 test_that("flightpath_layout returns correct format", {
-  expect_true(all(dim(fp$clustpos) == c(2, 2)))
+  expect_true(all(dim(fp$clustpos) == c(6, 2)))
   expect_true(all(dim(fp$cellpos) == c(nrow(res$logliks), 2)))
   expect_true(all(!is.na(fp$clustpos)))
   expect_true(all(!is.na(fp$cellpos)))

@@ -5,7 +5,7 @@ genes <- intersect(dimnames(mini_nsclc$counts)[[2]], dimnames(ioprofiles)[[1]])
 mat <- mini_nsclc$counts[, genes]
 x <- ioprofiles[genes, 1, drop = FALSE]
 
-testthat::test_that("Rcpp calculation is same as stats package for RNA data type", {
+test_that("Rcpp calculation is same as stats package for RNA data type", {
   bgsub <- pmax(sweep(mat, 1, bg, "-"), 0)
   s <- Matrix::rowSums(bgsub) / sum(x)
   s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
@@ -31,7 +31,7 @@ x <- tonsil_reference_profile$mean.ref.profile[proteins, 1, drop = FALSE]
 xsd <- tonsil_reference_profile$SDs.ref.profile[proteins, 1, drop = FALSE]
 
 
-testthat::test_that("Rcpp calculation is same as stats package for protein data type", {
+test_that("Rcpp calculation is same as stats package for protein data type", {
   bgsub <- pmax(sweep(mat, 1, bg, "-"), 0)
   s <- Matrix::rowSums(bgsub) / sum(x)
   s[s <= 0] <- Matrix::rowSums(mat[s <= 0, , drop = FALSE]) / sum(x)
