@@ -1,0 +1,71 @@
+---
+title: "Deriving reference profiles from scRNA-seq data"
+output: 
+  rmarkdown::html_vignette: 
+    toc: true
+fig_width: 10 
+fig_height: 6 
+vignette: >
+  %\VignetteIndexEntry{Deriving reference profiles from scRNA-seq data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+<style>
+p.caption {
+  font-size: 1.5em;
+}
+</style>
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+Here we'll show how to derive reference profiles from a scRNA-seq dataset.
+These profiles can then be used to run Insitutype in supervised or semi-supervised mode. 
+
+First, we load the package and access the example data. 
+```{r setup}
+library(InSituType)
+data("mini_nsclc")
+```
+
+You'll have a scRNA-seq dataset in whatever format you prefer. For our tools, you'll just 
+need to extract the raw, linear-scale expression matrix and a vector of cell type assignments. 
+
+```{r exampledata}
+# pretend the demo cosmx data is your scRNA-seq counts matrix
+counts <- mini_nsclc$counts  
+dim(counts)  # cells in rows, genes in columns
+counts[1:5,1:5]  # see linear scale
+
+# make up a vector of cell type assignments:
+clust <- sample(c("a","b","c"), nrow(counts), replace = TRUE)
+table(clust)
+```
+
+
+Now run the getRNAprofiles function:
+
+```{r getprofiles}
+profiles <- getRNAprofiles(x = counts, 
+                           neg = 0,   # assume no background in scRNA-seq data. 
+                           clust = clust) 
+head(profiles)
+```
+
+And of course, if you were deriving a profile matrix from a previous CosMx dataset or 
+any other technology with background, you'd want to enter the per-cell background level
+in the "neg" argument. 
+
+```
+
+
+
+### Session Info
+
+```{r sessioninfo}
+sessionInfo()
+```

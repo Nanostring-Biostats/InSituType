@@ -5,21 +5,26 @@
 \title{Calculate the likelihood of the expression mat
   using the reference profiles of x}
 \usage{
-lldist(x, mat, bg = 0.01, size = 10, digits = 2)
+lldist(x, xsd = NULL, mat, bg = 0.01, size = 10, digits = 2, assay_type)
 }
 \arguments{
-\item{x}{matrix of reference cell types, genes x profiles}
+\item{x}{a vector of a reference mean profile for the cell type}
 
-\item{mat}{a matrix of expression levels in all cells, cells x genes}
+\item{xsd}{a vector of a reference standard deviation profile for the cell type}
 
-\item{bg}{background level (default: 0.01), usually vector length equal to
-number of cells}
+\item{mat}{a matrix of expression levels in all cells: for Protein data, we use raw data for calculating the scaling factor}
+
+\item{bg}{background level (default: 0.01)}
 
 \item{size}{the parameters for dnbinom function (default: 10)}
 
 \item{digits}{the number of digits for rounding}
+
+\item{assay_type}{Assay type of RNA, protein}
 }
 \value{
+likelihood for profile
+
 cells x profiles matrix of log likelihoods
 }
 \description{
@@ -33,5 +38,6 @@ bg <- Matrix::rowMeans(mini_nsclc$neg)
 genes <- intersect(dimnames(mini_nsclc$counts)[[2]], dimnames(ioprofiles)[[1]])
 mat <- mini_nsclc$counts[, genes]
 x <- ioprofiles[genes, ]
-lldist(x = x, mat = mini_nsclc$counts, bg = Matrix::rowMeans(mini_nsclc$neg))
+lldist(x = x, mat = mini_nsclc$counts, bg = bg, assay_type="RNA")
+
 }

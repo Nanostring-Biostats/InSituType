@@ -11,6 +11,7 @@ choose_anchors_from_stats(
   anchorstats = NULL,
   cos = NULL,
   llr = NULL,
+  assay_type = "rna",
   n_cells = 500,
   min_cosine = 0.3,
   min_scaled_llr = 0.01,
@@ -32,6 +33,8 @@ cell types in columns.}
 
 \item{llr}{Matrix of log likelihood ratios from reference profiles. Cells in
 rows, cell types in columns.}
+
+\item{assay_type}{Assay type of RNA, protein}
 
 \item{n_cells}{Up to this many cells will be taken as anchor points}
 
@@ -58,6 +61,7 @@ data("mini_nsclc")
 counts <- mini_nsclc$counts
 astats <- get_anchor_stats(counts = counts,
                          neg = Matrix::rowMeans(mini_nsclc$neg),
+                         sds=NULL, assay_type = "RNA",
                          profiles = ioprofiles)
 
 ## estimate per-cell bg as a fraction of total counts:
@@ -75,5 +79,6 @@ choose_anchors_from_stats(counts = counts,
                           n_cells = 50, 
                           min_cosine = 0.4, 
                           min_scaled_llr = 0.03, 
-                          insufficient_anchors_thresh = 5)
+                          insufficient_anchors_thresh = 5,
+                          assay_type="RNA")
 }

@@ -1,3 +1,11 @@
+# InSituType 2.0.0
+
+* Enable use in protein datasets via the assay_type argument. This required a major overhaul under the hood, but has little impact on existing RNA workflows. 
+* More advanced methods for updating reference profiles via anchor cells, implemented in `updateReferenceProfiles`.
+* New function `spatialUpdate` for using alternative data types (e.g. space or immunofluorescence) and the Insitutype likelihood framework to update cell typing results from any method. 
+* New functions `getRNAprofiles` and `getProteinParameters`, which serve as user-facing tools for getting profile matrices. 
+
+
 # InSituType 1.0.0
 
 * License updated

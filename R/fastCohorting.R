@@ -16,7 +16,7 @@
 #' @importFrom mclust predict.Mclust
 #' @importFrom mclust mclustBIC
 #' @importFrom stats qnorm
-#' @examples 
+#' @examples
 #' data("mini_nsclc")
 #' ## simulate immunofluorescence data: 
 #' immunofluordata <- matrix(rpois(n = nrow(mini_nsclc$counts) * 4, lambda = 100), 
