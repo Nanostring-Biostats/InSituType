@@ -49,7 +49,7 @@ set.seed(0)
 ```
 
 #### Necessary inputs
-First, let us look at the data we need.  
+First, let us look at the data we need: 
 
 1. A matrix of protein expression data, cells are in rows and proteins are in columns. Different from RNA data set, protein data set is a dense matrix with real values. Hence, in Insitu cell typing method, InGaussian distribution is used to estimate log-likelihood values. 
 ```{r strcounts}
@@ -133,8 +133,8 @@ sup <- insitutype(
   assay_type = "protein", 
   n_clusts=0, 
   anchors = NULL, 
-  reference_profiles = tonsil_reference_profile$mean.ref.profile, #[names(sig_mat)[-c(1:2)],],
-  reference_sds = tonsil_reference_profile$SDs.ref.profile, #[names(sig_mat)[-c(1:2)],],
+  reference_profiles = tonsil_reference_profile$mean.ref.profile, 
+  reference_sds = tonsil_reference_profile$SDs.ref.profile, 
   cohort = cohort,
   update_reference_profiles = TRUE
 )
@@ -151,8 +151,8 @@ semi_sup <- insitutype(
   assay_type = "protein", 
   n_clusts = 5, 
   anchors = NULL, 
-  reference_profiles = tonsil_reference_profile$mean.ref.profile, #[names(sig_mat)[-c(1:2)],],
-  reference_sds = tonsil_reference_profile$SDs.ref.profile, #[names(sig_mat)[-c(1:2)],],
+  reference_profiles = tonsil_reference_profile$mean.ref.profile, 
+  reference_sds = tonsil_reference_profile$SDs.ref.profile, 
   cohort = cohort,
   update_reference_profiles = TRUE
 ) 
@@ -180,11 +180,11 @@ names(cols) <- unique(unsup$clust)
 par(mfrow = c(1, 2))
 par(mar = c(0, 0, 3, 0))
 
-plot(tonsil_protein$xy_coord, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+plot(tonsil_protein$xy_coord, pch = 16, cex = .25, asp = 1, cex.main = 0.75,
           main = "Cells in physical space",
      col = cols[unsup$clust], xlab = "X", ylab = "Y", xaxt = "n", yaxt = "n")
 
-plot(tonsil_protein$UMAP, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+plot(tonsil_protein$UMAP, pch = 16, cex = .25, asp = 1, cex.main = 0.75,
      main = "Cells in UMAP space",     
      col = cols[unsup$clust], xlab = "UMAP1", ylab = "UMAP2", xaxt = "n", yaxt = "n")
 legend("bottomleft", pch = 16, col = cols, legend = names(cols), cex = 0.7)
@@ -261,29 +261,9 @@ newclusts <- refineClusters(logliks = unsup$logliks,
 str(newclusts)
 
 # plot the updated results:
-cols <-
-  c(
-    '#8DD3C7',
-    '#BEBADA',
-    '#FB8072',
-    '#80B1D3',
-    '#FDB462',
-    '#B3DE69',
-    '#FCCDE5',
-    '#D9D9D9',
-    '#BC80BD',
-    '#CCEBC5',
-    '#FFED6F',
-    '#E41A1C',
-    '#377EB8',
-    '#4DAF4A',
-    '#984EA3',
-    '#FF7F00',
-    '#FFFF33',
-    '#A65628',
-    '#F781BF',
-    '#999999'
-  )
+cols <- c('#8DD3C7','#BEBADA','#FB8072','#80B1D3','#FDB462','#B3DE69','#FCCDE5',
+    '#D9D9D9','#BC80BD','#CCEBC5','#FFED6F','#E41A1C','#377EB8','#4DAF4A',
+    '#984EA3','#FF7F00','#FFFF33','#A65628','#F781BF','#999999')
 cols <- cols[seq_along(unique(newclusts$clust))]
 names(cols) <- unique(newclusts$clust)
 fp <- flightpath_plot(flightpath_result = NULL, insitutype_result = newclusts, col = cols[newclusts$clust])
@@ -306,17 +286,17 @@ Here are 3 versions:
 par(mfrow = c(1, 3))
 par(mar = c(0, 0, 3, 0))
 
-plot(tonsil_protein$xy_coord, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+plot(tonsil_protein$xy_coord, pch = 16, cex = .25, asp = 1, cex.main = 0.75,
           main = "brewers palette",
      col = colorCellTypes(freqs = table(unsup$clust), palette = "brewers")[unsup$clust], 
      xlab = "", ylab = "", xaxt = "n", yaxt = "n")
 
-plot(tonsil_protein$xy_coord, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+plot(tonsil_protein$xy_coord, pch = 16, cex = .25, asp = 1, cex.main = 0.75,
           main = "tableau20 palette",
      col = colorCellTypes(freqs = table(unsup$clust), palette = "tableau20")[unsup$clust], 
      xlab = "", ylab = "", xaxt = "n", yaxt = "n")
 
-plot(tonsil_protein$xy_coord, pch = 16, cex = .75, asp = 1, cex.main = 0.75,
+plot(tonsil_protein$xy_coord, pch = 16, cex = .25, asp = 1, cex.main = 0.75,
           main = "earthplus palette",
      col = colorCellTypes(freqs = table(unsup$clust), palette = "earthplus")[unsup$clust], 
      xlab = "", ylab = "", xaxt = "n", yaxt = "n")

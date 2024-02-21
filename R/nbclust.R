@@ -350,9 +350,10 @@ nbclust <- function(counts,
   }
   
   for (iter in seq_len(max_iters)) {
-    message(paste0("iter ", iter))
+    if (iter %% 5 == 0) {
+      message(paste0("iter ", iter))
+    }
     # M-step: get cell * cluster probs:
-    
     probs <- Mstep(counts = counts,
                    means = profiles,
                    sds=sds,
