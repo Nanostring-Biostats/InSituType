@@ -32,7 +32,7 @@ Insitutype has 3 treatments for reference profiles:
 
 We suggest using the below flowchart to choose from among these options:
 
-![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/e58f8196-f226-4641-8dfa-bafd9b3dbfae)
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/3a35e3fc-790d-49d8-87f2-b542f9d127ed)
 
 ## Confidence Scores
 Insitutype returns a posterior probability for each cell type call. In practice, we have found these probabilities to be overconfident. 
