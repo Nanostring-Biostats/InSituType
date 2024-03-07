@@ -77,7 +77,7 @@ dev.off()
 ```
 
 We have found the below workflows to be effective and efficent:
-![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/2f7774db-7437-447b-a0e1-f32acb3eafcb)
+![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/3adda877-53e7-48ca-8781-927e77739943)
 
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/24a28e1b-e1bf-4be1-bf38-0c4ebeb574d4)
 
