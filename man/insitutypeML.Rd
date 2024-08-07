@@ -14,7 +14,9 @@ insitutypeML(x, ...)
   bg = NULL,
   cohort = NULL,
   reference_profiles,
+  reference_sds = NULL,
   nb_size = 10,
+  assay_type = c("rna", "protein"),
   align_genes = TRUE
 )
 
@@ -39,7 +41,14 @@ arguments to pass to the ANY method.}
 e.g. from previous scRNA-seq. These profiles will not be updated by the EM algorithm.
 Colnames must all be included in the init_clust variable.}
 
+\item{reference_sds}{Matrix of standard deviation profiles of pre-defined
+clusters. These SD profiles also will not be updated by the EM algorithm. 
+Columns must all be included in the init_clust variable. This parameter should
+be defined if assay_type is protein. Default is NULL.}
+
 \item{nb_size}{The size parameter to assume for the NB distribution.}
+
+\item{assay_type}{Assay type of RNA, protein (default = "rna")}
 
 \item{align_genes}{Logical, for whether to align the counts matrix and the reference_profiles by gene ID.}
 
@@ -64,6 +73,7 @@ data("ioprofiles")
 sup <- insitutypeML(
  x = mini_nsclc$counts,
  neg = Matrix::rowMeans(mini_nsclc$neg),
- reference_profiles = ioprofiles)
+ reference_profiles = ioprofiles,
+ assay_type = "RNA")
 table(sup$clust)
 }

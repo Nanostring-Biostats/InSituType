@@ -7,17 +7,22 @@
 Mstep(
   counts,
   means,
+  sds = NULL,
   cohort,
   bg = 0.01,
   size = 10,
   digits = 2,
-  return_loglik = FALSE
+  return_loglik = FALSE,
+  assay_type = c("rna", "protein")
 )
 }
 \arguments{
 \item{counts}{Counts matrix, cells * genes.}
 
 \item{means}{Matrix of mean cluster profiles,
+with genes in rows and clusters in columns.}
+
+\item{sds}{Matrix of standard deviation cluster profiles,
 with genes in rows and clusters in columns.}
 
 \item{cohort}{a vector of cells' "cohort" assignment, used to update logliks 
@@ -30,6 +35,8 @@ based on cluster frequencies within a cohort.}
 \item{digits}{Round the output to this many digits (saves memory)}
 
 \item{return_loglik}{If TRUE, logliks will be returned. If FALSE, probabilities will be returned.}
+
+\item{assay_type}{Assay type of RNA, protein (default = "rna")}
 }
 \value{
 Matrix of probabilities of each cell belonging to each cluster
@@ -41,5 +48,5 @@ Compute probability that each cell belongs to a given cluster
 data("mini_nsclc")
 data("ioprofiles")
 sharedgenes <- intersect(rownames(ioprofiles), colnames(mini_nsclc$counts))
-Mstep(mini_nsclc$counts, ioprofiles[sharedgenes, ], bg = Matrix::rowMeans(mini_nsclc$neg), cohort = NULL)
+Mstep(mini_nsclc$counts, ioprofiles[sharedgenes, ], bg = Matrix::rowMeans(mini_nsclc$neg), cohort = NULL, assay_type="RNA")
 }

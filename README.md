@@ -18,14 +18,19 @@ See the "vignettes" folder. Vignettes should run in <5 minutes.
 Run "insitutype" for unsupervised or semi-supervised clustering. Run "insitutypeML" for supervised cell typing. See the vignettes for example workflows. 
 
 ### FAQs and tips:
-[https://github.com/Nanostring-Biostats/InSituType/FAQs.md
-](https://github.com/Nanostring-Biostats/InSituType/blob/main/FAQs.md)
+[https://github.com/Nanostring-Biostats/InSituType/FAQs.md](https://github.com/Nanostring-Biostats/InSituType/blob/main/FAQs.md)
 
 ### Reproduction instructions
 The full results of the Insitutype manuscript can be reproduced with the code in this repo: https://github.com/Nanostring-Biostats/InSituType-manuscript-analyses
 
 ### Installation
 ```
+# Make sure Matrix and irlba are both up to date (otherwise versioning issues cause prcomp_irlba to error out):
+# (This is required as of Feb 2024; with any luck these packages will fix their versioning issues soon and this will not be necessary.)
+install.packages("Matrix", type = "source")
+install.packages("irlba", type = "source")
+
+# Install Insitutype:
 devtools::install_github("https://github.com/Nanostring-Biostats/InSituType")
 ```
 Installation should take < 2 mins on a normal desktop computer. 

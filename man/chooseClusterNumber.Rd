@@ -7,8 +7,10 @@
 chooseClusterNumber(
   counts,
   neg,
+  assay_type = c("rna", "protein"),
   bg = NULL,
   fixed_profiles = NULL,
+  fixed_sds = NULL,
   cohort = NULL,
   init_clust = NULL,
   n_clusts = 2:12,
@@ -25,11 +27,15 @@ chooseClusterNumber(
 \arguments{
 \item{counts}{Counts matrix, cells * genes.}
 
-\item{neg}{Vector of mean negprobe counts per cell}
+\item{neg}{Vector of mean negprobe counts per cell (default = "rna")}
+
+\item{assay_type}{Assay type of RNA, protein}
 
 \item{bg}{Expected background}
 
 \item{fixed_profiles}{Matrix of cluster profiles to hold unchanged throughout iterations.}
+
+\item{fixed_sds}{Matrix of SDs expression of genes x cell types,to hold unchanged throughout iterations. Only for assay_type of protein}
 
 \item{cohort}{Vector of cells' cohort assignments.}
 
@@ -70,6 +76,6 @@ For a subset of the data, perform clustering under a range of cluster numbers.
 }
 \examples{
 data("mini_nsclc")
-chooseClusterNumber(mini_nsclc$counts, Matrix::rowMeans(mini_nsclc$neg),
+chooseClusterNumber(mini_nsclc$counts, Matrix::rowMeans(mini_nsclc$neg), assay_type="RNA",
  n_clust = 2:5)
 }

@@ -16,7 +16,25 @@
 #' @importFrom Rcpp evalCpp
 #' @exportPattern "^[[:alpha:]]+" 
 #' @export
-fast_lldist <- function(mat, bgsub, x, bg, size_dnb) {
-    .Call(`_InSituType_fast_lldist`, mat, bgsub, x, bg, size_dnb)
+lls_rna <- function(mat, bgsub, x, bg, size_dnb) {
+    .Call(`_InSituType_lls_rna`, mat, bgsub, x, bg, size_dnb)
+}
+
+#' sum from Gaussian density function
+#'
+#' Probability density function of the Gaussian distribution (written in C++)
+#'
+#' @param mat dgCMatrix expression matrix
+#' @param bgsub vector of background expression per cell
+#' @param x numeric expression for reference profiles
+#' @param xsd numeric expression for reference SD profiles
+#' 
+#' @return rowSums for matrix of densities
+#' @useDynLib InSituType, .registration = TRUE
+#' @importFrom Rcpp evalCpp
+#' @exportPattern "^[[:alpha:]]+" 
+#' @export
+lls_protein <- function(mat, bgsub, x, xsd) {
+    .Call(`_InSituType_lls_protein`, mat, bgsub, x, xsd)
 }
 

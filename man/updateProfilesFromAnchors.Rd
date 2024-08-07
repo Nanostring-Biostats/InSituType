@@ -8,11 +8,9 @@ profile of the anchors.}
 updateProfilesFromAnchors(
   counts,
   neg,
-  anchors,
-  reference_profiles,
-  align_genes = TRUE,
-  nb_size = 10,
-  max_rescaling = 5
+  bg = NULL,
+  assay_type = c("rna", "protein"),
+  anchors
 )
 }
 \arguments{
@@ -20,26 +18,18 @@ updateProfilesFromAnchors(
 
 \item{neg}{Vector of mean negprobe counts per cell. Can be provided}
 
+\item{bg}{Expected background}
+
+\item{assay_type}{Assay type of RNA, protein (default = "rna")}
+
 \item{anchors}{Vector of anchor assignments}
-
-\item{reference_profiles}{Matrix of expression profiles of pre-defined
-clusters, e.g. from previous scRNA-seq. These profiles will not be updated
-by the EM algorithm. Colnames must all be included in the init_clust
-variable.}
-
-\item{align_genes}{Logical, for whether to align the counts matrix and the
-reference_profiles by gene ID.}
-
-\item{nb_size}{The size parameter to assume for the NB distribution.}
-
-\item{max_rescaling}{Scaling factors will be truncated above by this value
-and below by its inverse (at 1/value and value)}
 }
 \value{
-\enumerate{ \item profiles: A profiles matrix with the rows rescaled
-according to platform effects and individual elements updated further \item
-scaling_factors: A vector of genes' scaling factors (what they were
-multiplied by when updating the reference profiles). }
+\enumerate{ 
+\item updated_profiles: A mean profiles matrix with the rows rescaled
+according to platform effects and individual elements updated further 
+\item updated_sds: A mean profiles matrix with the rows rescaled
+according to platform effects and individual elements updated further}
 }
 \description{
 Uses anchor cells to estimate platform effects / scaling factors to be

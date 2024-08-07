@@ -7,9 +7,12 @@
 nbclust(
   counts,
   neg,
+  assay_type = c("rna", "protein"),
   bg = NULL,
   fixed_profiles = NULL,
+  fixed_sds = NULL,
   init_profiles = NULL,
+  init_sds = NULL,
   init_clust = NULL,
   nb_size = 10,
   cohort = NULL,
@@ -22,20 +25,31 @@ nbclust(
 \arguments{
 \item{counts}{Counts matrix, cells * genes.}
 
-\item{neg}{Vector of mean negprobe counts per cell}
+\item{neg}{Vector of mean negative probe counts per cell.}
+
+\item{assay_type}{Assay type of RNA, protein (default = "rna")}
 
 \item{bg}{Expected background}
 
-\item{fixed_profiles}{Matrix of cluster profiles to hold unchanged throughout iterations.}
+\item{fixed_profiles}{Matrix of mean expression profiles to hold unchanged throughout iterations. genes * cell types}
 
-\item{init_profiles}{Matrix of cluster profiles under which to begin iterations.
+\item{fixed_sds}{Matrix of standard deviation profiles of pre-defined
+clusters to hold unchanged throughout iterations. 
+Columns must all be included in the init_clust variable. This parameter is 
+only for assay_type of protein.}
+
+\item{init_profiles}{Matrix of cluster mean profiles under which to begin iterations.
 If NULL, initial assignments will be automatically inferred, using init_clust 
 if available, and using random clusters if not.}
+
+\item{init_sds}{Matrix of cluster SDs profiles under which to begin iterations.
+If NULL, initial assignments will be automatically inferred, using init_clust 
+if available, and using random clusters if not. Only for assay_type of protein}
 
 \item{init_clust}{Vector of initial cluster assignments.
 If NULL, initial assignments will be automatically inferred.}
 
-\item{nb_size}{The size parameter to assume for the NB distribution.}
+\item{nb_size}{The size parameter to assume for the NB distribution. Only for assay_type of RNA.}
 
 \item{cohort}{Vector of cells' "cohort" assignments, uses to assess frequencies in each cluster.}
 
@@ -68,11 +82,17 @@ data("ioprofiles")
 data("mini_nsclc")
 sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
 nbclust(counts = mini_nsclc$counts[, sharedgenes],
-       neg =  Matrix::rowMeans(mini_nsclc$neg), bg = NULL,
+       neg =  Matrix::rowMeans(mini_nsclc$neg), 
+       assay_type = "RNA",
+       bg = NULL,
        fixed_profiles = ioprofiles[sharedgenes, 1:3],
-       init_profiles = NULL, init_clust = rep(c("a", "b"), nrow(mini_nsclc$counts) / 2),
+       init_profiles = NULL, 
+       init_clust = rep(c("a", "b"), 
+       nrow(mini_nsclc$counts) / 2),
        nb_size = 10,
        cohort = rep("a", nrow(mini_nsclc$counts)),
        pct_drop = 1/10000,
-       min_prob_increase = 0.05, max_iters = 3, logresults = FALSE)
+       min_prob_increase = 0.05, 
+       max_iters = 3, 
+       logresults = FALSE)
 }

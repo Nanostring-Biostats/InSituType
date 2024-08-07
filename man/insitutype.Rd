@@ -11,11 +11,13 @@ insitutype(x, ...)
 \S4method{insitutype}{ANY}(
   x,
   neg,
+  assay_type = c("rna", "protein"),
   bg = NULL,
   anchors = NULL,
   cohort = NULL,
   n_clusts,
   reference_profiles = NULL,
+  reference_sds = NULL,
   update_reference_profiles = TRUE,
   sketchingdata = NULL,
   align_genes = TRUE,
@@ -33,7 +35,10 @@ insitutype(x, ...)
   n_anchor_cells = 2000,
   min_anchor_cosine = 0.3,
   min_anchor_llr = 0.03,
-  insufficient_anchors_thresh = 20
+  insufficient_anchors_thresh = 20,
+  refinement = FALSE,
+  rescale = TRUE,
+  refit = TRUE
 )
 
 \S4method{insitutype}{SingleCellExperiment}(x, ..., assay.type = "counts")
@@ -49,6 +54,8 @@ arguments to pass to the ANY method.}
 
 \item{neg}{Vector of mean negprobe counts per cell}
 
+\item{assay_type}{Assay type of rna, protein (default = "rna")}
+
 \item{bg}{Expected background}
 
 \item{anchors}{Vector giving "anchor" cell types, for use in semi-supervised
@@ -62,10 +69,15 @@ types. Enter 0 to run purely supervised cell typing from fixed profiles.
 Enter a range of integers to automatically select the optimal number of
 clusters.}
 
-\item{reference_profiles}{Matrix of expression profiles of pre-defined
+\item{reference_profiles}{Matrix of mean expression profiles of pre-defined
 clusters, e.g. from previous scRNA-seq. These profiles will not be updated
-by the EM algorithm. Colnames must all be included in the init_clust
+by the EM algorithm. Columns must all be included in the init_clust
 variable.}
+
+\item{reference_sds}{Matrix of standard deviation profiles of pre-defined
+clusters. These SD profiles also will not be updated by the EM algorithm. 
+Columns must all be included in the init_clust variable. This parameter should
+be defined if assay_type is protein. Default is NULL.}
 
 \item{update_reference_profiles}{Logical, for whether to use the data to
 update the reference profiles. Default and strong recommendation is TRUE.
@@ -79,7 +91,8 @@ used.}
 \item{align_genes}{Logical, for whether to align the counts matrix and the
 fixed_profiles by gene ID.}
 
-\item{nb_size}{The size parameter to assume for the NB distribution.}
+\item{nb_size}{The size parameter to assume for the NB distribution. This 
+parameter is only for RNA.}
 
 \item{init_clust}{Vector of initial cluster assignments. If NULL, initial
 assignments will be automatically inferred.}
@@ -123,6 +136,12 @@ anchor}
 \item{insufficient_anchors_thresh}{Cell types that end up with fewer than
 this many anchors after anchor selection will be discarded.}
 
+\item{refinement}{Logical, flag for further anchor refinement, used when update_reference_profiles = TRUE (default = FALSE)}
+
+\item{rescale}{Logical, flag for platform effect correction, used when update_reference_profiles = TRUE (default = FALSE)}
+
+\item{refit}{Logical, flag for fitting reference profiles to anchors, used when update_reference_profiles = TRUE (default = TRUE)}
+
 \item{assay.type}{A string specifying which assay values to use.}
 }
 \value{
@@ -142,6 +161,7 @@ data("mini_nsclc")
 unsup <- insitutype(
  x = mini_nsclc$counts,
  neg = Matrix::rowMeans(mini_nsclc$neg),
+ assay_type = "rna",
  n_clusts = 8,
  n_phase1 = 200,
  n_phase2 = 500,

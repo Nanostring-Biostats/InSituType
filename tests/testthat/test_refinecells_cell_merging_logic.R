@@ -10,14 +10,14 @@ merges <- c("old_a" = "new1", "old_b" = "new1", "old_c" = "old_c")
 res <- refineClusters(merges = merges, logliks = logliks)
 
 # confirm it works:
-testthat::test_that("new cluster names are right", {
+test_that("new cluster names are right", {
   expect_equal(colnames(res$logliks), c("new1", "old_c.new"))
 })
 
-testthat::test_that("new cluster assignments are right", {
+test_that("new cluster assignments are right", {
   expect_equal(res$clust, c("cell1" = "old_c.new", "cell2" = "new1"))
 })
 
-testthat::test_that("probabilities are right", {
+test_that("probabilities are right", {
   expect_equal(res$logliks[, 1], c("cell1" = -2, "cell2" = -1), tolerance = 2)
 })

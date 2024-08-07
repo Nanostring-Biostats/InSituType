@@ -1,49 +1,42 @@
-parameters:
-- name: dev1_1Env
-  displayName: DEV 1.1 environment
-  type: boolean
-  default: true
-- name: qa1_1Env
-  displayName: QA 1.1 environment
-  type: boolean
-  default: false
+trigger: none
 
-trigger:
-- main
+parameters:
+  - name: imageTag
+    displayName: 'Enter nanopipeline-build-environment image tag from last build https://dev.azure.com/Nanostring/Gemini/_build?definitionId=525&_a=summary'
+    default: '1.3.2-94008'
+    type: string
 
 resources:
 - repo: self
 
 variables:
-  buildDev1_1: ${{ eq(parameters.dev1_1Env, 'true') }}
-  buildQa1_1: ${{ eq(parameters.qa1_1Env, 'true') }}
+  group: smida-build-pipeline-devnext-variables
 
 stages:
-- stage: DEV_1_1
-  condition: eq(variables.buildDev1_1, 'True')
-  displayName: Build CellTyping for DEV 1.1 environment
+- stage: Build
+  displayName: Build Docker image
   jobs:
-  - job: Build_CellTyping_for_Dev_1_1
-    displayName: Build CellTyping for DEV 1.1
+  - job: Build_image
+    displayName: Build Docker image
     pool:
       vmImage: ubuntu-latest
     variables:
-      - group: smida-build-pipeline-variables
+      - group: smida-build-pipeline-devnext-variables
     steps:
     - task: ECRPullImage@1
-      displayName: Pull NanoPipeline Build environment image from DEV 1.1 HUB ECR
+      displayName: Pull NanoPipeline Build environment image from DEVNEXT HUB ECR
       inputs:
-        awsCredentials: 'tenanthub-dev-$(TENANT_AWS_CREDENTIALS)'
+        awsCredentials: 'atomx-aws-devnext-hub'
         regionName: '$(AWS_REGION)'
-        repository: 'ecr-usw2-atmx-mt-cosmx_da_repo-dev-hub-smida-nanopipeline-build-environment'
+        repository: 'ecr-cac1-devnext-cosmx_da_repo-devnext-hub-smida-nanopipeline-build-environment'
         imageSource: 'imagetag'
-        imageTag: 'latest'
+        imageTag: ${{ parameters.imageTag }}
     - task: Bash@3
       displayName: Run smida-nanopipeline-build-environment Docker Image
       inputs:
         targetType: 'inline'
         script: |
-          docker run --rm -v "$(Build.SourcesDirectory)":"/source" $(DEV_HUB_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/ecr-usw2-atmx-mt-cosmx_da_repo-dev-hub-smida-nanopipeline-build-environment:latest
+          docker run --rm -v "$(Build.SourcesDirectory)":"/source" $(DEVNEXT_HUB_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/ecr-cac1-devnext-cosmx_da_repo-devnext-hub-smida-nanopipeline-build-environment:${{ parameters.imageTag }}
     - task: Bash@3
       displayName: Copy .tar.gz file as latest
       inputs:
@@ -51,40 +44,11 @@ stages:
         script: |
           cp *.tar.gz smiCellTyping_latest.tar.gz
     - task: S3Upload@1
-      displayName: Upload CellTyping .tar.gz files to S3 on DEV 1.1 HUB
+      displayName: Upload CellTyping .tar.gz files to S3 on DEVNEXT HUB
       inputs:
-        awsCredentials: 'tenanthub-dev-$(TENANT_AWS_CREDENTIALS)'
+        awsCredentials: 'atomx-aws-devnext-hub'
         regionName: '$(AWS_REGION)'
-        bucketName: 's3-usw2-atmx-mt-$(GLOBAL_BUCKET_NAME)-dev-dev-hub-ah001'
+        bucketName: 's3-cac1-devnext-smida-assets-global-devnext'
         sourceFolder: '$(Build.SourcesDirectory)'
-        globExpressions: '+(smiCellTyping|InSituType)_*.tar.gz'
-        targetFolder: 'smida/assets/nanopipeline'
-- stage: QA_1_1
-  condition: eq(variables.buildQa1_1, 'True')
-  displayName: Copy CellTyping from DEV 1.1 to QA 1.1 environment
-  jobs:
-  - job: Copy_CellTyping_from_Dev_1_1_to_Qa_1_1
-    displayName: Copy CellTyping from DEV 1.1 to QA 1.1
-    pool:
-      vmImage: ubuntu-latest
-    variables:
-      - group: smida-build-pipeline-variables
-    steps:
-    - task: S3Download@1
-      displayName: Download CellTyping .tar.gz files from S3 ON DEV 1.1 HUB
-      inputs:
-        awsCredentials: 'tenanthub-dev-$(TENANT_AWS_CREDENTIALS)'
-        regionName: '$(AWS_REGION)'
-        bucketName: 's3-usw2-atmx-mt-$(GLOBAL_BUCKET_NAME)-dev-dev-hub-ah001'
-        sourceFolder: 'smida/assets/nanopipeline'
-        globExpressions: '+(smiCellTyping|InSituType)_*.tar.gz'
-        targetFolder: '$(Build.SourcesDirectory)'
-    - task: S3Upload@1
-      displayName: Upload CellTyping .tar.gz files to S3 on QA 1.1 HUB
-      inputs:
-        awsCredentials: 'hub-qa1-$(TENANT_AWS_CREDENTIALS)'
-        regionName: '$(AWS_REGION)'
-        bucketName: 's3-usw2-qa1-1.1-$(GLOBAL_BUCKET_NAME)-qa1-qa1-hub-qa1-001'
-        sourceFolder: '$(Build.SourcesDirectory)/smida/assets/nanopipeline'
         globExpressions: '+(smiCellTyping|InSituType)_*.tar.gz'
         targetFolder: 'smida/assets/nanopipeline'

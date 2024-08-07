@@ -11,9 +11,9 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// fast_lldist
-Rcpp::NumericMatrix fast_lldist(arma::sp_mat& mat, arma::vec& bgsub, arma::mat& x, arma::vec& bg, int& size_dnb);
-RcppExport SEXP _InSituType_fast_lldist(SEXP matSEXP, SEXP bgsubSEXP, SEXP xSEXP, SEXP bgSEXP, SEXP size_dnbSEXP) {
+// lls_rna
+Rcpp::NumericMatrix lls_rna(arma::sp_mat& mat, arma::vec& bgsub, arma::mat& x, arma::vec& bg, int& size_dnb);
+RcppExport SEXP _InSituType_lls_rna(SEXP matSEXP, SEXP bgsubSEXP, SEXP xSEXP, SEXP bgSEXP, SEXP size_dnbSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,13 +22,28 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat& >::type x(xSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type bg(bgSEXP);
     Rcpp::traits::input_parameter< int& >::type size_dnb(size_dnbSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_lldist(mat, bgsub, x, bg, size_dnb));
+    rcpp_result_gen = Rcpp::wrap(lls_rna(mat, bgsub, x, bg, size_dnb));
+    return rcpp_result_gen;
+END_RCPP
+}
+// lls_protein
+Rcpp::NumericMatrix lls_protein(arma::mat& mat, arma::vec& bgsub, arma::mat& x, arma::mat& xsd);
+RcppExport SEXP _InSituType_lls_protein(SEXP matSEXP, SEXP bgsubSEXP, SEXP xSEXP, SEXP xsdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat& >::type mat(matSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type bgsub(bgsubSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type xsd(xsdSEXP);
+    rcpp_result_gen = Rcpp::wrap(lls_protein(mat, bgsub, x, xsd));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_InSituType_fast_lldist", (DL_FUNC) &_InSituType_fast_lldist, 5},
+    {"_InSituType_lls_rna", (DL_FUNC) &_InSituType_lls_rna, 5},
+    {"_InSituType_lls_protein", (DL_FUNC) &_InSituType_lls_protein, 4},
     {NULL, NULL, 0}
 };
 
