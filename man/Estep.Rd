@@ -4,7 +4,7 @@
 \alias{Estep}
 \title{E step: estimate each cluster's mean profile}
 \usage{
-Estep(counts, clust, neg)
+Estep(counts, clust, neg, assay_type = c("rna", "protein"))
 }
 \arguments{
 \item{counts}{Counts matrix, cells * genes.}
@@ -13,9 +13,12 @@ Estep(counts, clust, neg)
 of cells (rows) belonging to clusters (columns).}
 
 \item{neg}{Vector of mean background counts}
+
+\item{assay_type}{Assay type of RNA, protein (default = "rna")}
 }
 \value{
-A matrix of cluster profiles, genes * clusters
+A list with two elements: 1.  A matrix of cluster profiles, genes * clusters. 
+        2. In protein mode, a matrix holding SDs, also genes * clusters. NULL in RNA mode.
 }
 \description{
 Given cell assignments (or posterior probabilities), estimate the mean
@@ -31,7 +34,8 @@ unsup <- insitutype(
  n_phase2 = 500,
  n_phase3 = 2000,
  n_starts = 1,
- max_iters = 5
+ max_iters = 5,
+ assay_type="RNA",
 ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
-Estep(counts = mini_nsclc$counts, clust = unsup$clust, neg = Matrix::rowMeans(mini_nsclc$neg))
+Estep(counts = mini_nsclc$counts, clust = unsup$clust, neg = Matrix::rowMeans(mini_nsclc$neg), assay_type="RNA")
 }

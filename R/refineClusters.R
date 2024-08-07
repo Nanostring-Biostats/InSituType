@@ -2,6 +2,7 @@
 #'
 #' Take a user-defined list of cells types to rename/combine, then re-compute
 #' cluster assignments and probabilities under the merged cell types.
+#' @param assay_type Assay type of RNA, protein (default = "rna")
 #' @param merges A named vector in which the elements give new cluster names and
 #'   the names give old cluster names. OK to omit cell types that aren't being
 #'   merged.
@@ -37,8 +38,13 @@
 #' to_delete = c("neutrophils")
 #' # example subcluster argument:
 #' subcluster = list("Myofibroblast" = 2:3)
-refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, logliks,
-                       counts = NULL, neg = NULL, bg = NULL, cohort = NULL) {
+refineClusters <- function(assay_type = c("rna", "protein"), 
+                           merges = NULL, to_delete = NULL, subcluster = NULL, 
+                           logliks,
+                           counts = NULL, 
+                           neg = NULL, bg = NULL, 
+                           cohort = NULL) {
+  assay_type <- match.arg(tolower(assay_type), c("rna", "protein"))
   
   # check that provided cell names are all in logliks:
   if (any(!is.element(names(merges), colnames(logliks)))) {
@@ -105,6 +111,7 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
     use <- which(colnames(newlogliks)[apply(newlogliks, 1, which.max)] == name)
     # run insitutype on just the named cell type:
     temp <- insitutype(x = counts[use, ],
+                       assay_type = assay_type,
                        neg = neg[use],
                        bg = bg[use],
                        cohort = cohort[use],
@@ -143,18 +150,30 @@ refineClusters <- function(merges = NULL, to_delete = NULL, subcluster = NULL, l
   
   # re-calculate profiles if available:
   profiles <- NULL
+  sds <- NULL
   if (!is.null(counts) && !is.null(neg)) {
-    profiles <- Estep(counts = counts,
-                      clust = clust,
-                      neg = neg)
+    profiles_info <- Estep(counts = counts,
+                           clust = clust,
+                           neg = neg,
+                           assay_type=assay_type)
+    profiles <- profiles_info$profiles
+    sds <- profiles_info$sds
+    
   }
   # aligns profiles and logliks, removing lost clusters:
   logliks_from_lost_celltypes <- newlogliks[, !is.element(colnames(newlogliks), unique(clust)), drop = FALSE]
   newlogliks <- newlogliks[, is.element(colnames(newlogliks), clust), drop = FALSE]
   profiles <- profiles[, colnames(newlogliks), drop = FALSE]
   
+  if(identical(tolower(assay_type), "protein")){
+    sds <- sds[, colnames(newlogliks), drop = FALSE]
+  }
+  
+  if(identical(tolower(assay_type), "rna")){
+    sds <- NULL
+  }
   out <- list(clust = clust, prob = prob, logliks = round(newlogliks, 4), # (rounding logliks to save memory)
-              profiles = profiles, logliks_from_lost_celltypes = round(logliks_from_lost_celltypes, 4))  
+              profiles = profiles, sds=sds, logliks_from_lost_celltypes = round(logliks_from_lost_celltypes, 4))  
   return(out)
 }
 
@@ -187,7 +206,8 @@ probs2logliks <- function(probs) {
 #'  n_phase2 = 500,
 #'  n_phase3 = 2000,
 #'  n_starts = 1,
-#'  max_iters = 5
+#'  max_iters = 5,
+#'  assay_type="RNA"
 #' ) # choosing inadvisably low numbers to speed the vignette; using the defaults in recommended.
 #' logliks2probs(unsup$logliks)
 #' 

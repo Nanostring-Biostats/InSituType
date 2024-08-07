@@ -10,11 +10,14 @@ find_anchor_cells(
   bg = NULL,
   align_genes = TRUE,
   profiles,
+  sds = NULL,
   size = 10,
+  assay_type = c("rna", "protein"),
   n_cells = 500,
   min_cosine = 0.3,
   min_scaled_llr = 0.01,
-  insufficient_anchors_thresh = 20
+  insufficient_anchors_thresh = 20,
+  refinement = FALSE
 )
 }
 \arguments{
@@ -31,8 +34,12 @@ matrix and the rows of the profiles matrix based on their names.}
 x cell types. Input linear-scale expression, with genes in rows and cell
 types in columns.}
 
-\item{size}{Negative binomial size parameter to be used in loglikelihood
-calculatoin}
+\item{sds}{Matrix of reference profiles holding SDs expression of genes x cell types. 
+Input linear-scale expression, with genes in rows and cell types in columns. Only for assay_type of protein}
+
+\item{size}{Negative binomial size parameter to be used in likelihood calculation. Only for assay_type of RNA}
+
+\item{assay_type}{Assay type of RNA, protein (default = "rna")}
 
 \item{n_cells}{Up to this many cells will be taken as anchor points}
 
@@ -44,6 +51,8 @@ above this threshold to be used as an anchor}
 
 \item{insufficient_anchors_thresh}{Cell types that end up with fewer than
 this many anchors will be discarded.}
+
+\item{refinement}{flag to further refine the anchors via UMAP projection (default = FALSE)}
 }
 \value{
 A vector holding anchor cell assignments (or NA) for each cell in the
@@ -52,13 +61,16 @@ A vector holding anchor cell assignments (or NA) for each cell in the
 \description{
 Finds cells with very good fits to the reference profiles, and saves these
 cells for use as "anchors" in the semi-supervised learning version of
-nbclust.
+nbclust. The function would first pick anchor cell candidates through stats 
+and then refine anchors based on umap projection.
 }
 \examples{
 data("ioprofiles")
 data("mini_nsclc")
 sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
 find_anchor_cells(counts = mini_nsclc$counts[, sharedgenes], 
+                  assay_type="RNA", 
+                  sds=NULL,
                   neg = Matrix::rowMeans(mini_nsclc$neg),
                   profiles = ioprofiles)
 }

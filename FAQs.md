@@ -15,8 +15,33 @@ The broad Insitutype workflow is as follows:
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/45d89004-dc46-40a1-bde8-33d204e0f0b8)
 
 
+## Unsupervised vs. Supervised vs. Semi-supervised cell typing
+InSituType runs in 3 modes:
+- Supervised: call only cell types defined in reference profiles. Set `nclust = 0` to run in fully supervised mode. 
+- Unsupervised: de novo clustering, with no reference cell types
+- Semi-supervised: find new clusters while also calling reference cell types. `Set reference_profiles = NULL` to run in unsupervised mode. 
+
+Considerations for choosing a workflow:
+- Supervised is most convenient if you are confident that your reference profiles contain all the cell types in your dataset. 
+However, many reference profiles from scRNA-seq don't fit spatial data well, so using reference profiles can be challenging. 
+- Semi-supervised mode is the most powerful but most challenging workflow. We use this in >80% of analyses. 
+ Success hinges on how well the reference profiles are calibrated to spatial data. InSituType tries to
+ perform this calibration using anchor cells, but this does not always succeed. 
+- We recommend trying semi-supervised cell typing first, assuming there are new clusters you expect to discover. 
+- Unsupervised has no difficulty with poorly-calibrated reference profiles, but it requires you to name each cluster, 
+ which can be onerous. It may also fail to define distinctions that are important to you.
+
+## Choosing reference profiles
+Keep in mind the following when selecting reference profiles:
+- Quality of scRNA-seq references varies greatly. Finding mis-annotated cell types is not uncommon,
+and for smaller datasets, profiles of rare cell types will be noisy. Exercsie some skepticism. 
+- Large platform effects separate scRNA-seq and spatial platforms. When possible, use a reference from the same platform as your data.
+- A large collection of single cell references can be found here: https://github.com/Nanostring-Biostats/cellprofilelibrary
+- A growing collection of CosMx references is here: https://github.com/Nanostring-Biostats/CosMx-Cell-Profiles
+
+
 ## Choosing nclust
-We recommend choosing a slightly generous value of nclust, then using refineClusters to condense the resulting clusters. For example, if you're running semi-supervised cell typing and you expect to find 5 new clusters, set nclust = 8. Or for unsupervised clustering with an expectation of 12 cell types, set nclust = 16. 
+We recommend choosing a slightly generous value of `nclust`, then using `refineClusters` to condense the resulting clusters. For example, if you're running semi-supervised cell typing and you expect to find 5 new clusters, set `nclust = 8`. Or for unsupervised clustering with an expectation of 12 cell types, set `nclust = 16`. 
 It's generally easy to tell when two clusters come from the same cell type: they'll be adjacent in UMAP space, and the flightpath plot will show them frequently confused with each other. 
 
 Final note: Insitutype splits big clusters with higher counts more aggressively than other clusters. For example, in a tumor study, it will subcluster tumor cells many times before it subclusters e.g. fibroblasts. The simplest solution is to increase nclust as needed, then condense the over-clustered cell type as desired. 
@@ -34,9 +59,11 @@ We suggest using the below flowchart to choose from among these options:
 
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/824dec47-2221-4fe8-92a0-15693c749d55)
 
+For more on starting with a coarse reference then subclustering, see the "Targeted subclustering" discussion further on. 
+
 ## Confidence Scores
 Insitutype returns a posterior probability for each cell type call. In practice, we have found these probabilities to be overconfident. 
-Here's an image from the preprint demonstrating this phenomenon:
+Below is an image from the preprint demonstrating this phenomenon. For various posterior probability bins, it shows the accuracy rate actually achieved (with a confidence interval). 
 
 ![image](https://github.com/Nanostring-Biostats/InSituType/assets/4357938/f02df11d-405b-411d-8049-4ab3d021d0a4)
 

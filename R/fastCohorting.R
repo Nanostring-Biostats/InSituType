@@ -16,7 +16,7 @@
 #' @importFrom mclust predict.Mclust
 #' @importFrom mclust mclustBIC
 #' @importFrom stats qnorm
-#' @examples 
+#' @examples
 #' data("mini_nsclc")
 #' ## simulate immunofluorescence data: 
 #' immunofluordata <- matrix(rpois(n = nrow(mini_nsclc$counts) * 4, lambda = 100), 
@@ -44,13 +44,41 @@ fastCohorting <- function(mat, n_cohorts = NULL, gaussian_transform = TRUE) {
     if (nrow(mat) > 100000) n_cohorts <- 50
     if (nrow(mat) > 200000) n_cohorts <- 100
   }
-  
+ 
   # cluster in a subsample:
   sub <- sample(seq_len(nrow(mat)), min(20000, nrow(mat)))
-  mc <- mclust::Mclust(data = mat[sub, ], G = n_cohorts, modelNames = "EEE")
+  tryCatch({
+    mc <- mclust::Mclust(data = mat[sub, ], G = n_cohorts, modelNames = "EEE")
+    if(is.null(mc)) stop("Cohorting failed with ", ncohorts, " groups. Results in NULL mclust::Mclust object.")
+    # classify all cells:
+    cohort <- mclust::predict.Mclust(object = mc, newdata = mat)$classification
+  },error = function(e){
+    message("First attempt at autocohorting failed, possibly due to high collinearity of biomarkers. User should consider manually cohorting.") 
+    message("Automatically attempting to cohort in 2-PC space:") 
+    message(paste0("Projecting data to a lower dimensional 2-PC space for cohorting."))
+    message(paste0("Error in cohorting with ", n_cohorts, " groups."))
+    
+    ### project to 2-d pca space
+    pc2 <- irlba::prcomp_irlba(mat, n=min(ncol(mat), 2))
+    n_cohorts_try <- rev(c(2, 3, 10, 25, 50, 100))
+    n_cohorts_try <- n_cohorts_try[n_cohorts_try <= n_cohorts]
+    
+    for(ii in seq_along(n_cohorts_try)){
+      tryCatch({
+        # cluster in a subsample:
+        mc <<- mclust::Mclust(data = pc2$x[sub, ], G = n_cohorts_try[ii], modelNames = "EEE")
+        if(is.null(mc)) stop("Cohorting PC's with ", ncohorts_try[ii], " groups results in NULL mclust::Mclust object.")
+        break
+      }, error = function(e){
+        if(ii == length(n_cohorts_try)) stop("All attempts at cohorting have failed.  Please take a look at biomarkers used for cohorting to diagnose potential issues.")
+        message(paste0("Error in cohorting with ", n_cohorts_try[ii], " groups."))
+        message(paste0("Retrying with ", n_cohorts_try[ii + 1], " groups."))
+      })
+    }
+    # classify all cells:
+    cohort <<- mclust::predict.Mclust(object = mc, newdata = pc2$x)$classification
+  }) 
   
-  # classify all cells:
-  cohort <- mclust::predict.Mclust(object = mc, newdata = mat)$classification
   names(cohort) <- rownames(mat)
   return(cohort)
 }
