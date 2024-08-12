@@ -125,10 +125,7 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
 #' counts <- mini_nsclc$counts
 #' astats <- get_anchor_stats(counts = counts,
 #'                          neg = Matrix::rowMeans(mini_nsclc$neg),
-<<<<<<< HEAD
 #'                          sds=NULL, assay_type = "RNA",
-=======
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
 #'                          profiles = ioprofiles)
 #'
 #' ## estimate per-cell bg as a fraction of total counts:
@@ -146,12 +143,8 @@ get_anchor_stats <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
 #'                           n_cells = 50, 
 #'                           min_cosine = 0.4, 
 #'                           min_scaled_llr = 0.03, 
-<<<<<<< HEAD
 #'                           insufficient_anchors_thresh = 5,
 #'                           assay_type="RNA")
-=======
-#'                           insufficient_anchors_thresh = 5)
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
 choose_anchors_from_stats <-
   function(counts,
            neg = NULL,
@@ -162,7 +155,6 @@ choose_anchors_from_stats <-
            n_cells = 500,
            min_cosine = 0.3,
            min_scaled_llr = 0.01,
-<<<<<<< HEAD
            insufficient_anchors_thresh = 20,
            assay_type = c("rna", "protein")) {
     assay_type <- match.arg(tolower(assay_type), c("rna", "protein"))
@@ -230,85 +222,13 @@ choose_anchors_from_stats <-
 
 
 
-=======
-           insufficient_anchors_thresh = 20) {
-    
-  
-  if (is.null(anchorstats) && (is.null(cos) || is.null(llr))) {
-    stop("Must provide either anchorstats or both cos and llr matrices.")
-  }
-  
-  # get input:
-  if (!is.null(anchorstats)) {
-    cos <- anchorstats$cos
-    llr <- anchorstats$llr
-  }
-  
-  # apply thresholds:
-  cos <- cos * (cos > min_cosine)
-  llr <- llr * (llr > min_scaled_llr)
-  
-  # choose anchors for each cell type:
-  anchors <- rep(NA, nrow(cos))
-  names(anchors) <- rownames(cos)
-  for (cell in colnames(cos)) {
-    score <- llr[, cell] * cos[, cell] * (llr[, cell] > min_scaled_llr) * (cos[, cell] > min_cosine)
-    topn <- order(score, decreasing = TRUE)[seq_len(min(n_cells, sum(score > 0, na.rm = TRUE)))]
-    rm(score)
-    anchors[topn] <- cell
-  }
-  
-  # anchor consolidation: identify and remove anchor cells that are poor fits to
-  # the mean anchor profile for the cell type:
-  for (cell in setdiff(unique(anchors), NA)) {
-    
-    use <- (anchors == cell) & !is.na(anchors)
-    # get centroid:
-    if (!is.null(neg)) {
-      mean_anchor_profile <- Estep(counts = counts[use, , drop = FALSE], clust = cell, neg = neg[use])
-    } else {
-      mean_anchor_profile <- Estep(counts = counts[use, , drop = FALSE], clust = cell, neg = bg[use])
-    }
-    
-    # get anchors' cosine distances from centroid:
-    newcos <- apply(counts[use, , drop = FALSE], 1, cosine, mean_anchor_profile)
-    updated_anchors <- replace(anchors[use], (newcos < min_cosine), NA)
-    anchors[names(updated_anchors)] <- updated_anchors
-  }
-  
-  # remove all anchors from cells with too few total anchors:
-  anchornums <- table(anchors)
-  too_few_anchors <- names(anchornums)[anchornums <= insufficient_anchors_thresh]
-  anchors[is.element(anchors, too_few_anchors)] <- NA
-  
-  if (length(setdiff(colnames(cos), unique(anchors))) > 0) {
-    message(paste0("The following cell types had too few anchors and so are being removed from consideration: ",
-                   paste0(setdiff(colnames(cos), unique(anchors)), collapse = ", ")))
-  }
-  
-  if (all(is.na(anchors))) {
-    warning("No anchor cells were selected - not enough cells met the selection criteria.")
-    anchors <- NULL
-  }
-  return(anchors)  
-}
-
-  
-
-
-  
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
 #' Choose anchor cells
 #'
 #' Finds cells with very good fits to the reference profiles, and saves these
 #' cells for use as "anchors" in the semi-supervised learning version of
-<<<<<<< HEAD
 #' nbclust. The function would first pick anchor cell candidates through stats 
 #' and then refine anchors based on umap projection. 
 #' 
-=======
-#' nbclust.
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
 #' @param counts Counts matrix, cells * genes.
 #' @param neg Vector of mean negprobe counts per cell
 #' @param bg Expected background
@@ -317,15 +237,10 @@ choose_anchors_from_stats <-
 #' @param profiles Matrix of reference profiles holding mean expression of genes
 #'   x cell types. Input linear-scale expression, with genes in rows and cell
 #'   types in columns.
-<<<<<<< HEAD
 #' @param sds Matrix of reference profiles holding SDs expression of genes x cell types. 
 #'  Input linear-scale expression, with genes in rows and cell types in columns. Only for assay_type of protein
 #' @param size Negative binomial size parameter to be used in likelihood calculation. Only for assay_type of RNA
 #' @param assay_type Assay type of RNA, protein (default = "rna")
-=======
-#' @param size Negative binomial size parameter to be used in loglikelihood
-#'   calculatoin
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
 #' @param n_cells Up to this many cells will be taken as anchor points
 #' @param min_cosine Cells must have at least this much cosine similarity to a
 #'   fixed profile to be used as an anchor
@@ -333,10 +248,7 @@ choose_anchors_from_stats <-
 #'   above this threshold to be used as an anchor
 #' @param insufficient_anchors_thresh Cell types that end up with fewer than
 #'   this many anchors will be discarded.
-<<<<<<< HEAD
 #' @param refinement flag to further refine the anchors via UMAP projection (default = FALSE)
-=======
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
 #' @return A vector holding anchor cell assignments (or NA) for each cell in the
 #'   counts matrix
 #' @importFrom lsa cosine
@@ -346,7 +258,6 @@ choose_anchors_from_stats <-
 #' data("mini_nsclc")
 #' sharedgenes <- intersect(colnames(mini_nsclc$counts), rownames(ioprofiles))
 #' find_anchor_cells(counts = mini_nsclc$counts[, sharedgenes], 
-<<<<<<< HEAD
 #'                   assay_type="RNA", 
 #'                   sds=NULL,
 #'                   neg = Matrix::rowMeans(mini_nsclc$neg),
@@ -378,32 +289,12 @@ find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
   
   # select anchors based on stats:
   # double number for candidates if do further refinement
-=======
-#'                   neg = Matrix::rowMeans(mini_nsclc$neg),
-#'                   profiles = ioprofiles)
-find_anchor_cells <- function(counts, neg = NULL, bg = NULL, align_genes = TRUE,
-                              profiles, size = 10, n_cells = 500, 
-                              min_cosine = 0.3, min_scaled_llr = 0.01, 
-                              insufficient_anchors_thresh = 20) {
-  
-  # get cos and llr stats:
-  anchorstats <- get_anchor_stats(counts = counts,
-                                   neg = neg,
-                                   bg = bg, 
-                                   align_genes = TRUE,
-                                   profiles = profiles, 
-                                   size = size, 
-                                   min_cosine = min_cosine)  
-  
-  # select anchors based on stats:
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
   anchors <- choose_anchors_from_stats(counts = counts, 
                                        neg = neg,
                                        bg = bg,
                                        anchorstats = anchorstats, 
                                        cos = NULL, 
                                        llr = NULL, 
-<<<<<<< HEAD
                                        n_cells = ifelse(refinement, n_cells*2, n_cells), 
                                        min_cosine = min_cosine, 
                                        min_scaled_llr = min_scaled_llr, 
@@ -544,13 +435,3 @@ refineAnchors <- function(counts,
 }
 
 
-=======
-                                       n_cells = n_cells, 
-                                       min_cosine = min_cosine, 
-                                       min_scaled_llr = min_scaled_llr, 
-                                       insufficient_anchors_thresh = insufficient_anchors_thresh) 
-  
-  return(anchors)
-  
-}
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
