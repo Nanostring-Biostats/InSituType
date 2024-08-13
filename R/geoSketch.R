@@ -141,10 +141,7 @@ geoSketch_get_plaid <- function(X, N,
 #' plaids <- geoSketch_get_plaid(mini_nsclc$counts, 100)
 #' geoSketch_sample_from_plaids(plaids, 5)
 geoSketch_sample_from_plaids <- function(Plaid, N) {
-<<<<<<< HEAD
 
-=======
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
   # define cells' sampling probabilities as the inverse of their plaid size:
   PlaidCounts <- table(Plaid) # Count the number of cells per bin
   prob <- 1 / PlaidCounts[Plaid]
@@ -177,10 +174,7 @@ geoSketch <- function(X, N,
                       max_iter=200,
                       returnBins=FALSE,
                       minCellsPerBin = 1) {
-<<<<<<< HEAD
 
-=======
->>>>>>> e06422f238976068692d1a20fac7cbcefe5a627a
   # Determine the total number of cells and compare it to the desired sample size 
   nCells <- nrow(X)
   
