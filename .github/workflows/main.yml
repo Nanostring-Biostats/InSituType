@@ -10,5 +10,5 @@ jobs:
       - uses: EddieHubCommunity/gh-action-community/src/welcome@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          issue-message: "Thank you for contacting us about our tools! To receive assistance, kindly email support@nanostring.com with detailed information about your issue. If applicable, attach a screenshot of any encountered errors and include a copy of the modified script in Notepad. Our customer support team will help facilitate a review and resolution of the issue."
+          issue-message: "Thank you for contacting us about our tools! To receive assistance, kindly email support.spatial@bruker.com with detailed information about your issue. If applicable, attach a screenshot of any encountered errors and include a copy of the modified script in Notepad. Our customer support team will help facilitate a review and resolution of the issue."
           footer: "Thank you for choosing NanoString,\nNanoString Dev Team"
