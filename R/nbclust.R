@@ -59,6 +59,10 @@ lldist <- function(x, xsd=NULL, mat,
     
     if(identical(tolower(assay_type), "rna")){
       xsd <- NULL
+      # guard against list-matrices (e.g. from sapply over Matrix::colMeans in newer Matrix versions)
+      if (is.list(x)) {
+        x <- matrix(as.numeric(x), nrow = nrow(x), ncol = ncol(x), dimnames = dimnames(x))
+      }
       res <- lls_rna(mat=mat, bgsub=bgsub, x=x, bg=bg, size=size)
     }
     
@@ -194,11 +198,11 @@ Estep <- function(counts, clust, neg,
   means <- sapply(unique(clust), function(cl) {
     
     if(identical(tolower(assay_type), "rna")){
-      means = pmax(Matrix::colMeans(counts[clust == cl, , drop = FALSE]) - mean(neg[clust == cl]), 0)
+      means = pmax(as.numeric(Matrix::colMeans(counts[clust == cl, , drop = FALSE])) - mean(neg[clust == cl]), 0)
     }
     
     if(identical(tolower(assay_type), "protein")){
-      means = Matrix::colMeans(counts[clust == cl, , drop = FALSE])  #- mean(neg[clust == cl])
+      means = as.numeric(Matrix::colMeans(counts[clust == cl, , drop = FALSE]))  #- mean(neg[clust == cl])
     }
     return(means)
   })
