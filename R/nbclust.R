@@ -216,6 +216,13 @@ Estep <- function(counts, clust, neg,
       return(sds)
     })
   }
+  # ensure means is a plain numeric matrix (sapply over Matrix::colMeans can
+  # produce a list-matrix in some Matrix package versions)
+  if (!is.numeric(means)) {
+    means <- matrix(as.numeric(means), nrow = nrow(means), ncol = ncol(means),
+                    dimnames = dimnames(means))
+  }
+
   if (is.matrix(sds)) {
     rownames(sds) <- rownames(means)
   }
@@ -438,6 +445,12 @@ nbclust <- function(counts,
     probs_old_max <- apply(probs, 1, max)
   }
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
+
+  # ensure profiles is a plain numeric matrix before sweep/colSums
+  if (!is.numeric(profiles)) {
+    profiles <- matrix(as.numeric(profiles), nrow = nrow(profiles),
+                       ncol = ncol(profiles), dimnames = dimnames(profiles))
+  }
 
   if(identical(tolower(assay_type), "protein")){
     sds = sweep(sds, 2, colSums(sds), "/") * 1000
