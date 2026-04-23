@@ -98,6 +98,8 @@
 #' @param refinement Logical, flag for further anchor refinement, used when update_reference_profiles = TRUE (default = FALSE)
 #' @param rescale Logical, flag for platform effect correction, used when update_reference_profiles = TRUE (default = FALSE)
 #' @param refit Logical, flag for fitting reference profiles to anchors, used when update_reference_profiles = TRUE (default = TRUE)
+#' @param seed Random seed for reproducibility. Set to NULL to disable seed
+#'   management and use the caller's RNG state. Default is 0.
 #' @param ... For the \linkS4class{SingleCellExperiment} method, additional
 #'   arguments to pass to the ANY method.
 #' @param assay.type A string specifying which assay values to use.
@@ -163,9 +165,27 @@ NULL
                         insufficient_anchors_thresh = 20,
                         refinement = FALSE, 
                         rescale = TRUE, 
-                        refit = TRUE) {
+                        refit = TRUE,
+                        seed = 0) {
   
   #### preliminaries ---------------------------
+
+  # set seed for reproducibility, restoring previous RNG state on exit
+  if (!is.null(seed)) {
+    old_seed <- if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+      get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    } else {
+      NULL
+    }
+    on.exit({
+      if (is.null(old_seed)) {
+        rm(".Random.seed", envir = .GlobalEnv)
+      } else {
+        assign(".Random.seed", old_seed, envir = .GlobalEnv)
+      }
+    }, add = TRUE)
+    set.seed(seed)
+  }
 
   assay_type <- match.arg(tolower(assay_type), c("rna", "protein"))
  
