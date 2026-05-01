@@ -217,10 +217,14 @@ Estep <- function(counts, clust, neg,
     })
   }
   # ensure means is a plain numeric matrix (sapply over Matrix::colMeans can
-  # produce a list-matrix in some Matrix package versions)
-  if (!is.numeric(means)) {
-    means <- matrix(as.numeric(means), nrow = nrow(means), ncol = ncol(means),
-                    dimnames = dimnames(means))
+  # produce a list-matrix or a list in some Matrix package versions)
+  n_genes <- ncol(counts)
+  n_clusts_found <- length(unique(clust))
+  if (!is.matrix(means) || !is.numeric(means)) {
+    cnames <- if (!is.null(dim(means))) colnames(means) else names(means)
+    means <- matrix(as.numeric(unlist(means)), nrow = n_genes, ncol = n_clusts_found)
+    colnames(means) <- cnames
+    rownames(means) <- colnames(counts)
   }
 
   if (is.matrix(sds)) {
@@ -447,9 +451,10 @@ nbclust <- function(counts,
   names(pct_changed) <- paste0("Iter_", seq_len(iter))
 
   # ensure profiles is a plain numeric matrix before sweep/colSums
-  if (!is.numeric(profiles)) {
-    profiles <- matrix(as.numeric(profiles), nrow = nrow(profiles),
-                       ncol = ncol(profiles), dimnames = dimnames(profiles))
+  if (!is.matrix(profiles) || !is.numeric(profiles)) {
+    profiles <- matrix(as.numeric(unlist(profiles)),
+                       nrow = ncol(counts), ncol = length(clustnames),
+                       dimnames = list(colnames(counts), clustnames))
   }
 
   if(identical(tolower(assay_type), "protein")){
